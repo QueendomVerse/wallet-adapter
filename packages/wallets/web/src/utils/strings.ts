@@ -60,3 +60,5 @@ export const fromUTF8Array = (data: number[]) => {
 
     return str;
 };
+
+export const isValidHttpUrl = (text: string): boolean => text.startsWith('http:') || text.startsWith('https:');

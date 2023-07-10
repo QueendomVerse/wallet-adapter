@@ -12,8 +12,6 @@ import { WalletAdapterNetwork } from '@mindblox-wallet-adapter/base';
 export const accountsEqual = (a?: AccountDatum, b?: AccountDatum): boolean =>
     a && b ? a.accountInfo.data.equals(b.accountInfo.data) : false;
 
-export const isValidHttpUrl = (text: string): boolean => text.startsWith('http:') || text.startsWith('https:');
-
 export const formatPriceNumber = new Intl.NumberFormat('en-US', {
     style: 'decimal',
     minimumFractionDigits: 2,
