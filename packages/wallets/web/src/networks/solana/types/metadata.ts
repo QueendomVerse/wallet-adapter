@@ -2,10 +2,10 @@ import { SystemProgram, SYSVAR_RENT_PUBKEY, TransactionInstruction } from '@sola
 import { deserializeUnchecked, serialize } from 'borsh';
 import type BN from 'bn.js';
 
+import type { StringPublicKey } from '@/networks';
 import { emptyKey } from '../constants';
 import { programIds } from '../utils';
 import { findProgramAddress, toPublicKey } from '../utils';
-import type { StringPublicKey } from './keypair';
 
 export const METADATA_PREFIX = 'metadata';
 export const EDITION = 'edition';

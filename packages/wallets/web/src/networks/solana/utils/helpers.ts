@@ -2,8 +2,9 @@ import type { MintInfo } from '@solana/spl-token';
 import { Keypair, PublicKey } from '@solana/web3.js';
 import BN from 'bn.js';
 
+import type { StringPublicKey } from '@/networks';
 import { useLocalStorage } from '@/utils';
-import type { KnownTokenMap, StringPublicKey, TokenAccount } from '../types';
+import type { KnownTokenMap, TokenAccount } from '../types';
 import { WAD, ZERO } from '../constants';
 import type { AccountDatum } from '../internal';
 import { WalletAdapterNetwork } from '@mindblox-wallet-adapter/base';

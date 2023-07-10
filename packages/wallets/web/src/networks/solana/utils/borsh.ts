@@ -1,7 +1,8 @@
 import { PublicKey } from '@solana/web3.js';
 import { BinaryReader, BinaryWriter } from 'borsh';
 import { encode as encodeBs58, decode as decodeBs58 } from 'bs58';
-import type { StringPublicKey } from '../types';
+
+import type { StringPublicKey } from '@/networks';
 
 export const extendBorsh = (): void => {
     (

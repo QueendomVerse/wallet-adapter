@@ -1,7 +1,7 @@
 import { Buffer } from 'buffer';
 import { useEffect, useState } from 'react';
 import * as nearAPI from 'near-api-js';
-import { keyStore } from './keyStore';
+import { keyStore } from '../utils/keyStore';
 
 window.Buffer = Buffer;
 

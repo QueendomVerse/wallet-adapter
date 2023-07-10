@@ -1,4 +1,4 @@
-import type { StringPublicKey } from './keypair';
+import type { StringPublicKey } from '@/networks';
 
 export enum VaultKey {
     Uninitialized = 0,

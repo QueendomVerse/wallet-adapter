@@ -17,13 +17,6 @@ import type { Connection, PublicKey, Transaction } from '@solana/web3.js';
 import { PhantomWalletAdapter } from '@mindblox-wallet-adapter/phantom';
 
 import type { SendTransactionOptions, WalletName } from '@mindblox-wallet-adapter/base';
-import type {
-    Wallet,
-    // WalletContext,
-    // useWallet,
-    // WalletProvider as BaseWalletProvider,
-    // WalletContextState
-} from '@mindblox-wallet-adapter/react';
 import {
     WalletError,
     WalletReadyState,
@@ -44,7 +37,7 @@ import type { WalletContextState } from '../hooks/useWallet';
 import { useWallet, WalletContext } from '../hooks/useWallet';
 import { BrowserWalletAdapter, BrowserWalletAdapter as NearBrowserWalletAdapter } from '@/networks/near';
 import { intArrayToString } from '../utils';
-import type { ExtendedAdapter } from '@/networks';
+import type { ExtendedAdapter, ExtendedWallet } from '@/networks';
 
 const { Panel } = Collapse;
 
@@ -73,11 +66,6 @@ interface WalletProviderProps {
     autoConnect?: boolean;
     onError?: (error: WalletError) => void;
     localStorageKey?: string;
-}
-
-export interface ExtendedWallet extends Wallet {
-    adapter: ExtendedAdapter;
-    readyState: WalletReadyState;
 }
 
 export interface WalletModalContextState {

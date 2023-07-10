@@ -1,4 +1,4 @@
-import type { StringPublicKey } from '../types';
+import type { StringPublicKey } from '@/networks';
 
 export class CacheClearEvent {
     static type = 'CacheDelete';

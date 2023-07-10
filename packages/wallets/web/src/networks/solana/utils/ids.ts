@@ -1,7 +1,7 @@
 import type { AccountInfo } from '@solana/web3.js';
 import { PublicKey } from '@solana/web3.js';
 
-import type { StringPublicKey } from '../types';
+import type { StringPublicKey } from '@/networks';
 
 const PubKeysInternedMap = new Map<string, PublicKey>();
 
