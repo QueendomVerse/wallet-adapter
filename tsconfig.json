@@ -1,21 +1,42 @@
 {
-    "include": ["packages/*/*/src"],
-    "exclude": ["node_modules", "packages/*/*/node_modules"],
+    "include": [
+        "./packages/*/*/src/**/*/*.ts",
+        "./packages/*/*/src/**/*/*.tsx"
+    ],
+    "exclude": [
+        "./node_modules",
+        "./packages/*/*/node_modules"
+    ],
     "compilerOptions": {
         "target": "es2019",
         "module": "esnext",
         "moduleResolution": "node",
-        "noEmit": true,
+        "noEmit": false,
         "declaration": true,
         "sourceMap": true,
         "noEmitOnError": true,
         "stripInternal": true,
+        "skipLibCheck": true,
         "jsx": "react",
         "strict": true,
         "esModuleInterop": true,
         "resolveJsonModule": true,
         "isolatedModules": true,
-        "typeRoots": ["node_modules/@types"]
+        "types": ["jest"],
+        "typeRoots": ["./node_modules/@types"],
+        "baseUrl": "packages",
+        "paths": {
+          "@base": ["./core/base/src"],
+          "@react": ["./core/react/src"],
+          "@wallets": ["./wallets/wallets/src"],
+          "@phantom": ["./wallets/phantom/src"],
+          "@web": ["./wallets/web/src"],
+          "@base/*": ["./core/base/src/*"],
+          "@react/*": ["./core/react/src/*"],
+          "@wallets/*": ["./wallets/wallets/src/*"],
+          "@phantom/*": ["./wallets/phantom/src/*"],
+          "@web/*": ["./wallets/web/src/*"]
+        },
     },
     "typedocOptions": {
         "entryPoints": ".",

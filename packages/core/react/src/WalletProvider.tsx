@@ -1,8 +1,10 @@
-import type { Adapter, SendTransactionOptions, WalletError, WalletName } from '@solana/wallet-adapter-base';
-import { WalletNotConnectedError, WalletNotReadyError, WalletReadyState } from '@solana/wallet-adapter-base';
-import type { Connection, PublicKey, Transaction } from '@solana/web3.js';
 import type { FC, ReactNode } from 'react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { Connection, PublicKey, Transaction } from '@solana/web3.js';
+
+import type { Adapter, SendTransactionOptions, WalletError, WalletName } from '@base';
+import { WalletNotConnectedError, WalletNotReadyError, WalletReadyState } from '@base';
+
 import { WalletNotSelectedError } from './errors';
 import { useLocalStorage } from './useLocalStorage';
 import type { Wallet } from './useWallet';
@@ -54,9 +56,11 @@ export const WalletProvider: FC<WalletProviderProps> = ({
 
     // When the wallets change, start to listen for changes to their `readyState`
     useEffect(() => {
-        function handleReadyStateChange(this: Adapter, readyState: WalletReadyState) {
+        const handleReadyStateChange = (adapter: Adapter, readyState: WalletReadyState) => {
             setWallets((prevWallets) => {
-                const walletIndex = prevWallets.findIndex(({ adapter }) => adapter.name === this.name);
+                const walletIndex = prevWallets.findIndex(
+                    ({ adapter: prevAdapter }) => prevAdapter.name === adapter.name
+                );
                 if (walletIndex === -1) return prevWallets;
 
                 return [
@@ -65,13 +69,18 @@ export const WalletProvider: FC<WalletProviderProps> = ({
                     ...prevWallets.slice(walletIndex + 1),
                 ];
             });
-        }
+        };
+
         for (const adapter of adapters) {
-            adapter.on('readyStateChange', handleReadyStateChange, adapter);
+            adapter.on('readyStateChange', (readyState: WalletReadyState) =>
+                handleReadyStateChange(adapter, readyState)
+            );
         }
         return () => {
             for (const adapter of adapters) {
-                adapter.off('readyStateChange', handleReadyStateChange, adapter);
+                adapter.off('readyStateChange', (readyState: WalletReadyState) =>
+                    handleReadyStateChange(adapter, readyState)
+                );
             }
         };
     }, [adapters]);
@@ -103,12 +112,12 @@ export const WalletProvider: FC<WalletProviderProps> = ({
         )
             return;
 
-        (async function () {
+        (async () => {
             isConnecting.current = true;
             setConnecting(true);
             try {
                 await adapter.connect();
-            } catch (error: any) {
+            } catch (error) {
                 // Clear the selected wallet
                 setName(null);
                 // Don't throw error, but handleError will still be called
@@ -121,9 +130,9 @@ export const WalletProvider: FC<WalletProviderProps> = ({
 
     // If the window is closing or reloading, ignore disconnect and error events from the adapter
     useEffect(() => {
-        function listener() {
+        const listener = () => {
             isUnloading.current = true;
-        }
+        };
 
         window.addEventListener('beforeunload', listener);
         return () => window.removeEventListener('beforeunload', listener);
@@ -192,7 +201,7 @@ export const WalletProvider: FC<WalletProviderProps> = ({
         setConnecting(true);
         try {
             await adapter.connect();
-        } catch (error: any) {
+        } catch (error) {
             // Clear the selected wallet
             setName(null);
             // Rethrow the error, and handleError will also be called
@@ -212,7 +221,7 @@ export const WalletProvider: FC<WalletProviderProps> = ({
         setDisconnecting(true);
         try {
             await adapter.disconnect();
-        } catch (error: any) {
+        } catch (error) {
             // Clear the selected wallet
             setName(null);
             // Rethrow the error, and handleError will also be called

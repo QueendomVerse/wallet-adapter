@@ -1,8 +1,8 @@
 {
-    "name": "@solana/wallet-adapter-base",
+    "name": "wallet-adapter-base",
     "version": "0.9.10",
-    "author": "Solana Maintainers <maintainers@solana.foundation>",
-    "repository": "https://github.com/solana-labs/wallet-adapter",
+    "author": "Phillip Strefling <phillip@queendom.io>",
+    "repository": "https://github.com/QueendomVerse/wallet-adapter",
     "license": "Apache-2.0",
     "type": "module",
     "sideEffects": false,
@@ -27,16 +27,16 @@
     },
     "scripts": {
         "clean": "shx rm -rf lib/*",
-        "build": "yarn clean && tsc -p tsconfig.json && tsc-esm -p tsconfig.json && tsc -p tsconfig.cjs.json",
+        "build": "pnpm clean && tsc -p tsconfig.json && tsc-esm -p tsconfig.json && tsc -p tsconfig.cjs.json",
         "postbuild": "echo '{\"type\":\"commonjs\"}' | npx json > lib/cjs/package.json && echo '{\"type\":\"module\"} ' | npx json > lib/esm/package.json"
     },
     "peerDependencies": {
-        "@solana/web3.js": "^1.50.1"
+        "@solana/web3.js": "*"
     },
     "dependencies": {
-        "eventemitter3": "^4.0.0"
+        "eventemitter3": "^4.0.7"
     },
     "devDependencies": {
-        "@solana/web3.js": "^1.50.1"
+        "@solana/web3.js": "^1.78.0"
     }
 }

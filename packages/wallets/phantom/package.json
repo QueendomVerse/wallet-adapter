@@ -1,8 +1,8 @@
 {
-    "name": "@solana/wallet-adapter-phantom",
-    "version": "0.9.9",
-    "author": "Solana Maintainers <maintainers@solana.foundation>",
-    "repository": "https://github.com/solana-labs/wallet-adapter",
+    "name": "wallet-adapter-react",
+    "version": "0.15.9",
+    "author": "Phillip Strefling <phillip@queendom.io>",
+    "repository": "https://github.com/QueendomVerse/wallet-adapter",
     "license": "Apache-2.0",
     "type": "module",
     "sideEffects": false,
@@ -10,9 +10,12 @@
     "module": "lib/esm/index.mjs",
     "types": "lib/types/index.d.ts",
     "exports": {
-        "require": "./lib/cjs/index.js",
-        "import": "./lib/esm/index.mjs",
-        "types": "./lib/types/index.d.ts"
+        ".": {
+            "require": "./lib/cjs/index.js",
+            "import": "./lib/esm/index.mjs",
+            "types": "./lib/types/index.d.ts"
+        },
+        "./package.json": "./package.json"
     },
     "files": [
         "lib",
@@ -24,16 +27,14 @@
     },
     "scripts": {
         "clean": "shx rm -rf lib/*",
-        "build": "yarn clean && tsc -p tsconfig.json && tsc-esm -p tsconfig.json && tsc -p tsconfig.cjs.json",
+        "build": "pnpm clean && tsc -p tsconfig.json && tsc-esm -p tsconfig.json && tsc -p tsconfig.cjs.json",
+        "test": "jest",
         "postbuild": "echo '{\"type\":\"commonjs\"}' | npx json > lib/cjs/package.json && echo '{\"type\":\"module\"} ' | npx json > lib/esm/package.json"
     },
     "peerDependencies": {
-        "@solana/web3.js": "^1.50.1"
-    },
-    "dependencies": {
-        "@solana/wallet-adapter-base": "^0.9.10"
+        "@solana/web3.js": "*"
     },
     "devDependencies": {
-        "@solana/web3.js": "^1.50.1"
+        "@solana/web3.js": "^1.78.0"
     }
 }

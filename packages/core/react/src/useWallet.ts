@@ -5,7 +5,7 @@ import type {
     SignerWalletAdapterProps,
     WalletName,
     WalletReadyState,
-} from '@solana/wallet-adapter-base';
+} from '@base';
 import type { Connection, PublicKey, Transaction, TransactionSignature } from '@solana/web3.js';
 import { createContext, useContext } from 'react';
 
@@ -85,7 +85,7 @@ Object.defineProperty(DEFAULT_CONTEXT, 'publicKey', {
     },
 });
 
-function constructMissingProviderErrorMessage(action: string, valueName: string) {
+const constructMissingProviderErrorMessage = (action: string, valueName: string) => {
     return (
         'You have tried to ' +
         ` ${action} "${valueName}"` +
@@ -94,10 +94,10 @@ function constructMissingProviderErrorMessage(action: string, valueName: string)
         ' as an ancestor of the component that uses ' +
         'WalletContext'
     );
-}
+};
 
 export const WalletContext = createContext<WalletContextState>(DEFAULT_CONTEXT as WalletContextState);
 
-export function useWallet(): WalletContextState {
+export const useWallet = (): WalletContextState => {
     return useContext(WalletContext);
-}
+};

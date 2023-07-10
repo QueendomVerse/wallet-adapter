@@ -7,6 +7,6 @@ export interface ConnectionContextState {
 
 export const ConnectionContext = createContext<ConnectionContextState>({} as ConnectionContextState);
 
-export function useConnection(): ConnectionContextState {
+export const useConnection = (): ConnectionContextState => {
     return useContext(ConnectionContext);
-}
+};

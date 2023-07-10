@@ -2,6 +2,8 @@
 export default {
     preset: 'ts-jest/presets/js-with-ts-esm',
     testEnvironment: 'node',
+    resetMocks: false,
+    setupFiles: ["jest-localstorage-mock"],
     globals: {
         IS_REACT_ACT_ENVIRONMENT: true,
         'ts-jest': {
@@ -9,4 +11,9 @@ export default {
         },
     },
     transformIgnorePatterns: ['/node_modules\\/uuid\\//'],
+      globals: {
+        'ts-jest': {
+          tsconfig: '<rootDir>/tsconfig.json',
+        },
+    },
 };

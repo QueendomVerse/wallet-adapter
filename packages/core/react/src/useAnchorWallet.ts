@@ -8,7 +8,7 @@ export interface AnchorWallet {
     signAllTransactions(transactions: Transaction[]): Promise<Transaction[]>;
 }
 
-export function useAnchorWallet(): AnchorWallet | undefined {
+export const useAnchorWallet = (): AnchorWallet | undefined => {
     const { publicKey, signTransaction, signAllTransactions } = useWallet();
     return useMemo(
         () =>
@@ -17,4 +17,4 @@ export function useAnchorWallet(): AnchorWallet | undefined {
                 : undefined,
         [publicKey, signTransaction, signAllTransactions]
     );
-}
+};

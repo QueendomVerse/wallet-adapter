@@ -1,2 +1,2 @@
-export * from '@solana/wallet-adapter-phantom';
-export * from '@solana/wallet-adapter-web';
+export * from '@phantom';
+export * from '@web';

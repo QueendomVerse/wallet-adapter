@@ -1,7 +1,7 @@
 import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
 
-export function useLocalStorage<T>(key: string, defaultState: T): [T, React.Dispatch<React.SetStateAction<T>>] {
+export const useLocalStorage = <T>(key: string, defaultState: T): [T, React.Dispatch<React.SetStateAction<T>>] => {
     const state = useState<T>(() => {
         try {
             const value = localStorage.getItem(key);
@@ -36,4 +36,4 @@ export function useLocalStorage<T>(key: string, defaultState: T): [T, React.Disp
     }, [value]);
 
     return state;
-}
+};
