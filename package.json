@@ -19,6 +19,7 @@
     "scripts": {
         "clean": "lerna run clean",
         "build": "lerna run build",
+        "bootstrap": "pnpm i && pnpm wallets:bootstrap",
         "test": "lerna run test",
         "publish": "lerna publish from-package",
         "deploy": "pnpm deploy:docs && pnpm deploy:example",
@@ -28,12 +29,12 @@
         "fmt": "prettier --write '{*,**/*}.{js,ts,jsx,tsx,json,vue}'",
         "lint": "eslint --ext .ts,.tsx . && prettier --check '{*,**/*}.{js,ts,jsx,tsx,json,vue}'",
         "lint:fix": "eslint --fix --ext .ts,.tsx . && pnpm fmt",
-        "wallets:clean": "shx rm -rf {.,packages/*/*}/{node_modules,npm.lock,pnpm-lock.yaml}",
+        "wallets:clean": "rimraf {.,packages/*/*}/node_modules && rimraf {.,packages/*/*}/package-lock.json && rimraf {.,packages/*/*}/pnpm-lock.yaml && rimraf {.,packages/*/*}/yarn.lock",
         "wallets:check": "tsc --noEmit -p tsconfig.json",
         "wallets:install": "cd ./packages/wallets/wallets && pnpm install && pnpm install-all && cd ../../..",
         "wallets:link": "pnpm link ./packages/wallets/wallets && cd ./packages/wallets/wallets && pnpm link-all && cd ../../..",
         "wallets:build": "cd ./packages/wallets/wallets && pnpm build && cd ../../..",
-        "wallets:setup": "pnpm install && pnpm wallets:install && pnpm wallets:link && pnpm wallets:build"
+        "wallets:bootstrap": "pnpm wallets:install && pnpm wallets:link && pnpm wallets:build"
     },
     "devDependencies": {
         "@babel/eslint-parser": "^7.22.7",
@@ -69,9 +70,9 @@
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
         "shx": "^0.3.4",
+        "ts-jest": "^28.0.8",
         "tsc-esm": "^1.0.4",
         "tslib": "^2.6.0",
-        "ts-jest": "^28.0.8",
         "typedoc": "^0.23.28",
         "typescript": "^4.9.5",
         "typescript-esm": "^2.0.0"
@@ -101,6 +102,7 @@
         "dexie": "^3.2.4",
         "dotenv": "^16.3.1",
         "eventemitter3": "^5.0.1",
+        "glob": "^10.3.3",
         "js-sha256": "^0.9.0",
         "keccak": "^3.0.3",
         "near-api-js": "^2.1.4",
@@ -110,6 +112,7 @@
         "readable-stream": "^4.4.2",
         "redux": "^4.2.1",
         "redux-thunk": "^2.4.2",
+        "rimraf": "^5.0.1",
         "simple-crypto-js": "^3.0.1",
         "tweetnacl": "^1.0.3"
     },
