@@ -1,4 +1,4 @@
-import { notify } from '@react';
+import { notify } from '@wallet-adapter/react';
 import {
     deleteDatabase,
     readAllUsers,

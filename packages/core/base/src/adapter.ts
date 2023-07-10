@@ -2,7 +2,7 @@ import type { Connection, PublicKey, SendOptions, Signer, Transaction, Transacti
 import EventEmitter from 'eventemitter3';
 import type { WalletError } from './errors';
 import { WalletNotConnectedError } from './errors';
-import type { WalletName } from './types';
+import type { MessageSignerWalletAdapter, SignerWalletAdapter } from './signer';
 
 export { EventEmitter };
 
@@ -65,6 +65,18 @@ export enum WalletReadyState {
      */
     Unsupported = 'Unsupported',
 }
+
+export enum WalletAdapterNetwork {
+    Mainnet = 'mainnet-beta',
+    Testnet = 'testnet',
+    Devnet = 'devnet',
+}
+
+// WalletName is a nominal type that wallet adapters should use, e.g. `'MyCryptoWallet' as WalletName<'MyCryptoWallet'>`
+// https://medium.com/@KevinBGreene/surviving-the-typescript-ecosystem-branding-and-type-tagging-6cf6e516523d
+export type WalletName<T extends string = string> = T & { __brand__: 'WalletName' };
+
+export type Adapter = WalletAdapter | SignerWalletAdapter | MessageSignerWalletAdapter;
 
 export abstract class BaseWalletAdapter extends EventEmitter<WalletAdapterEvents> implements WalletAdapter {
     abstract name: WalletName;

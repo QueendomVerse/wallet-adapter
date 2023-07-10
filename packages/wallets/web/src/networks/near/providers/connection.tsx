@@ -4,11 +4,12 @@ import { ENV as ChainId } from '@solana/spl-token-registry';
 import { Keypair, clusterApiUrl, Connection } from '@solana/web3.js';
 import * as dotenv from 'dotenv';
 
-import { asyncEnsureRpcConnection, fetchWithRetry, useLocalStorageState, useQuerySearch } from '@web';
+import { asyncEnsureRpcConnection, fetchWithRetry, useQuerySearch } from '@/utils';
+import { useLocalStorageState } from '@/hooks';
 
 import { getTokenListContainerPromise } from '../../solana';
 
-import { WalletAdapterNetwork } from '@base';
+import { WalletAdapterNetwork } from '@wallet-adapter/base';
 
 dotenv.config();
 

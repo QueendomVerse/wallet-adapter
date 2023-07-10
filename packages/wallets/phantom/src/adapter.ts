@@ -1,7 +1,7 @@
 import type { Connection, SendOptions, Transaction, TransactionSignature } from '@solana/web3.js';
 import { PublicKey } from '@solana/web3.js';
 
-import type { EventEmitter, SendTransactionOptions, WalletName } from '@base';
+import type { EventEmitter, SendTransactionOptions, WalletName } from '@wallet-adapter/base';
 import {
     BaseMessageSignerWalletAdapter,
     scopePollingDetectionStrategy,
@@ -18,7 +18,7 @@ import {
     WalletSignMessageError,
     WalletSignTransactionError,
     handleError,
-} from '@base';
+} from '@wallet-adapter/base';
 
 interface PhantomWalletEvents {
     connect(...args: unknown[]): unknown;

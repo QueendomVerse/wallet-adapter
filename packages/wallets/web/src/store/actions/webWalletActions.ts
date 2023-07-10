@@ -13,7 +13,7 @@ import { Token, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { type ThunkAction } from 'redux-thunk';
 import { type FinalExecutionOutcome } from 'near-api-js/lib/providers';
 
-import { notify } from '@react';
+import { notify } from '@wallet-adapter/react';
 import { ChainNetworks } from '../../chains';
 
 import { type RootState } from '../index';
@@ -35,9 +35,9 @@ import {
     type LocalWallet,
     type LocalKeyPair,
     type LocalTransaction,
-} from '@web/store/types';
-import type { ApiUser, ApiWallet } from '@web/api';
-import type { Send, SendNear, SendSolana } from '@web/networks';
+} from '@/store/types';
+import type { ApiUser, ApiWallet } from '@/api';
+import type { Send, SendNear, SendSolana } from '@/networks';
 import {
     // encryptText,
     generateWallet,
@@ -48,7 +48,7 @@ import {
     getBalance,
     sendFundsTransaction,
     getChainProp,
-} from '@web/networks';
+} from '@/networks';
 import {
     type DbWallet,
     getSavedUsers,

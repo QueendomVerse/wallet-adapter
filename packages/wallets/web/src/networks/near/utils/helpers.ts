@@ -1,6 +1,6 @@
 import { decode as decodeBs58 } from 'bs58';
 
-import { isBase58, isHex } from '@base';
+import { isBase58, isHex } from '@wallet-adapter/base';
 import { fetchPublicKeys } from './helper-api';
 
 export const isValidAccount = async (account: string) => {

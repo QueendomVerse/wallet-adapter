@@ -16,7 +16,7 @@ import BN from 'bn.js';
 import React from 'react';
 import type { Unsubscribe } from 'redux';
 
-import { WalletError } from '@base';
+import { WalletError } from '@wallet-adapter/base';
 import { ChainNetworks } from '../../chains';
 
 import type { ContractWithMint } from './hooks';

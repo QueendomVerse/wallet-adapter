@@ -2,11 +2,11 @@ import type { MintInfo } from '@solana/spl-token';
 import { Keypair, PublicKey } from '@solana/web3.js';
 import BN from 'bn.js';
 
-import { useLocalStorage } from '@web/utils';
+import { useLocalStorage } from '@/utils';
 import type { KnownTokenMap, StringPublicKey, TokenAccount } from '../types';
 import { WAD, ZERO } from '../constants';
 import type { AccountDatum } from '../internal';
-import { WalletAdapterNetwork } from '@base';
+import { WalletAdapterNetwork } from '@wallet-adapter/base';
 
 export const accountsEqual = (a?: AccountDatum, b?: AccountDatum): boolean =>
     a && b ? a.accountInfo.data.equals(b.accountInfo.data) : false;
@@ -42,9 +42,6 @@ export const findProgramAddress = async (seeds: (Buffer | Uint8Array)[], program
     }
     return [result[0].toBase58(), result[1]] as [string, number];
 };
-
-export const shortenAddress = (address: string, chars = 4): string =>
-    `${address.slice(0, chars)}...${address.slice(-chars)}`;
 
 export const getTokenName = (map: KnownTokenMap, mint?: string | PublicKey, shorten = true): string => {
     const mintAddress = typeof mint === 'string' ? mint : mint?.toBase58();

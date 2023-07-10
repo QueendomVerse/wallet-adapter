@@ -1,5 +1,5 @@
-import type { WalletName } from '@base';
-import { capitalizeFirst } from '@base';
+import type { WalletName } from '@wallet-adapter/base';
+import { capitalizeFirst } from '@wallet-adapter/base';
 
 import { ChainTickers, ChainNetworks } from '../chains';
 

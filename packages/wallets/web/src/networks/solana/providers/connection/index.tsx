@@ -14,9 +14,9 @@ import type {
     ConnectionConfig,
     // connectionManager
 } from './manager';
-import { WalletAdapterNetwork } from '@base';
-import { fetchWithRetry, useQuerySearch, asyncEnsureRpcConnection } from '@web/utils';
-import { useLocalStorageState } from '@web/hooks';
+import { WalletAdapterNetwork } from '@wallet-adapter/base';
+import { fetchWithRetry, useQuerySearch, asyncEnsureRpcConnection } from '@/utils';
+import { useLocalStorageState } from '@/hooks';
 import { getTokenListContainerPromise } from '../../utils';
 
 export type ENV = ENDPOINT_NAME;

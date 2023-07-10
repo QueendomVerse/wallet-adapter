@@ -1,6 +1,6 @@
 import type { Connection, Commitment, SignatureResult } from '@solana/web3.js';
-import type { StringPublicKey } from '@web/networks/solana';
-import { SailGetMultipleTransactionsError, chunks } from '@web/networks/solana';
+import type { StringPublicKey } from '@/networks/solana';
+import { SailGetMultipleTransactionsError, chunks } from '@/networks/solana';
 
 export const GET_MULTIPLE_TRANSACTIONS_CHUNK_SIZE = 100; // or value you require
 

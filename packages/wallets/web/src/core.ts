@@ -15,8 +15,8 @@ import nacl from 'tweetnacl';
 import React from 'react';
 import type { Unsubscribe } from 'redux';
 
-import type { WalletName } from '@base';
-import { notify } from '@react';
+import type { WalletName } from '@wallet-adapter/base';
+import { notify } from '@wallet-adapter/react';
 
 import { ChainNetworks } from './chains';
 

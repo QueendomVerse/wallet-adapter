@@ -23,7 +23,6 @@ export type {
 export {
     ConnectionContext as SolanaConnectionContext,
     ENDPOINTS as SOLANA_ENDPOINTS,
-    shortenAddress as shortenSolanaAddress,
     WalletContext as SolanaWalletContext,
     getAccount as getSolanaAccount,
     getBalance as getSolanaBalance,

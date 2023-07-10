@@ -1,5 +1,5 @@
 {
-    "name": "wallet-adapter-wallets",
+    "name": "@wallet-adapter/wallets",
     "version": "0.17.3",
     "author": "Phillip Strefling <phillip@queendom.io>",
     "repository": "https://github.com/QueendomVerse/wallet-adapter",
@@ -44,8 +44,8 @@
         "react": "*"
     },
     "dependencies": {
-        "wallet-adapter-phantom": "file:../phantom",
-        "wallet-adapter-web": "file:../web"
+        "@wallet-adapter/phantom": "^0.15.9",
+        "@wallet-adapter/web": "^0.0.1"
     },
     "devDependencies": {
         "@solana/web3.js": "^1.78.0",

@@ -1,6 +1,7 @@
 export * from './Components';
 export * from './ConnectionProvider';
 export * from './errors';
+export * from './helpers';
 export * from './sharedStates';
 export * from './useAnchorWallet';
 export * from './useConnection';

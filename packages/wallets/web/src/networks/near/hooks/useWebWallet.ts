@@ -31,7 +31,7 @@ import type {
     SignerWalletAdapterProps as SolanaSignerWalletAdapterProps,
     WalletName as SolanaWalletName,
     WalletAdapter,
-} from '@base';
+} from '@wallet-adapter/base';
 
 import { type NftMetaData } from '../types';
 import { getNetworkConfig } from '../models/wallet';

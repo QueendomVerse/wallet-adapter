@@ -1,5 +1,5 @@
 {
-    "name": "wallet-adapter-web",
+    "name": "@wallet-adapter/web",
     "version": "0.0.1",
     "author": "Phillip Strefling <phillip@chiefmetaverse.co>",
     "repository": "https://github.com/QueendomVerse/wallet-adapter",
@@ -33,6 +33,9 @@
         "react": "*"
     },
     "dependencies": {
+        "@wallet-adapter/base": "^0.9.10",
+        "@wallet-adapter/react": "^0.15.9",
+        "@wallet-adapter/phantom": "^0.15.9",
         "@ant-design/icons": "^5.1.4",
         "formdata-node": "^5.0.1",
         "use-between": "^1.3.5"

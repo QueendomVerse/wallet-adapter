@@ -6,8 +6,8 @@ import { Transaction as NearTransaction } from 'near-api-js/lib/transaction';
 // import { PublicKey as NearPublicKey } from 'near-api-js/lib/utils';
 // import { Connection } from 'near-api-js/lib/connection';
 
-import type { WalletName, WalletAdapterNetwork } from '@base';
-import { WalletReadyState, BaseMessageSignerWalletAdapter, handleError } from '@base';
+import type { WalletName, WalletAdapterNetwork } from '@wallet-adapter/base';
+import { WalletReadyState, BaseMessageSignerWalletAdapter, handleError } from '@wallet-adapter/base';
 
 // import {
 //   // BaseMessageSignerWalletAdapter
@@ -29,9 +29,9 @@ import {
     WalletKeypairError,
     WalletSignTransactionError,
     WalletAccountError,
-} from '@base';
-import { capitalizeFirst } from '@base';
-import { notify } from '@react';
+} from '@wallet-adapter/base';
+import { capitalizeFirst } from '@wallet-adapter/base';
+import { notify } from '@wallet-adapter/react';
 
 // import { BaseMessageSignerWalletAdapter } from '../../../utils/wallets/base';
 // import { NearIcon } from './view/icon/near';

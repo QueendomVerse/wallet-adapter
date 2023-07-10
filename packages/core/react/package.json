@@ -1,5 +1,5 @@
 {
-    "name": "wallet-adapter-react",
+    "name": "@wallet-adapter/react",
     "version": "0.15.9",
     "author": "Phillip Strefling <phillip@queendom.io>",
     "repository": "https://github.com/QueendomVerse/wallet-adapter",
@@ -36,6 +36,7 @@
         "react": "*"
     },
     "dependencies": {
+        "@wallet-adapter/base": "^0.9.10",
         "@react-native-async-storage/async-storage": "^1.19.0"
     },
     "devDependencies": {

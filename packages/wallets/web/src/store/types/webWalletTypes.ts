@@ -1,5 +1,5 @@
-import type { ArtType, Artist } from '@web/api';
-import type { Attribute, Creator, FileOrString, MetadataCategory } from '@web/networks/solana';
+import type { ArtType, Artist } from '@/api';
+import type { Attribute, Creator, FileOrString, MetadataCategory } from '@/networks/solana';
 
 // @TODO: make url, bio, twitter, site, avatarUrl, and walletAddress optional => ?
 // @NOTES ensure corresponding changes are propagated to local and backend User schema

@@ -1,4 +1,4 @@
-import { PhantomWalletAdapter } from '@wallets';
+import { PhantomWalletAdapter } from '@wallet-adapter/phantom';
 import { ChainNetworks } from '../chains';
 import { BrowserWalletAdapter as NearBrowserWalletAdapter } from '../networks/near';
 

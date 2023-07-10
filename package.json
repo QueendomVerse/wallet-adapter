@@ -19,7 +19,7 @@
     "scripts": {
         "clean": "lerna run clean",
         "build": "lerna run build",
-        "bootstrap": "pnpm i && pnpm wallets:bootstrap",
+        "check": "tsc --noEmit -p tsconfig.json",
         "test": "lerna run test",
         "publish": "lerna publish from-package",
         "deploy": "pnpm deploy:docs && pnpm deploy:example",
@@ -30,7 +30,6 @@
         "lint": "eslint --ext .ts,.tsx . && prettier --check '{*,**/*}.{js,ts,jsx,tsx,json,vue}'",
         "lint:fix": "eslint --fix --ext .ts,.tsx . && pnpm fmt",
         "wallets:clean": "rimraf {.,packages/*/*}/node_modules && rimraf {.,packages/*/*}/package-lock.json && rimraf {.,packages/*/*}/pnpm-lock.yaml && rimraf {.,packages/*/*}/yarn.lock",
-        "wallets:check": "tsc --noEmit -p tsconfig.json",
         "wallets:install": "cd ./packages/wallets/wallets && pnpm install && pnpm install-all && cd ../../..",
         "wallets:link": "pnpm link ./packages/wallets/wallets && cd ./packages/wallets/wallets && pnpm link-all && cd ../../..",
         "wallets:build": "cd ./packages/wallets/wallets && pnpm build && cd ../../..",

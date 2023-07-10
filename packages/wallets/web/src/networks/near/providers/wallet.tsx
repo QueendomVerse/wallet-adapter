@@ -12,7 +12,7 @@ import { config as defaultConfig } from '../config';
 import type { BrowserWalletConfig as NearBrowserWalletConfig } from '../../../networks/near';
 import { BrowserWallet as NearBrowserWallet } from '../../../networks/near';
 import { initialState, WalletContext } from '../hooks';
-// import { QueryParams } from '@web/utils';
+// import { QueryParams } from '@/utils';
 
 interface Props {
     children: ReactNode;

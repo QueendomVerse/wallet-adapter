@@ -2,8 +2,8 @@ import { useMemo } from 'react';
 // import { clusterApiUrl } from '@solana/web3.js';
 import * as dotenv from 'dotenv';
 
-import type { WalletAdapterNetwork } from '@base';
-import { PhantomWalletAdapter } from '@wallets';
+import type { WalletAdapterNetwork } from '@wallet-adapter/base';
+import { PhantomWalletAdapter } from '@wallet-adapter/phantom';
 import { WebWalletAdapter } from './adapter';
 import { BrowserWalletAdapter as NearBrowserWalletAdapter } from './networks/near';
 import { getAdapterNetwork } from './networks/solana';

@@ -4,8 +4,8 @@
 
 'use strict';
 
-import type { Adapter, WalletName } from '@base';
-import { BaseWalletAdapter, WalletError, WalletNotReadyError, WalletReadyState } from '@base';
+import type { Adapter, WalletName } from '@wallet-adapter/base';
+import { BaseWalletAdapter, WalletError, WalletNotReadyError, WalletReadyState } from '@wallet-adapter/base';
 import { PublicKey } from '@solana/web3.js';
 import 'jest-localstorage-mock';
 import React, { createRef, forwardRef, useImperativeHandle } from 'react';

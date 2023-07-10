@@ -1,18 +1,19 @@
 import type { Connection, PublicKey, Transaction, TransactionSignature } from '@solana/web3.js';
 import { createContext, useContext } from 'react';
 
-import type { Adapter } from '@base/types';
-import type { Wallet } from '@react';
+import type { Wallet } from '@wallet-adapter/react';
+
+import type { WebWalletAdapter } from '@/adapter';
 
 import type {
     WalletName,
     SendTransactionOptions,
     SignerWalletAdapterProps,
     MessageSignerWalletAdapterProps,
-} from '@base';
+} from '@wallet-adapter/base';
 
 export interface WalletContextState {
-    adapter?: Adapter | null;
+    adapter?: WebWalletAdapter | null;
     autoConnect: boolean;
     wallets: Wallet[];
     wallet: Wallet | null;

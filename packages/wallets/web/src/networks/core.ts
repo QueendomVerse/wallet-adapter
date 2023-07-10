@@ -1,10 +1,10 @@
-import { ChainTickers } from '@web/chains';
+import { ChainTickers } from '@/chains';
 import type {
     LocalKeyPair,
     // LocalWallet,
-} from '@web/store';
-import type { LocalWallet } from '@web/store';
-import type { DbWallet } from '@web/indexDb';
+} from '@/store';
+import type { LocalWallet } from '@/store';
+import type { DbWallet } from '@/indexDb';
 import { getBalance as getSolanaBalance, sendFundsTransaction as sendSolanaFundsTransaction } from './solana';
 import { getBalance as getNearBalance, sendFundsTransaction as sendNearFundsTransaction } from './near';
 import type { SendNear, SendSolana } from '.';

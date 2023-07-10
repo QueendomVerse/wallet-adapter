@@ -1,4 +1,4 @@
-import { WalletDatabaseError, printError } from '@base';
+import { WalletDatabaseError, printError } from '@wallet-adapter/base';
 import type { AppDatabase, User, Profile } from './db';
 import { Wallet, Mint } from './db';
 import Dexie from 'dexie';

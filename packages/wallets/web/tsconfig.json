@@ -1,9 +1,15 @@
 {
     "extends": "../../../tsconfig.json",
-    "include": ["src"],
+    "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/__tests__"],
     "compilerOptions": {
         "outDir": "lib/esm",
         "declarationDir": "lib/types",
-        "noEmit": false
+        "noEmit": false,
+        "baseUrl": "./src",
+        "paths": {
+            "@/*": ["./*"],
+            "_mocks__/*": ["./__mocks__/*"],
+            "*": ["node_modules/*", "*"]
+        }
     }
 }

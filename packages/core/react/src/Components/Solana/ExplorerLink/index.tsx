@@ -1,7 +1,8 @@
 import React from 'react';
 import { Typography } from 'antd';
-import { shortenSolanaAddress } from '@web';
 import type { PublicKey } from '@solana/web3.js';
+
+import { shortenAddress } from '@/helpers';
 
 export const ExplorerLink = (props: { address: string | PublicKey; type: string; code?: boolean; length?: number }) => {
     const { type, code } = props;
@@ -22,9 +23,9 @@ export const ExplorerLink = (props: { address: string | PublicKey; type: string;
             title={address}
         >
             {code ? (
-                <Typography.Text code>{shortenSolanaAddress(address, length)}</Typography.Text>
+                <Typography.Text code>{shortenAddress(address, length)}</Typography.Text>
             ) : (
-                shortenSolanaAddress(address, length)
+                shortenAddress(address, length)
             )}
         </a>
     );

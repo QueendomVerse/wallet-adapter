@@ -16,15 +16,20 @@ import {
     // FeeCalculator
 } from '@solana/web3.js';
 
-import { WalletError, WalletPublicKeyError, WalletNotActivatedError, WalletSignTransactionError } from '@base';
+import {
+    WalletError,
+    WalletPublicKeyError,
+    WalletNotActivatedError,
+    WalletSignTransactionError,
+} from '@wallet-adapter/base';
 import type { WalletContextState } from './hooks';
 
 import { getTransactionInstructionError, isTransactionInstructionError } from './errors';
 
 import { chunks, sleep } from './utils';
-import { notify } from '@react';
-import { ExplorerLink } from '@react';
-import { asyncEnsureRpcConnection } from '@web/utils';
+import { notify } from '@wallet-adapter/react';
+import { ExplorerLink } from '@wallet-adapter/react';
+import { asyncEnsureRpcConnection } from '@/utils';
 
 interface BlockhashAndFeeCalculator {
     blockhash: Blockhash;

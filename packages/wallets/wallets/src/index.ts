@@ -1,2 +1,2 @@
-export * from '@phantom';
-export * from '@web';
+export * from '@wallet-adapter/phantom';
+export * from '@wallet-adapter/web';

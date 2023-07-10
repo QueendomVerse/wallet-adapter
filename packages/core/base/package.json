@@ -1,5 +1,5 @@
 {
-    "name": "wallet-adapter-base",
+    "name": "@wallet-adapter/base",
     "version": "0.9.10",
     "author": "Phillip Strefling <phillip@queendom.io>",
     "repository": "https://github.com/QueendomVerse/wallet-adapter",

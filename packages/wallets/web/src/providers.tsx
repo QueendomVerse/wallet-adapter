@@ -10,8 +10,9 @@ import {
     WalletProvider as NearWalletProvider,
     BrowserWalletProvider as NearBrowserWalletProvider,
 } from './networks/near';
-import type { Adapter, WalletError } from '@base';
+import type { WalletError } from '@wallet-adapter/base';
 import { initializeWallets } from './setup';
+import type { ExtendedAdapter } from './networks';
 
 // import {
 //   WalletProvider as SampleWalletProvider
@@ -30,7 +31,7 @@ export const ConnectionProviders: FC<ConnectionProps> = ({ children }: Connectio
 
 interface WalletProps {
     children: ReactNode;
-    wallets?: Adapter[];
+    wallets?: ExtendedAdapter[];
     autoConnect?: boolean;
     onError?: (error: WalletError) => void;
     localStorageKey?: string;

@@ -14,16 +14,16 @@ import { Button, Collapse, Modal } from 'antd';
 import type { Connection, PublicKey, Transaction } from '@solana/web3.js';
 // import { PhantomWalletAdapter } from '@solana/wallet-adapter-wallets';
 
-import { PhantomWalletAdapter } from '@wallets';
+import { PhantomWalletAdapter } from '@wallet-adapter/phantom';
 
-import type { Adapter, SendTransactionOptions, WalletName } from '@base';
+import type { SendTransactionOptions, WalletName } from '@wallet-adapter/base';
 import type {
     Wallet,
     // WalletContext,
     // useWallet,
     // WalletProvider as BaseWalletProvider,
     // WalletContextState
-} from '@react';
+} from '@wallet-adapter/react';
 import {
     WalletError,
     WalletReadyState,
@@ -34,16 +34,17 @@ import {
     WalletNotReadyError,
     WalletPublicKeyError,
     WalletNotSelectedError,
-} from '@base';
+} from '@wallet-adapter/base';
 
-import { notify } from '@react';
-import { useLocalStorageStringState } from '@web/hooks';
+import { notify } from '@wallet-adapter/react';
+import { WebWalletAdapter } from '@/adapter';
+import { useLocalStorageStringState } from '@/hooks';
 
 import type { WalletContextState } from '../hooks/useWallet';
 import { useWallet, WalletContext } from '../hooks/useWallet';
-import { WebWalletAdapter } from '@web';
-import { BrowserWalletAdapter as NearBrowserWalletAdapter } from '@web/networks/near';
+import { BrowserWalletAdapter, BrowserWalletAdapter as NearBrowserWalletAdapter } from '@/networks/near';
 import { intArrayToString } from '../utils';
+import type { ExtendedAdapter } from '@/networks';
 
 const { Panel } = Collapse;
 
@@ -68,14 +69,14 @@ export interface ModalProps {
 
 interface WalletProviderProps {
     children: ReactNode;
-    wallets: Adapter[];
+    wallets: ExtendedAdapter[];
     autoConnect?: boolean;
     onError?: (error: WalletError) => void;
     localStorageKey?: string;
 }
 
 export interface ExtendedWallet extends Wallet {
-    adapter: Adapter;
+    adapter: ExtendedAdapter;
     readyState: WalletReadyState;
 }
 
@@ -92,7 +93,7 @@ export const useWalletModal = (): WalletModalContextState => {
 
 const initialState: {
     wallet: ExtendedWallet | null;
-    adapter: Adapter | null;
+    adapter: ExtendedAdapter | null;
     publicKey: PublicKey | null;
     connected: boolean;
 } = {
@@ -369,7 +370,7 @@ export const WalletProvider: FC<WalletProviderProps> = ({
     useEffect(() => {
         if (!adapters || adapters.length < 1) return;
 
-        const handleReadyStateChange = (adapter: Adapter) => (readyState: WalletReadyState) => {
+        const handleReadyStateChange = (adapter: ExtendedAdapter) => (readyState: WalletReadyState) => {
             setWallets((prevWallets) => {
                 const walletIndex = prevWallets.findIndex(
                     ({ adapter: currentAdapter }) => currentAdapter.name === adapter.name
@@ -419,7 +420,7 @@ export const WalletProvider: FC<WalletProviderProps> = ({
             // });
             // return;
         }
-        const wallet = wallets.find(({ adapter }: { adapter: Adapter }) => {
+        const wallet = wallets.find(({ adapter }: { adapter: ExtendedAdapter }) => {
             console.debug(`${adapter.name}, ${name}`);
             return adapter.name === name;
         });
@@ -767,4 +768,4 @@ export const WalletProvider: FC<WalletProviderProps> = ({
     );
 };
 
-export type WalletSigner = Pick<Adapter, 'publicKey' | 'sendTransaction'>;
+export type WalletSigner = Pick<WebWalletAdapter, 'publicKey' | 'sendTransaction'>;

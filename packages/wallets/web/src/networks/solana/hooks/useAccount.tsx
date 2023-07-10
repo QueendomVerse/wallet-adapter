@@ -11,8 +11,8 @@ import {
     sendAndConfirmTransaction,
 } from '@solana/web3.js';
 
-import { WalletAdapterNetwork } from '@base';
-import { fetchWithRetry } from '@web/utils';
+import { WalletAdapterNetwork } from '@wallet-adapter/base';
+import { fetchWithRetry } from '@/utils';
 import { ConnectionError } from '../errors';
 
 export interface SendSolana {
