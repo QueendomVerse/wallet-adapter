@@ -1,5 +1,5 @@
 {
-    "name": "@wallet-adapter/phantom",
+    "name": "@mindblox-wallet-adapter/phantom",
     "version": "0.15.9",
     "author": "Phillip Strefling <phillip@queendom.io>",
     "repository": "https://github.com/QueendomVerse/wallet-adapter",
@@ -27,17 +27,18 @@
     },
     "scripts": {
         "clean": "shx rm -rf lib/*",
-        "build": "pnpm clean && tsc -p tsconfig.json && tsc-esm -p tsconfig.json && tsc -p tsconfig.cjs.json",
+        "build": "tsc -p tsconfig.json && tsc-esm -p tsconfig.json && tsc -p tsconfig.cjs.json",
         "test": "jest",
         "postbuild": "echo '{\"type\":\"commonjs\"}' | npx json > lib/cjs/package.json && echo '{\"type\":\"module\"} ' | npx json > lib/esm/package.json"
     },
     "dependencies": {
-        "@wallet-adapter/base": "^0.9.10"
+        "@mindblox-wallet-adapter/base": "*"
     },
     "peerDependencies": {
         "@solana/web3.js": "*"
     },
     "devDependencies": {
-        "@solana/web3.js": "^1.78.0"
+        "@solana/web3.js": "^1.78.0",
+        "tsc-esm": "^1.0.4"
     }
 }

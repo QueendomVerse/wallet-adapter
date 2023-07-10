@@ -2,8 +2,8 @@ import type { FC, ReactNode } from 'react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Connection, PublicKey, Transaction } from '@solana/web3.js';
 
-import type { Adapter, SendTransactionOptions, WalletError, WalletName } from '@wallet-adapter/base';
-import { WalletNotConnectedError, WalletNotReadyError, WalletReadyState } from '@wallet-adapter/base';
+import type { Adapter, SendTransactionOptions, WalletError, WalletName } from '@mindblox-wallet-adapter/base';
+import { WalletNotConnectedError, WalletNotReadyError, WalletReadyState } from '@mindblox-wallet-adapter/base';
 
 import { WalletNotSelectedError } from './errors';
 import { useLocalStorage } from './useLocalStorage';

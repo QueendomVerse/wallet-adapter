@@ -1,2 +1,2 @@
-export * from '@wallet-adapter/phantom';
-export * from '@wallet-adapter/web';
+export * from '@mindblox-wallet-adapter/phantom';
+export * from '@mindblox-wallet-adapter/web';

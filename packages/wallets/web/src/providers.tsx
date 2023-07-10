@@ -10,7 +10,7 @@ import {
     WalletProvider as NearWalletProvider,
     BrowserWalletProvider as NearBrowserWalletProvider,
 } from './networks/near';
-import type { WalletError } from '@wallet-adapter/base';
+import type { WalletError } from '@mindblox-wallet-adapter/base';
 import { initializeWallets } from './setup';
 import type { ExtendedAdapter } from './networks';
 

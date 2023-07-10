@@ -27,7 +27,7 @@ import {
     // WalletKeypairError,
     WalletSignTransactionError,
     WalletConnectionError,
-} from '@wallet-adapter/base';
+} from '@mindblox-wallet-adapter/base';
 
 import { WebWallet } from './core';
 import type { Chain } from './chains';

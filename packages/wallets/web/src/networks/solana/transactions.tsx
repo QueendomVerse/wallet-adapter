@@ -21,14 +21,14 @@ import {
     WalletPublicKeyError,
     WalletNotActivatedError,
     WalletSignTransactionError,
-} from '@wallet-adapter/base';
+} from '@mindblox-wallet-adapter/base';
 import type { WalletContextState } from './hooks';
 
 import { getTransactionInstructionError, isTransactionInstructionError } from './errors';
 
 import { chunks, sleep } from './utils';
-import { notify } from '@wallet-adapter/react';
-import { ExplorerLink } from '@wallet-adapter/react';
+import { notify } from '@mindblox-wallet-adapter/react';
+import { ExplorerLink } from '@mindblox-wallet-adapter/react';
 import { asyncEnsureRpcConnection } from '@/utils';
 
 interface BlockhashAndFeeCalculator {

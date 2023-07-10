@@ -14,16 +14,16 @@ import { Button, Collapse, Modal } from 'antd';
 import type { Connection, PublicKey, Transaction } from '@solana/web3.js';
 // import { PhantomWalletAdapter } from '@solana/wallet-adapter-wallets';
 
-import { PhantomWalletAdapter } from '@wallet-adapter/phantom';
+import { PhantomWalletAdapter } from '@mindblox-wallet-adapter/phantom';
 
-import type { SendTransactionOptions, WalletName } from '@wallet-adapter/base';
+import type { SendTransactionOptions, WalletName } from '@mindblox-wallet-adapter/base';
 import type {
     Wallet,
     // WalletContext,
     // useWallet,
     // WalletProvider as BaseWalletProvider,
     // WalletContextState
-} from '@wallet-adapter/react';
+} from '@mindblox-wallet-adapter/react';
 import {
     WalletError,
     WalletReadyState,
@@ -34,9 +34,9 @@ import {
     WalletNotReadyError,
     WalletPublicKeyError,
     WalletNotSelectedError,
-} from '@wallet-adapter/base';
+} from '@mindblox-wallet-adapter/base';
 
-import { notify } from '@wallet-adapter/react';
+import { notify } from '@mindblox-wallet-adapter/react';
 import { WebWalletAdapter } from '@/adapter';
 import { useLocalStorageStringState } from '@/hooks';
 

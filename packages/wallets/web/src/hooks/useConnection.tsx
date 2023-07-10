@@ -2,7 +2,7 @@ import { useContext, useState } from 'react';
 // import { useBetween } from 'use-between';
 import type { Connection } from '@solana/web3.js';
 
-import { WalletError } from '@wallet-adapter/base';
+import { WalletError } from '@mindblox-wallet-adapter/base';
 import { ChainTickers } from '../chains';
 import type {
     ENDPOINT_NAME as SOLANA_ENDPOINT_NAME,

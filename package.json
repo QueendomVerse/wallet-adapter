@@ -18,7 +18,7 @@
     },
     "scripts": {
         "clean": "lerna run clean",
-        "build": "lerna run build",
+        "build": "pnpm recursive run build",
         "check": "tsc --noEmit -p tsconfig.json",
         "test": "lerna run test",
         "publish": "lerna publish from-package",

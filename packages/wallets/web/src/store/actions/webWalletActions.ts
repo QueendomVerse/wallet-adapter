@@ -13,7 +13,7 @@ import { Token, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { type ThunkAction } from 'redux-thunk';
 import { type FinalExecutionOutcome } from 'near-api-js/lib/providers';
 
-import { notify } from '@wallet-adapter/react';
+import { notify } from '@mindblox-wallet-adapter/react';
 import { ChainNetworks } from '../../chains';
 
 import { type RootState } from '../index';

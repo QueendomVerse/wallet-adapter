@@ -1,5 +1,5 @@
-import type { WalletName } from '@wallet-adapter/base';
-import { capitalizeFirst } from '@wallet-adapter/base';
+import type { WalletName } from '@mindblox-wallet-adapter/base';
+import { capitalizeFirst } from '@mindblox-wallet-adapter/base';
 
 import { ChainTickers, ChainNetworks } from '../chains';
 

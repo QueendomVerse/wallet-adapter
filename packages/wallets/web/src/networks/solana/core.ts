@@ -13,7 +13,7 @@ import * as dotenv from 'dotenv';
 
 import type { LocalKeyPair } from '../../store/types';
 import type { SolanaKeypair } from './types/keypair';
-import type { WalletAdapterNetwork } from '@wallet-adapter/base';
+import type { WalletAdapterNetwork } from '@mindblox-wallet-adapter/base';
 
 dotenv.config();
 

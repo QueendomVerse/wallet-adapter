@@ -1,7 +1,7 @@
 import type { Connection, PublicKey, Transaction, TransactionSignature } from '@solana/web3.js';
 import { createContext, useContext } from 'react';
 
-import type { Wallet } from '@wallet-adapter/react';
+import type { Wallet } from '@mindblox-wallet-adapter/react';
 
 import type { WebWalletAdapter } from '@/adapter';
 
@@ -10,7 +10,7 @@ import type {
     SendTransactionOptions,
     SignerWalletAdapterProps,
     MessageSignerWalletAdapterProps,
-} from '@wallet-adapter/base';
+} from '@mindblox-wallet-adapter/base';
 
 export interface WalletContextState {
     adapter?: WebWalletAdapter | null;

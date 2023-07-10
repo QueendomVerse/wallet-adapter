@@ -6,7 +6,7 @@ import { useLocalStorage } from '@/utils';
 import type { KnownTokenMap, StringPublicKey, TokenAccount } from '../types';
 import { WAD, ZERO } from '../constants';
 import type { AccountDatum } from '../internal';
-import { WalletAdapterNetwork } from '@wallet-adapter/base';
+import { WalletAdapterNetwork } from '@mindblox-wallet-adapter/base';
 
 export const accountsEqual = (a?: AccountDatum, b?: AccountDatum): boolean =>
     a && b ? a.accountInfo.data.equals(b.accountInfo.data) : false;

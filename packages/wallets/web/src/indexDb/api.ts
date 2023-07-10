@@ -1,4 +1,4 @@
-import { notify } from '@wallet-adapter/react';
+import { notify } from '@mindblox-wallet-adapter/react';
 import {
     deleteDatabase,
     readAllUsers,

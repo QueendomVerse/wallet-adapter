@@ -6,8 +6,8 @@ import { Transaction as NearTransaction } from 'near-api-js/lib/transaction';
 // import { PublicKey as NearPublicKey } from 'near-api-js/lib/utils';
 // import { Connection } from 'near-api-js/lib/connection';
 
-import type { WalletName, WalletAdapterNetwork } from '@wallet-adapter/base';
-import { WalletReadyState, BaseMessageSignerWalletAdapter, handleError } from '@wallet-adapter/base';
+import type { WalletName, WalletAdapterNetwork } from '@mindblox-wallet-adapter/base';
+import { WalletReadyState, BaseMessageSignerWalletAdapter, handleError } from '@mindblox-wallet-adapter/base';
 
 // import {
 //   // BaseMessageSignerWalletAdapter
@@ -29,9 +29,9 @@ import {
     WalletKeypairError,
     WalletSignTransactionError,
     WalletAccountError,
-} from '@wallet-adapter/base';
-import { capitalizeFirst } from '@wallet-adapter/base';
-import { notify } from '@wallet-adapter/react';
+} from '@mindblox-wallet-adapter/base';
+import { capitalizeFirst } from '@mindblox-wallet-adapter/base';
+import { notify } from '@mindblox-wallet-adapter/react';
 
 // import { BaseMessageSignerWalletAdapter } from '../../../utils/wallets/base';
 // import { NearIcon } from './view/icon/near';

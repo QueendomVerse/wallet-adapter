@@ -9,7 +9,7 @@ import { useLocalStorageState } from '@/hooks';
 
 import { getTokenListContainerPromise } from '../../solana';
 
-import { WalletAdapterNetwork } from '@wallet-adapter/base';
+import { WalletAdapterNetwork } from '@mindblox-wallet-adapter/base';
 
 dotenv.config();
 

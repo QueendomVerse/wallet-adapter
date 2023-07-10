@@ -1,4 +1,4 @@
-import { PhantomWalletAdapter } from '@wallet-adapter/phantom';
+import { PhantomWalletAdapter } from '@mindblox-wallet-adapter/phantom';
 import { ChainNetworks } from '../chains';
 import { BrowserWalletAdapter as NearBrowserWalletAdapter } from '../networks/near';
 
