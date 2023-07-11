@@ -1,5 +1,5 @@
 import { WalletDatabaseError, printError } from '@mindblox-wallet-adapter/base';
-import type { IndexDbAppDatabase, IndexDbUser, IndexDbProfile } from './db';
+import type { IndexDbAppDatabase, IndexDbUser, IndexDbProfile, IndexDbItem } from './db';
 import { IndexDbWallet, IndexDbMint } from './db';
 import Dexie from 'dexie';
 
@@ -308,6 +308,17 @@ export const deleteProfile = async (db: IndexDbAppDatabase, profile: IndexDbProf
 };
 
 /**
+ * Delete an Item
+ */
+export const deleteItem = async (db: IndexDbAppDatabase, item: IndexDbItem) => {
+    if (!item.gid) return;
+    console.debug(`removing item: ${item.publicKey}`);
+    console.debug(`item gid: ${item.gid}`);
+    await db.items.delete(item.gid);
+    return (await db.items.get(item.gid)) ? false : true;
+};
+
+/**
  * Create a IndexDbMint
  *
  * Note that since the mint is guaranteed
@@ -324,6 +335,54 @@ export const createMint = async (db: IndexDbAppDatabase, mint: IndexDbMint) => {
  */
 export const loadWalletMints = async (walletGID: string, db: IndexDbAppDatabase): Promise<IndexDbMint[]> => {
     return await getArray(db.mints.where('walletId').equals(walletGID));
+};
+
+// Items Database Functions
+/**
+ * Clear all Item tables
+ */
+export const clearAllItemTables = async (db: IndexDbAppDatabase) => {
+    await Promise.all([db.items.clear()]);
+};
+
+/**
+ * Read all Items
+ */
+export const readAllItems = async (db: IndexDbAppDatabase): Promise<IndexDbItem[]> => {
+    return await getArray(db.items);
+};
+
+/**
+ * Create an Item
+ *
+ * Note that since the user is guaranteed
+ * to have a unique ID we are using `put`
+ * to update the databse.
+ */
+export const createItem = async (db: IndexDbAppDatabase, item: IndexDbItem): Promise<string> => {
+    return await db.items.put(item);
+};
+
+/**
+ * Read an Item
+ */
+export const readItem = async (db: IndexDbAppDatabase, itemGID: string) => {
+    return await db.items.get(itemGID);
+};
+
+/**
+ * Update an Item
+ */
+export const amendItem = async (db: IndexDbAppDatabase, item: IndexDbItem) => {
+    return await db.items.put(item);
+};
+
+/**
+ * Load Item records and
+ * update the corresponding user id fields.
+ */
+export const loadUserItems = async (userGID: string, db: IndexDbAppDatabase): Promise<IndexDbItem[]> => {
+    return await getArray(db.items.where('userGID').equals(userGID));
 };
 
 export const saveDbWallet = async (wallet: IndexDbWallet, db: IndexDbAppDatabase): Promise<string> => {

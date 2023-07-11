@@ -9,8 +9,8 @@ export {
     saveUser as saveIndexDbUser,
     updateUser as updateIndexDbUser,
     getUserProfiles as getIndexDbUserProfiles,
-    // saveProfile as saveIndexDbProfile,
-    // updateProfile as updateIndexDbProfile,
+    saveProfile as saveIndexDbProfile,
+    updateProfile as updateIndexDbProfile,
     getSavedWallets as getSavedIndexDbWallets,
     getSavedWalletMatches as getSavedIndexDbWalletMatches,
     getSavedWallet as getSavedIndexDbWallet,
@@ -20,6 +20,8 @@ export {
     getSavedMints as getSavedIndexDbMints,
     saveMint as saveIndexDbMint,
     getUserWallets as getIndexDbUserWallets,
+    getSavedUserMatches as getSavedIndexDbUserMatches,
+    removeUser as removeIndexDbUser,
 } from './api';
 export * from './constants';
 export * from './db';

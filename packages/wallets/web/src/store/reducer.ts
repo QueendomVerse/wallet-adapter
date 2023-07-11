@@ -1,6 +1,8 @@
 import { combineReducers } from 'redux';
-import { walletReducer } from './reducers/webWalletReducers';
+import { itemReducer, userReducer, walletReducer } from './reducers/webWalletReducers';
 
 export default combineReducers({
+    users: userReducer,
     wallets: walletReducer,
+    items: itemReducer,
 });

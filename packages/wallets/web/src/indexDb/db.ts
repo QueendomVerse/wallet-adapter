@@ -2,6 +2,8 @@ import Dexie from 'dexie';
 import { createId } from '@paralleldrive/cuid2';
 import type { LocalTransactionStore } from '../store';
 import { INDEXED_DB_VERSION } from './constants';
+import type { ArtType, Artist } from '../api';
+import type { Attribute, Creator, FileOrString, MetadataCategory } from '../networks/solana';
 // import { LocalWalletStore } from '../store';
 
 abstract class AbstractEntity {
@@ -141,11 +143,72 @@ export class IndexDbMint extends AbstractEntity {
     }
 }
 
+export class IndexDbItem extends AbstractEntity {
+    constructor(
+        public id: string,
+        public identifier: string,
+        public uri: string | undefined,
+        public image: string,
+        public artists: Artist[] | [],
+        public mint: string | undefined,
+        public link: string,
+        public external_url: string,
+        public title: string,
+        public seller_fee_basis_points: number,
+        public creators: Creator[] | [],
+        public type: ArtType,
+        public category: MetadataCategory,
+        public edition: number,
+        public supply: number,
+        public maxSupply: number,
+        public solPrice: number,
+        public description: string,
+        public story: string,
+        public attributes: Attribute[],
+        public files: FileOrString[],
+        public chain: string,
+        public tokenMint: string,
+        public publicKey: string,
+        public createdAt: string,
+        public updatedAt: string,
+
+        gid?: string
+    ) {
+        super(gid);
+        this.id = id;
+        this.identifier = identifier;
+        this.uri = uri;
+        this.image = image;
+        this.artists = artists;
+        this.mint = mint;
+        this.link = link;
+        this.external_url = external_url;
+        this.title = title;
+        this.seller_fee_basis_points = seller_fee_basis_points;
+        this.creators = creators;
+        this.type = type;
+        this.category = category;
+        this.edition = edition;
+        this.supply = supply;
+        this.maxSupply = maxSupply;
+        this.solPrice = solPrice;
+        this.description = description;
+        this.story = story;
+        this.attributes = attributes;
+        this.files = files;
+        this.chain = chain;
+        this.publicKey = publicKey;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+    }
+}
+
 export class IndexDbAppDatabase extends Dexie {
     public users!: Dexie.Table<IndexDbUser, string>;
     public profiles!: Dexie.Table<IndexDbProfile, string>;
     public wallets!: Dexie.Table<IndexDbWallet, string>;
     public mints!: Dexie.Table<IndexDbMint, string>;
+    public items!: Dexie.Table<IndexDbItem, string>;
 
     constructor() {
         super('WalletsDatabase');
@@ -166,6 +229,7 @@ export class IndexDbAppDatabase extends Dexie {
             this.profiles = this.table('profiles');
             this.wallets = this.table('wallets');
             this.mints = this.table('mints');
+            db.items = db.table('items');
         } catch (error) {
             console.error(`IndexDB error: ${error}`);
         }

@@ -28,25 +28,36 @@ import {
     sendFundsTransaction,
     getChainProp,
 } from '../../networks';
+import type { IndexDbItem } from '../../indexDb';
 import {
     type IndexDbWallet,
+    type IndexDbUser,
     getSavedIndexDbUsers,
     getSavedIndexDbUser,
     saveIndexDbUser,
     updateIndexDbUser,
     updateIndexDbWallet,
-    getIndexDbUserProfiles,
-    // saveIndexDbProfile,
-    // updateIndexDbProfile,
-    getIndexDbUserWallets,
+    // getIndexDbUserProfiles,
+    // getIndexDbUserWallets,
+    saveIndexDbProfile,
+    updateIndexDbProfile,
     getSavedIndexDbWalletMatches,
     getSavedIndexDbWallets,
     saveIndexDbWallet,
     removeIndexDbWallet,
     getSavedIndexDbMints,
     saveIndexDbMint,
-    getSavedIndexDbUserById,
+    getSavedIndexDbUserMatches,
+    removeIndexDbUser,
+    // getSavedIndexDbUserById,
 } from '../../indexDb';
+import type {
+    LocalWalletStore,
+    LocalKeyPairStore,
+    LocalTransactionStore,
+    LocalItemStore,
+    LocalUserStore,
+} from '../types';
 import {
     CREATE_WALLET_SUCCESS as _CREATE_WALLET_SUCCESS,
     RESTORE_WALLET_SUCCESS as _RESTORE_WALLET_SUCCESS,
@@ -61,14 +72,31 @@ import {
     CREATE_MINT_SUCCESS as _CREATE_MINT_SUCCESS,
     FETCH_ITEMS_SUCCESS as _FETCH_ITEMS_SUCCESS,
     CREATE_ITEM_SUCCESS as _CREATE_ITEM_SUCCESS,
-    type LocalWalletStore,
-    type LocalKeyPairStore,
-    type LocalTransactionStore,
+    CREATE_AIRDROP_SUCCESS as _CREATE_AIRDROP_SUCCESS,
+    FETCH_USERS_SUCCESS as _FETCH_USERS_SUCCESS,
+    CREATE_USER_SUCCESS as _CREATE_USER_SUCCESS,
+    FETCH_USER_SUCCESS as _FETCH_USER_SUCCESS,
+    REMOVE_USER_SUCCESS as _REMOVE_USER_SUCCESS,
+    TOGGLE_SELECT_USER as _TOGGLE_SELECT_USER,
+    UPDATED_USER_SUCCESS as _UPDATED_USER_SUCCESS,
 } from '../types';
-import type { StoreRootState } from '..';
+
+import type { ApiUser, ApiWallet, ApiItem } from '../../api';
+import { getSavedUsers, getSavedUserById, updateUser, saveUser, getSavedItems, saveItem } from '../../indexDb/api';
+import { connectionManager, ConnectionError } from '../../networks/solana';
+import { asyncEnsureRpcConnection } from '../../utils';
+import type { RootState } from '../root';
+
+// User actions
+const fetchUsers = (users: LocalUserStore[]) => {
+    return {
+        type: _FETCH_USERS_SUCCESS,
+        payload: users,
+    };
+};
 
 export const thunkCheckWalletSelections =
-    (wallets: IndexDbWallet[]): ThunkAction<void, StoreRootState, unknown, Action<string>> =>
+    (wallets: IndexDbWallet[]): ThunkAction<void, RootState, unknown, Action<string>> =>
     async (dispatch) => {
         console.debug(`Checking ${wallets?.length} wallet selections ...`);
         try {
@@ -79,8 +107,20 @@ export const thunkCheckWalletSelections =
         }
     };
 
+export const thunkCheckUserSelections =
+    (users: IndexDbUser[]): ThunkAction<void, RootState, unknown, Action<string>> =>
+    async (dispatch) => {
+        console.debug(`Checking ${users?.length} user selections ...`);
+        try {
+            await checkUserSelections(users);
+            dispatch(fetchUsers(users));
+        } catch (error) {
+            console.error(`thunkFetchUsers: Failed: ${error}`);
+        }
+    };
+
 export const thunkResetWalletSelections =
-    (): ThunkAction<void, StoreRootState, unknown, Action<string>> => async (dispatch) => {
+    (): ThunkAction<void, RootState, unknown, Action<string>> => async (dispatch) => {
         const wallets = await getSavedIndexDbWallets();
         const selectedWallets = wallets.filter((wallet) => wallet.isSelected);
         console.debug(`Resetting ${wallets?.length} wallet selections ...`);
@@ -89,6 +129,73 @@ export const thunkResetWalletSelections =
             dispatch(fetchWallets(selectedWallets));
         } catch (error) {
             console.error(`thunkFetchUsers: Failed: ${error}`);
+        }
+    };
+
+export const thunkResetUserSelections =
+    (): ThunkAction<void, RootState, unknown, Action<string>> => async (dispatch) => {
+        const users = await getSavedUsers();
+        const selectedUsers = users.filter((user) => user.isSelected);
+        console.debug(`Resetting ${users?.length} user selections ...`);
+        try {
+            await resetUserSelections(selectedUsers);
+            dispatch(fetchUsers(selectedUsers));
+        } catch (error) {
+            console.error(`thunkFetchUsers: Failed: ${error}`);
+        }
+    };
+
+const fetchUser = (user: LocalUserStore) => {
+    return {
+        type: _FETCH_USER_SUCCESS,
+        payload: user,
+    };
+};
+
+export const thunkFetchUser =
+    (id: string): ThunkAction<void, RootState, unknown, Action<string>> =>
+    async (dispatch) => {
+        console.debug(`Fetching user ... ${id}`);
+
+        try {
+            const currentUser = await getSavedUserById(id);
+            if (!currentUser) return;
+
+            console.debug(`Fetched user ${id}`);
+
+            dispatch(fetchUser(currentUser));
+        } catch (error) {
+            console.error(`thunkFetchUsers: Failed: ${error}`);
+            notify({
+                message: 'Remote Database',
+                description: `Failed: ${error}`,
+                type: 'error',
+            });
+        }
+    };
+
+export const thunkFetchUsers =
+    (checkDups?: boolean): ThunkAction<void, RootState, unknown, Action<string>> =>
+    async (dispatch) => {
+        console.debug(`Fetching users ...`);
+        try {
+            const users = await getSavedUsers();
+            console.debug(`Fetched ${users?.length} users.`);
+            // console.table(users);
+
+            // Clear user selections on multiple selections
+            if (checkDups) await checkUserSelections(users);
+            // Clear unselected user unencrypted wallets
+            await checkUserUnselectedUnencryptedWallets(users);
+
+            dispatch(fetchUsers(users));
+        } catch (error) {
+            console.error(`thunkFetchUsers: Failed: ${error}`);
+            notify({
+                message: 'Remote Database',
+                description: `Failed: ${error}`,
+                type: 'error',
+            });
         }
     };
 
@@ -204,6 +311,327 @@ export const resetUnSelectedWalletsEncryption = async (wallets: IndexDbWallet[])
     console.info(`Wallet encryption resets: ${numUpdatedWallets}/${updatedWallets.length}`);
 };
 
+export const checkUserSelections = async (users: IndexDbUser[]) => {
+    const selectedUsers = users.filter((user) => user.isSelected);
+    if (!selectedUsers) return;
+
+    console.debug(`number of selected users: ${selectedUsers.length}`);
+
+    if (selectedUsers.length > 1) {
+        console.warn(`Only 1 user can be selected, there are currently ${selectedUsers.length} selected users!`);
+        await resetUserSelections(selectedUsers);
+    }
+};
+
+export const checkUserUnselectedUnencryptedWallets = async (users: IndexDbUser[]) => {
+    const unselectedUsers = users.filter((user) => !user.isSelected);
+    if (!unselectedUsers) return;
+
+    console.debug(`number of unselected users: ${unselectedUsers.length}`);
+    await resetUserUnSelectedWalletsEncryption(unselectedUsers);
+};
+
+export const resetUserSelections = async (users: IndexDbUser[]) => {
+    if (!users || users.length < 1) return;
+    // console.debug(`Before user selection reset: ${users.length}`);
+    // console.table(users);
+
+    const updatedUsersPromises = users.map((_user) => {
+        const reset = async () => {
+            if (_user.isSelected) {
+                const _updatedUser = {
+                    ..._user,
+                    isSelected: false,
+                } as IndexDbUser;
+
+                const result = await updateUser(_updatedUser)
+                    .then((user) => user)
+                    .catch((err) => {
+                        console.error(err);
+                    });
+
+                console.debug(
+                    `deselected user ${_user.email} (${_user.isSelected} -> ${_updatedUser.isSelected}) result: ${
+                        result ? 'succeded' : 'failed or entry not found or unchanged'
+                    }`
+                );
+                return result ? _updatedUser : _user;
+            }
+            console.debug(`skipping unselected user '${_user.email}'`);
+            return _user;
+        };
+        return reset();
+    });
+    const updatedUsers = await Promise.all(updatedUsersPromises);
+    console.info(`User selections reset: ${updatedUsers.map((u) => u.email)}`);
+    // console.table(updatedUsers);
+};
+
+export const resetUserUnSelectedWalletsEncryption = async (users: IndexDbUser[]) => {
+    if (!users || users.length < 1) return;
+    // console.debug(`Before unselected user unencrypted wallets resets: ${users.length}`);
+    // console.table(users);
+
+    const updatedUsersPromises = users.map((_user) => {
+        const reset = async () => {
+            if (
+                !_user.wallets ||
+                _user.wallets.length < 1 ||
+                _user.wallets.filter((w) => w?.privKey || w?.seed || w?.seedPhrase).length < 1
+            )
+                return _user;
+            // console.debug(`Before unselected user ${_user.email} wallet encryption resets: ${_user.wallets}`);
+            // console.table(_user.wallets);
+
+            if (!_user.isSelected) {
+                let numUpdatedWallets = 0;
+                const updatedWallets = _user.wallets.map((w) => {
+                    if (!w) return w;
+                    if (w.privKey || w.seed || w.seedPhrase) {
+                        console.debug(
+                            `resetting(${_user.email}) ${w.chain} ${w.label} wallet '${w.pubKey}' encryption: '
+              (${w.privKey?.valueOf()} -> ${w.privKey?.valueOf()})
+              (${w.seed?.valueOf()} -> ${w.seed?.valueOf()})
+              (${w.seedPhrase} -> ${w.seedPhrase})`
+                        );
+                        numUpdatedWallets += 1;
+                        return {
+                            ...w,
+                            privKey: undefined,
+                            seed: undefined,
+                            seedPhrase: undefined,
+                        };
+                    }
+                });
+                const _updatedUser = {
+                    ..._user,
+                    wallets: updatedWallets,
+                } as IndexDbUser;
+
+                const result = await updateUser(_updatedUser)
+                    .then((user) => user)
+                    .catch((err) => {
+                        console.error(err);
+                    });
+
+                console.debug(
+                    `resetting user ${_user.email} wallets (${_user.wallets.length} -> ${numUpdatedWallets}) 
+          result: ${result ? 'succeded' : 'failed or entry not found or unchanged'}`
+                );
+                return result ? _updatedUser : _user;
+            }
+            console.debug(`skipping selected user '${_user.email}'`);
+            return _user;
+        };
+        return reset();
+    });
+    await Promise.all(updatedUsersPromises);
+    //@NOTES for debugging:
+    // const updatedUsers = await Promise.all(updatedUsersPromises);
+    // console.info(`Unselected Users unencrypted wallets resets: ${updatedUsers.map(u => u.email)}`);
+    // console.table(updatedUsers);
+};
+
+const createUserAction = (payload: LocalUserStore[]) => {
+    const result = {
+        type: _CREATE_USER_SUCCESS,
+        payload,
+    };
+    return result;
+};
+
+export const thunkCreateUser =
+    (user: ApiUser, wallets: LocalWalletStore[]): ThunkAction<void, RootState, unknown, Action<string>> =>
+    async (dispatch, getState) => {
+        if (!user) return;
+        console.info(`Creating database user: ${user.name} ...`);
+
+        const { users } = getState() as { users: LocalUserStore[] };
+        if (users.map((u) => u.id).includes(user.id)) {
+            console.warn(`User ${user.name} already exists in the local database.`);
+            return;
+        }
+
+        try {
+            const IndexdbUser = await saveUser(
+                { ...user, isSelected: true },
+                wallets.map((w) => {
+                    return { ...w, isSelected: true };
+                })
+            );
+            console.debug(`thunkCreateUser: saved user '${IndexdbUser.email}' to the local database`);
+
+            // users.push({...IndexdbUser});  //@TODO is this really neccesary?
+            // console.debug(`Latest users: ${users.length}`);
+            // console.table(users);
+
+            dispatch(createUserAction(users));
+        } catch (err) {
+            console.error(`thunkCreateUser: Failed: ${err}`);
+        }
+    };
+
+const removeUserAction = (payload: LocalUserStore[]) => {
+    const result = {
+        type: _REMOVE_USER_SUCCESS,
+        payload,
+    };
+    return result;
+};
+
+export const thunkRemoveUser =
+    (user: IndexDbUser): ThunkAction<void, RootState, unknown, Action<string>> =>
+    async (dispatch, getState) => {
+        console.warn(`Removing user: ${user.email} ...`);
+        try {
+            const IndexdbUsers = await getSavedIndexDbUserMatches(user.email);
+            if (!IndexdbUsers || IndexdbUsers.length < 1) {
+                console.warn(`Found no users matching email ${user.email}`);
+                return;
+            }
+
+            IndexdbUsers.forEach(async (u) => await removeIndexDbUser(u));
+
+            const { users } = getState() as { users: LocalUserStore[] };
+            console.debug(`users: ${users.length}`);
+            // console.table(users);
+            const updatedUsers: LocalUserStore[] = users.flatMap((usr) => (usr.email === user.email ? [] : usr));
+
+            dispatch(removeUserAction(updatedUsers));
+        } catch (err) {
+            console.error(`thunkRemoveUser: Failed: ${err}`);
+            notify({
+                message: 'Transaction',
+                description: `Failed: ${err}`,
+                type: 'error',
+            });
+        }
+    };
+
+// const fetchUserWalletAction = (payload: LocalUserStore[]) => {
+//   const result = {
+//     type: CREATE_USER_SUCCESS,
+//     payload,
+//   };
+//   return result;
+// };
+
+// export const thunkFetchUserWallets = (
+// user: User
+// ): ThunkAction<void, RootState, unknown, Action<string>> =>
+// async (dispatch, getState) => {
+//   console.debug(`thunkCreateUser: getting user wallets: ${user.email} ...`);
+//   try {
+//     const { users } = getState() as { users: LocalUserStore[] };
+//     console.debug('users: ');
+//     console.table(users);
+
+//     const selectedUsers = users.filter(user => user.isSelected);
+//     if (!selectedUsers) return
+
+//     console.debug(`number of selected users: ${selectedUsers.length}`)
+//     if (selectedUsers.length > 1) {
+//       console.error(`Only 1 user can be selected, there are currently ${selectedUsers.length} selected users!`);
+//       return;
+//     };
+
+//     // const updatedUser: LocalUserStore[] = users.map((user: LocalUserStore) => {
+//     //   return user;
+//     // });
+
+//     // updatedUser.push({
+//     //   gid: result,
+//     //   ...newUser,
+//     //   isSelected: true,
+//     // });
+//     user.id
+//     const userWallets = await getUserWallets(user.id)
+//     console.debug(`user (${user.email}) wallets:`)
+//     console.table(userWallets)
+//     dispatch(fetchWallets(userWallets));
+//   } catch (err) {
+//     console.error(`thunkCreateUser: Failed: ${err}`);
+//   };
+// };
+
+const updateUserAction = (payload: LocalUserStore) => {
+    const result = {
+        type: _UPDATED_USER_SUCCESS,
+        payload,
+    };
+    return result;
+};
+
+export const selectUserAction = (gid: string) => {
+    return {
+        type: _TOGGLE_SELECT_USER,
+        payload: gid,
+    };
+};
+
+export const thunkUserSelection =
+    (user: IndexDbUser, selection: boolean): ThunkAction<void, RootState, unknown, Action<string>> =>
+    // async (dispatch, getState) => {
+    async (dispatch) => {
+        if (!user) return;
+
+        console.debug(`thunUpdateWallet: updating user: ${user.email} ...`);
+        if (!user.gid) return;
+
+        try {
+            console.debug('deselecting updatedUser ');
+            const updatedUser = {
+                ...user,
+                gid: user.gid,
+                isSelected: selection,
+            } as IndexDbUser;
+            if (!updatedUser.gid) return;
+
+            const result = await updateUser(updatedUser);
+            console.debug(
+                `User(${user.email}) selection result: ${
+                    result ? 'succeded' : 'failed or entry not found or unchanged'
+                }`
+            );
+
+            dispatch(selectUserAction(updatedUser.gid));
+            return result;
+        } catch (err) {
+            console.error(`thunkUserSelection: Failed: ${err}`);
+            notify({
+                message: 'Transaction',
+                description: `Failed: ${err}`,
+                type: 'error',
+            });
+        }
+    };
+
+export const thunkUpdateUser =
+    (user: IndexDbUser): ThunkAction<void, RootState, unknown, Action<string>> =>
+    async (dispatch) => {
+        if (!user) return;
+
+        console.debug(`thunUpdateWallet: updating user: ${user.email} ...`);
+        if (!user.gid) return;
+
+        try {
+            const result = await updateUser(user);
+            console.debug(
+                `User(${user.email}) update result: ${result ? 'succeded' : 'failed or entry not found or unchanged'}`
+            );
+
+            dispatch(updateUserAction(user));
+            return result;
+        } catch (err) {
+            console.error(`thunkUpdateUser: Failed: ${err}`);
+            notify({
+                message: 'Transaction',
+                description: `Failed: ${err}`,
+                type: 'error',
+            });
+        }
+    };
+
 // Wallet actions
 // const fetchAccountBalance = async (keypair: Keypair) => {
 //   const connection = new Connection(clusterApiUrl('devnet'), 'confirmed');
@@ -221,7 +649,7 @@ const createWalletAction = (payload: LocalWalletStore) => {
 };
 
 export const thunkCreateWallet =
-    (password: string, label: string, chain: string): ThunkAction<void, StoreRootState, unknown, Action<string>> =>
+    (password: string, label: string, chain: string): ThunkAction<void, RootState, unknown, Action<string>> =>
     // async (dispatch, getState) => {
     async (dispatch) => {
         if (!password || !label || !chain) return;
@@ -234,16 +662,16 @@ export const thunkCreateWallet =
             if (!newWallet) return;
 
             // Save the wallet
-            const dbWallet = await saveIndexDbWallet({ ...newWallet, isSelected: true });
+            const IndexdbWallet = await saveIndexDbWallet({ ...newWallet, isSelected: true });
             console.debug(
-                `thunkCreateWallet: saved wallet '${dbWallet.chain}' '${dbWallet.label}' '${dbWallet.pubKey}' to the local database`
+                `thunkCreateWallet: saved wallet '${IndexdbWallet.chain}' '${IndexdbWallet.label}' '${IndexdbWallet.pubKey}' to the local database`
             );
 
-            // wallets.push({...dbWallet}); //@TODO is this really neccesary?
+            // wallets.push({...IndexdbWallet}); //@TODO is this really neccesary?
             // console.debug(`Latest wallets: ${wallets.length}`);
             // console.table(wallets);
 
-            dispatch(createWalletAction(dbWallet));
+            dispatch(createWalletAction(IndexdbWallet));
         } catch (err) {
             console.error(`thunkCreateWallet: Failed: ${err}`);
             notify({
@@ -263,7 +691,7 @@ const restoreWalletAction = (payload: LocalWalletStore) => {
 };
 
 export const thunkRestoreWallet =
-    (wallet: IndexDbWallet, password: string): ThunkAction<void, StoreRootState, unknown, Action<string>> =>
+    (wallet: IndexDbWallet, password: string): ThunkAction<void, RootState, unknown, Action<string>> =>
     // async (dispatch, getState) => {
     async (dispatch) => {
         if (!password || !wallet) return;
@@ -277,16 +705,16 @@ export const thunkRestoreWallet =
                 throw new Error(`Failed to decrypt wallet ${wallet.chain} wallet: ${wallet.label} ${wallet.pubKey}`);
             }
 
-            const dbWallet = await saveIndexDbWallet(decryptedWallet);
+            const IndexdbWallet = await saveIndexDbWallet(decryptedWallet);
             console.debug(
-                `thunkRestoreWallet: saved wallet '${dbWallet.chain}' '${dbWallet.label}' '${dbWallet.pubKey}' to the local database`
+                `thunkRestoreWallet: saved wallet '${IndexdbWallet.chain}' '${IndexdbWallet.label}' '${IndexdbWallet.pubKey}' to the local database`
             );
 
-            // wallets.push({...dbWallet}); //@TODO is this really neccesary?
+            // wallets.push({...IndexdbWallet}); //@TODO is this really neccesary?
             // console.debug(`Latest wallets: ${wallets.length}`);
             // console.table(wallets);
 
-            dispatch(restoreWalletAction(dbWallet));
+            dispatch(restoreWalletAction(IndexdbWallet));
         } catch (err) {
             console.error(`thunkRestoreWallet: Failed: ${err}`);
             notify({
@@ -306,7 +734,7 @@ export const thunkRestoreWallet =
 //     encodedPrivateKey: string,
 //     // decodedPrivateKey: string,
 //     publicKey: string,
-//  ): ThunkAction<void, StoreRootState, unknown, Action<string>> =>
+//  ): ThunkAction<void, RootState, unknown, Action<string>> =>
 //   async (dispatch, getState) => {
 //     if (!label || !encodedPrivateKey || !seed) return;
 //     console.info(`Importing wallet (${label}): ${publicKey} ...`);
@@ -356,14 +784,14 @@ export const thunkRestoreWallet =
 //         );
 //         return;
 //       }
-//       const dbWallet = await saveWallet(importedWallet);
-//       if (!dbWallet.gid) {
-//         console.warn(`Imported wallet ${dbWallet.label} has no gid!`);
+//       const IndexdbWallet = await saveWallet(importedWallet);
+//       if (!IndexdbWallet.gid) {
+//         console.warn(`Imported wallet ${IndexdbWallet.label} has no gid!`);
 //         return;
 //       }
 
-//       console.debug(`Adding dbWallet to wallets: ${dbWallet.pubKey}`);
-//       // wallets.push({ ...dbWallet }); //@TODO: Is this correct?
+//       console.debug(`Adding IndexdbWallet to wallets: ${IndexdbWallet.pubKey}`);
+//       // wallets.push({ ...IndexdbWallet }); //@TODO: Is this correct?
 //       // console.table(wallets);
 //       dispatch(createWalletAction(wallets)); // commenting this out inhibits the display of the user's navbar profile icon
 //     } catch (err) {
@@ -377,7 +805,7 @@ export const thunkRestoreWallet =
 //   };
 
 export const thunkImportWallet =
-    (wallet: IndexDbWallet): ThunkAction<void, StoreRootState, unknown, Action<string>> =>
+    (wallet: IndexDbWallet): ThunkAction<void, RootState, unknown, Action<string>> =>
     async (dispatch, getState) => {
         if (!wallet) return;
         console.info(`Importing wallet (${wallet.label}): ${wallet.pubKey} ...`);
@@ -425,16 +853,16 @@ export const thunkImportWallet =
                 console.warn(`Wallet ${wallet.pubKey} already exists in the local database.`);
                 return;
             }
-            const dbWallet = await saveIndexDbWallet(wallet);
-            if (!dbWallet.gid) {
-                console.warn(`Imported wallet ${dbWallet.label} has no gid!`);
+            const IndexdbWallet = await saveIndexDbWallet(wallet);
+            if (!IndexdbWallet.gid) {
+                console.warn(`Imported wallet ${IndexdbWallet.label} has no gid!`);
                 return;
             }
 
-            console.debug(`Adding dbWallet to wallets: ${dbWallet.pubKey}`);
-            // wallets.push({ ...dbWallet }); //@TODO: Is this correct?
+            console.debug(`Adding IndexdbWallet to wallets: ${IndexdbWallet.pubKey}`);
+            // wallets.push({ ...IndexdbWallet }); //@TODO: Is this correct?
             // console.table(wallets);
-            dispatch(createWalletAction(dbWallet));
+            dispatch(createWalletAction(IndexdbWallet));
         } catch (err) {
             console.error(`Failed to import wallet: ${err}`);
             notify({
@@ -446,7 +874,7 @@ export const thunkImportWallet =
     };
 
 export const thunkWalletSelection =
-    (wallet: IndexDbWallet, selection: boolean): ThunkAction<void, StoreRootState, unknown, Action<string>> =>
+    (wallet: IndexDbWallet, selection: boolean): ThunkAction<void, RootState, unknown, Action<string>> =>
     // async (dispatch, getState) => {
     async (dispatch) => {
         if (!wallet) return;
@@ -496,7 +924,7 @@ const updateWalletAction = (payload: LocalWalletStore) => {
 };
 
 export const thunkUpdateWallet =
-    (wallet: IndexDbWallet): ThunkAction<void, StoreRootState, unknown, Action<string>> =>
+    (wallet: IndexDbWallet): ThunkAction<void, RootState, unknown, Action<string>> =>
     async (dispatch) => {
         if (!wallet) return;
 
@@ -542,17 +970,17 @@ const removeWalletAction = (payload: LocalWalletStore[]) => {
 };
 
 export const thunkRemoveWallet =
-    (wallet: IndexDbWallet): ThunkAction<void, StoreRootState, unknown, Action<string>> =>
+    (wallet: IndexDbWallet): ThunkAction<void, RootState, unknown, Action<string>> =>
     async (dispatch, getState) => {
         console.warn(`Removing wallet: ${wallet.chain} ${wallet.label} ${wallet.pubKey}...`);
         try {
-            const dbWallets = await getSavedIndexDbWalletMatches(wallet.pubKey);
-            if (!dbWallets || dbWallets.length < 1) {
+            const IndexdbWallets = await getSavedIndexDbWalletMatches(wallet.pubKey);
+            if (!IndexdbWallets || IndexdbWallets.length < 1) {
                 console.warn(`Found no wallets matching public key ${wallet.pubKey}`);
                 return;
             }
 
-            dbWallets.forEach(async (w) => await removeIndexDbWallet(w));
+            IndexdbWallets.forEach(async (w) => await removeIndexDbWallet(w));
 
             const { wallets } = getState() as { wallets: LocalWalletStore[] };
             console.debug(`wallets: ${wallets.length}`);
@@ -580,7 +1008,7 @@ export const fetchWallets = (wallets: LocalWalletStore[]) => {
 };
 
 export const thunkFetchWallets =
-    (checkDups?: boolean): ThunkAction<void, StoreRootState, unknown, Action<string>> =>
+    (checkDups?: boolean): ThunkAction<void, RootState, unknown, Action<string>> =>
     async (dispatch) => {
         console.debug(`Fetching wallets ...`);
         try {
@@ -611,6 +1039,66 @@ export const selectWalletAction = (gid: string) => {
     };
 };
 
+export const thunkAirdropToAccount =
+    (gid: string): ThunkAction<void, RootState, unknown, Action<string>> =>
+    async (dispatch, getState) => {
+        console.debug(`thunkAirdropToAccount: airdroping tokens ...`);
+        try {
+            const { wallets } = getState() as { wallets: LocalWalletStore[] };
+            const [selectedWallet] = (wallets ? wallets.filter((wallet) => wallet.gid === gid) : null) as [ApiWallet];
+
+            if (!selectedWallet.privKey) return;
+
+            const { connection } = connectionManager();
+            if (!connection) {
+                throw new ConnectionError('Connection not established!');
+            }
+            const keypair = Keypair.fromSecretKey(selectedWallet.privKey);
+            const airdropSignature = await (
+                await asyncEnsureRpcConnection(connection)
+            ).requestAirdrop(keypair.publicKey, LAMPORTS_PER_SOL);
+
+            const latestBlockHash = await (await asyncEnsureRpcConnection(connection)).getLatestBlockhash();
+            // const result = await (await asyncEnsureRpcConnection(connection)).confirmTransaction(airdropSignature);
+            const result = await (
+                await asyncEnsureRpcConnection(connection)
+            ).confirmTransaction({
+                blockhash: latestBlockHash.blockhash,
+                lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
+                signature: airdropSignature,
+            });
+            console.info(`airdropped: ${result}`);
+
+            const account = await (await asyncEnsureRpcConnection(connection)).getAccountInfo(keypair.publicKey);
+
+            const balance = account ? account.lamports / LAMPORTS_PER_SOL : 0;
+            const _updatedWalletState = wallets.map((wallet) => {
+                if (wallet.gid === gid) {
+                    return {
+                        ...wallet,
+                        balance,
+                    };
+                }
+                return wallet;
+            }) as IndexDbWallet[];
+            dispatch(airdropToAccount(_updatedWalletState));
+        } catch (error) {
+            console.error(`thunkAirdropToAccount: Failed: ${error}`);
+            notify({
+                message: 'Transaction',
+                description: `Failed: ${error}`,
+                type: 'error',
+            });
+        }
+    };
+
+const airdropToAccount = (updatedWalletState: LocalWalletStore[]) => {
+    return {
+        type: _CREATE_AIRDROP_SUCCESS,
+        payload: updatedWalletState,
+    };
+};
+
 export const thunkCreateTransaction =
     (
         chain: string,
@@ -618,7 +1106,7 @@ export const thunkCreateTransaction =
         keypair: LocalKeyPairStore,
         toAddress: string,
         amount: string
-    ): ThunkAction<void, StoreRootState, unknown, Action<string>> =>
+    ): ThunkAction<void, RootState, unknown, Action<string>> =>
     async (dispatch, getState) => {
         console.debug(`thunkCreateTransaction: creating transaction ...`);
         //@TODO network should derive from Env var like the rest.
@@ -712,7 +1200,7 @@ export const thunkMintNft =
         toAddress: string,
         quantity: string,
         props: MintNearNft
-    ): ThunkAction<void, StoreRootState, unknown, Action<string>> =>
+    ): ThunkAction<void, RootState, unknown, Action<string>> =>
     async (/*dispatch, getState*/) => {
         console.debug(`thunkMintNft: minting NFT ...`);
         //@TODO network should derive from Env var like the rest.
@@ -821,7 +1309,7 @@ export const thunkFetchTransaction =
     (
         keypair: Keypair, // keypair: LocalKeyPairStore,
         gid: string
-    ): ThunkAction<void, StoreRootState, unknown, Action<string>> =>
+    ): ThunkAction<void, RootState, unknown, Action<string>> =>
     async (dispatch, getState) => {
         console.debug(`thunkFetchTransaction: fetching transactions ...`);
         try {
@@ -890,7 +1378,7 @@ const fetchTransaction = (payload: LocalWalletStore[]) => {
 };
 
 export const thunkCreateAndSendMint =
-    (toAddress: string): ThunkAction<void, StoreRootState, unknown, Action<string>> =>
+    (toAddress: string): ThunkAction<void, RootState, unknown, Action<string>> =>
     async (dispatch, getState) => {
         console.debug(`thunkCreateAndSendMint: sending mint ...`);
         try {
@@ -986,7 +1474,7 @@ const createMintAction = (wallets: LocalWalletStore[]) => {
 
 // NOT INVOKED
 export const thunkFetchTokens =
-    (): ThunkAction<void, StoreRootState, unknown, Action<string>> => async (dispatch, getState) => {
+    (): ThunkAction<void, RootState, unknown, Action<string>> => async (dispatch, getState) => {
         try {
             const { wallets } = getState() as { wallets: LocalWalletStore[] };
             const [selectedWallet] = wallets.filter((wallet) => wallet.isSelected);
@@ -1035,7 +1523,7 @@ export const thunkFetchTokens =
 
 // NOT INVOKED
 export const thunkSendTokens =
-    (toAddress: string): ThunkAction<void, StoreRootState, unknown, Action<string>> =>
+    (toAddress: string): ThunkAction<void, RootState, unknown, Action<string>> =>
     async (dispatch, getState) => {
         try {
             const { wallets } = getState() as { wallets: LocalWalletStore[] };
@@ -1092,3 +1580,65 @@ export const thunkSendTokens =
             });
         }
     };
+
+// Item actions
+const fetchItems = (items: LocalItemStore[]) => {
+    return {
+        type: _FETCH_ITEMS_SUCCESS,
+        payload: items,
+    };
+};
+
+export const thunkFetchItems =
+    (): // checkDups?: boolean,
+    ThunkAction<void, RootState, unknown, Action<string>> =>
+    async (dispatch) => {
+        console.debug(`Fetching items ...`);
+        try {
+            const items = await getSavedItems();
+            console.debug(`Fetched ${items?.length} items.`);
+            // console.table(items);
+
+            let LocalItemStores: ApiItem[];
+            if (items?.length) {
+                // Generate keypair from seed
+                LocalItemStores = [];
+
+                for (let i = 0; i < items.length; i++) {
+                    const item = items[i];
+                    LocalItemStores.push({ ...item });
+                }
+                dispatch(fetchItems(LocalItemStores));
+            }
+        } catch (error) {
+            console.error(`thunkFetchItems: Failed: ${error}`);
+        }
+    };
+
+export const thunkCreateItem =
+    (item: ApiItem): ThunkAction<void, RootState, unknown, Action<string>> =>
+    async (dispatch, getState) => {
+        console.debug(`thunkCreateItem: creating database item: ${item.title} ...`);
+        try {
+            const newItem = await saveItem(item);
+            const { items } = getState() as { items: LocalItemStore[] };
+            const _updatedItem: LocalItemStore[] = items.map((item: LocalItemStore) => {
+                return item;
+            }) as IndexDbItem[];
+            _updatedItem.push({
+                gid: newItem.gid,
+                ...newItem,
+            });
+            dispatch(createItemAction(_updatedItem));
+        } catch (err) {
+            console.error(`thunkCreateItem: Failed: ${err}`);
+        }
+    };
+
+const createItemAction = (payload: LocalItemStore[]) => {
+    const result = {
+        type: _CREATE_ITEM_SUCCESS,
+        payload,
+    };
+    return result;
+};
