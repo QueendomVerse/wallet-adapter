@@ -13,10 +13,10 @@ abstract class AbstractEntity {
     }
 }
 
-// @NOTES ensure corresponding changes are propagated to local type and backend User schema
-export class User extends AbstractEntity {
-    wallets?: Wallet[];
-    profiles?: Profile[];
+// @NOTES ensure corresponding changes are propagated to local type and backend IndexDbUser schema
+export class IndexDbUser extends AbstractEntity {
+    wallets?: IndexDbWallet[];
+    profiles?: IndexDbProfile[];
 
     constructor(
         public id: string,
@@ -61,7 +61,7 @@ export class User extends AbstractEntity {
     }
 }
 
-export class Profile extends AbstractEntity {
+export class IndexDbProfile extends AbstractEntity {
     constructor(
         public id: string,
         public name: string,
@@ -93,8 +93,8 @@ export class Profile extends AbstractEntity {
 }
 
 // @TODO specify wallet chain
-export class Wallet extends AbstractEntity {
-    mints!: Mint[];
+export class IndexDbWallet extends AbstractEntity {
+    mints!: IndexDbMint[];
 
     constructor(
         public chain: string,
@@ -129,7 +129,7 @@ export class Wallet extends AbstractEntity {
     }
 }
 
-export class Mint extends AbstractEntity {
+export class IndexDbMint extends AbstractEntity {
     constructor(
         public walletId: string,
         public mint: string,
@@ -142,10 +142,10 @@ export class Mint extends AbstractEntity {
 }
 
 export class IndexDbAppDatabase extends Dexie {
-    public users!: Dexie.Table<User, string>;
-    public profiles!: Dexie.Table<Profile, string>;
-    public wallets!: Dexie.Table<Wallet, string>;
-    public mints!: Dexie.Table<Mint, string>;
+    public users!: Dexie.Table<IndexDbUser, string>;
+    public profiles!: Dexie.Table<IndexDbProfile, string>;
+    public wallets!: Dexie.Table<IndexDbWallet, string>;
+    public mints!: Dexie.Table<IndexDbMint, string>;
 
     constructor() {
         super('WalletsDatabase');

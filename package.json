@@ -19,7 +19,7 @@
     "scripts": {
         "clean": "lerna run clean",
         "build": "pnpm recursive run build",
-        "check": "tsc --noEmit -p tsconfig.json",
+        "check": "tsc --noEmit --traceResolution -p tsconfig.json",
         "test": "lerna run test",
         "publish": "lerna publish from-package",
         "deploy": "pnpm deploy:docs && pnpm deploy:example",

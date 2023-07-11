@@ -3,13 +3,10 @@ import { FormData } from 'formdata-node';
 import type { ApiClient, FetchOptions } from './client';
 import type { LocalWalletStore } from '../store';
 import { emptyUser } from './empty';
-import type {
-    // ApiResponse,
-    User,
-} from './types';
+import type { ApiUser } from './types';
 
 export class UserApiClient {
-    static EmptyApiUser: User = emptyUser;
+    static EmptyApiUser: ApiUser = emptyUser;
 
     constructor(private apiClient: ApiClient = apiClient) {}
 
@@ -22,7 +19,7 @@ export class UserApiClient {
         roles: string[] = [],
         settings: string[] = [],
         wallets: LocalWalletStore[] = []
-    ): Promise<User | null> => {
+    ): Promise<ApiUser | null> => {
         const endpoint = '/users';
         const userData = {
             name,
@@ -46,7 +43,7 @@ export class UserApiClient {
 
         const found = await this.findOneUserByAddress(address);
         if (found) {
-            console.warn(`User '${address}' already exists!`);
+            console.warn(`ApiUser '${address}' already exists!`);
             return UserApiClient.EmptyApiUser;
         }
 
@@ -59,7 +56,7 @@ export class UserApiClient {
         };
 
         const response = await this.apiClient.fetch(endpoint, fetchOptions);
-        return this.apiClient.handleResponse<User>(response, UserApiClient.EmptyApiUser);
+        return this.apiClient.handleResponse<ApiUser>(response, UserApiClient.EmptyApiUser);
     };
 
     removeUser = async (id: string): Promise<boolean | null> => {
@@ -79,7 +76,7 @@ export class UserApiClient {
         return isSuccess;
     };
 
-    findAllUsers = async (): Promise<User[] | null> => {
+    findAllUsers = async (): Promise<ApiUser[] | null> => {
         const endpoint = '/users';
 
         console.debug(`Getting all users...`);
@@ -92,10 +89,10 @@ export class UserApiClient {
             },
         };
         const response = await this.apiClient.fetch(endpoint, fetchOptions);
-        return await this.apiClient.handleResponse<User[] | null>(response, null);
+        return await this.apiClient.handleResponse<ApiUser[] | null>(response, null);
     };
 
-    findOneUserById = async (id: string): Promise<User | null> => {
+    findOneUserById = async (id: string): Promise<ApiUser | null> => {
         const endpoint = `/users/${id}`;
 
         console.debug(`Finding user by id: '${id}'...`);
@@ -108,10 +105,10 @@ export class UserApiClient {
             },
         };
         const response = await this.apiClient.fetch(endpoint, fetchOptions);
-        return await this.apiClient.handleResponse<User | null>(response, null);
+        return await this.apiClient.handleResponse<ApiUser | null>(response, null);
     };
 
-    findOneUserByAddress = async (address: string): Promise<User | null> => {
+    findOneUserByAddress = async (address: string): Promise<ApiUser | null> => {
         const endpoint = `/users/byWallet/${address}`;
         console.debug(`Finding user by address: ${address} ...`);
 
@@ -123,10 +120,10 @@ export class UserApiClient {
             },
         };
         const response = await this.apiClient.fetch(endpoint, fetchOptions);
-        return await this.apiClient.handleResponse<User | null>(response, null);
+        return await this.apiClient.handleResponse<ApiUser | null>(response, null);
     };
 
-    findOneUserByEmail = async (email: string): Promise<User | null> => {
+    findOneUserByEmail = async (email: string): Promise<ApiUser | null> => {
         const endpoint = `/users/byEmail/${email}`;
 
         console.debug(`Finding user by email: ${email} ...`);
@@ -139,7 +136,7 @@ export class UserApiClient {
             },
         };
         const response = await this.apiClient.fetch(endpoint, fetchOptions);
-        return await this.apiClient.handleResponse<User | null>(response, null);
+        return await this.apiClient.handleResponse<ApiUser | null>(response, null);
     };
 
     async uploadUserAvatar(userId: string, avatar: File) {
@@ -158,7 +155,7 @@ export class UserApiClient {
         return await this.apiClient.handleResponse(response);
     }
 
-    updateUserAvatar = async (id: string, url: string): Promise<User | null> => {
+    updateUserAvatar = async (id: string, url: string): Promise<ApiUser | null> => {
         const endpoint = `/users/updateAvatar`;
         const userData = {
             id,
@@ -175,7 +172,7 @@ export class UserApiClient {
             },
             body: JSON.stringify(userData),
         });
-        return this.apiClient.handleResponse<User>(response, UserApiClient.EmptyApiUser);
+        return this.apiClient.handleResponse<ApiUser>(response, UserApiClient.EmptyApiUser);
     };
 
     async uploadUserImage(userId: string, image: File) {
@@ -208,7 +205,7 @@ export class UserApiClient {
         return this.apiClient.handleResponse<ImageData | null>(response, null);
     };
 
-    updateUserImage = async (id: string, url: string): Promise<User | null> => {
+    updateUserImage = async (id: string, url: string): Promise<ApiUser | null> => {
         const endpoint = `/users/updateImage`;
         const userData = {
             id,
@@ -225,7 +222,7 @@ export class UserApiClient {
             },
             body: JSON.stringify(userData),
         });
-        return this.apiClient.handleResponse<User>(response, UserApiClient.EmptyApiUser);
+        return this.apiClient.handleResponse<ApiUser>(response, UserApiClient.EmptyApiUser);
     };
 
     async uploadBannerImage(userId: string, banner: File) {
@@ -244,7 +241,7 @@ export class UserApiClient {
         return await this.apiClient.handleResponse(response);
     }
 
-    updateUserBanner = async (id: string, url: string): Promise<User | null> => {
+    updateUserBanner = async (id: string, url: string): Promise<ApiUser | null> => {
         const endpoint = `/users/updateBanner`;
         const userData = {
             id,
@@ -261,10 +258,10 @@ export class UserApiClient {
             },
             body: JSON.stringify(userData),
         });
-        return this.apiClient.handleResponse<User>(response, UserApiClient.EmptyApiUser);
+        return this.apiClient.handleResponse<ApiUser>(response, UserApiClient.EmptyApiUser);
     };
 
-    saveUserSetting = async (id: string, settings: string[]): Promise<User | null> => {
+    saveUserSetting = async (id: string, settings: string[]): Promise<ApiUser | null> => {
         const endpoint = `/users/saveSetting`;
         const userData = {
             id,
@@ -281,10 +278,10 @@ export class UserApiClient {
             },
             body: JSON.stringify(userData),
         });
-        return this.apiClient.handleResponse<User>(response, UserApiClient.EmptyApiUser);
+        return this.apiClient.handleResponse<ApiUser>(response, UserApiClient.EmptyApiUser);
     };
 
-    saveUserWallets = async (id: string, wallets: LocalWalletStore[]): Promise<User | null> => {
+    saveUserWallets = async (id: string, wallets: LocalWalletStore[]): Promise<ApiUser | null> => {
         const endpoint = `/users/saveWallets`;
         const userData = {
             id,
@@ -301,10 +298,10 @@ export class UserApiClient {
             },
             body: JSON.stringify(userData),
         });
-        return this.apiClient.handleResponse<User>(response, UserApiClient.EmptyApiUser);
+        return this.apiClient.handleResponse<ApiUser>(response, UserApiClient.EmptyApiUser);
     };
 
-    updateUserRoles = async (id: string, roles: string[]): Promise<User | null> => {
+    updateUserRoles = async (id: string, roles: string[]): Promise<ApiUser | null> => {
         const endpoint = `/users/updateRoles`;
         const userData = {
             id,
@@ -321,6 +318,6 @@ export class UserApiClient {
             },
             body: JSON.stringify(userData),
         });
-        return this.apiClient.handleResponse<User>(response, UserApiClient.EmptyApiUser);
+        return this.apiClient.handleResponse<ApiUser>(response, UserApiClient.EmptyApiUser);
     };
 }

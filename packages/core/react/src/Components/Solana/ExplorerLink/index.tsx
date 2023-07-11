@@ -2,7 +2,7 @@ import React from 'react';
 import { Typography } from 'antd';
 import type { PublicKey } from '@solana/web3.js';
 
-import { shortenAddress } from '@/helpers';
+import { shortenAddress } from '../../../helpers';
 
 export const ExplorerLink = (props: { address: string | PublicKey; type: string; code?: boolean; length?: number }) => {
     const { type, code } = props;

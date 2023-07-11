@@ -15,8 +15,8 @@ import type {
     // connectionManager
 } from './manager';
 import { WalletAdapterNetwork } from '@mindblox-wallet-adapter/base';
-import { fetchWithRetry, useQuerySearch, asyncEnsureRpcConnection } from '@/utils';
-import { useLocalStorageState } from '@/hooks';
+import { fetchWithRetry, useQuerySearch, asyncEnsureRpcConnection } from '../../../../utils';
+import { useLocalStorageState } from '../../../../hooks';
 import { getTokenListContainerPromise } from '../../utils';
 
 export type ENV = ENDPOINT_NAME;

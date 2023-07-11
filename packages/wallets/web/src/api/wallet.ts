@@ -1,10 +1,10 @@
 import type { ApiClient } from './client';
 import type { LocalTransactionStore } from '../store';
-import type { Wallet } from './types';
+import type { ApiWallet } from './types';
 import { emptyWallet } from './empty';
 
 export class WalletApiClient {
-    static EmptyApiWallet: Wallet = emptyWallet;
+    static EmptyApiWallet: ApiWallet = emptyWallet;
 
     constructor(private apiClient: ApiClient = apiClient) {}
 
@@ -17,7 +17,7 @@ export class WalletApiClient {
         encryptedPrivKey = '',
         balance: number,
         transactions: LocalTransactionStore[] = []
-    ): Promise<Wallet[] | null> => {
+    ): Promise<ApiWallet[] | null> => {
         const endpoint = '/wallets';
         const newWallet = {
             userId,
@@ -40,7 +40,7 @@ export class WalletApiClient {
 
         const found = await this.findOneWalletByAddress(pubKey);
         if (found) {
-            console.warn(`Wallet '${pubKey}' already exists!`);
+            console.warn(`ApiWallet '${pubKey}' already exists!`);
             return [WalletApiClient.EmptyApiWallet];
         }
 
@@ -54,7 +54,7 @@ export class WalletApiClient {
         };
 
         const response = await this.apiClient.fetch(endpoint, fetchOptions);
-        return await this.apiClient.handleResponse<Wallet[]>(response, []);
+        return await this.apiClient.handleResponse<ApiWallet[]>(response, []);
     };
 
     removeWallet = async (id: string): Promise<number> => {
@@ -73,15 +73,15 @@ export class WalletApiClient {
         return response.status;
     };
 
-    findAllWallets = async (): Promise<Wallet[] | null> => {
+    findAllWallets = async (): Promise<ApiWallet[] | null> => {
         const endpoint = `/wallets`;
 
         const response = await this.apiClient.fetch(endpoint);
-        const data: { data: Wallet[] } = response.ok ? await response.json() : null;
+        const data: { data: ApiWallet[] } = response.ok ? await response.json() : null;
         return data?.data;
     };
 
-    removeAllWallets = async (): Promise<Wallet[] | undefined> => {
+    removeAllWallets = async (): Promise<ApiWallet[] | undefined> => {
         const endpoint = '/wallets';
 
         const fetchOptions = {
@@ -92,25 +92,25 @@ export class WalletApiClient {
         return response.ok ? (await response.json()).data : undefined;
     };
 
-    findOneWalletById = async (id: string): Promise<Wallet | undefined> => {
+    findOneWalletById = async (id: string): Promise<ApiWallet | undefined> => {
         const endpoint = `/wallets/${id}`;
 
         const response = await this.apiClient.fetch(endpoint);
-        return response.ok ? ((await response.json()) as Wallet) : undefined;
+        return response.ok ? ((await response.json()) as ApiWallet) : undefined;
     };
 
-    findOneWalletByAddress = async (address: string): Promise<Wallet | undefined> => {
+    findOneWalletByAddress = async (address: string): Promise<ApiWallet | undefined> => {
         const endpoint = `/wallets/byAddress/${address}`;
 
         const response = await this.apiClient.fetch(endpoint);
-        return response.ok ? ((await response.json()) as Wallet) : undefined;
+        return response.ok ? ((await response.json()) as ApiWallet) : undefined;
     };
 
-    findOneWalletByUserId = async (userId: string): Promise<Wallet | undefined> => {
+    findOneWalletByUserId = async (userId: string): Promise<ApiWallet | undefined> => {
         const endpoint = `/wallets/byUser/${userId}`;
 
         const response = await this.apiClient.fetch(endpoint);
-        return response.ok ? ((await response.json()) as Wallet) : undefined;
+        return response.ok ? ((await response.json()) as ApiWallet) : undefined;
     };
 
     updateUserId = async (pubKey: string, userId: string): Promise<number> => {

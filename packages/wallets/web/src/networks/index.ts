@@ -137,8 +137,6 @@ export {
     sendTransactions as sendSolanaTransactions,
     sendTransactionWithRetry as sendSolanaTransactionWithRetry,
     sendTransactionsWithManualRetry as sendSolanaTransactionsWithManualRetry,
-    toUTF8Array,
-    fromUTF8Array,
     findAssociatedTokenAddress as findSolanaAssociatedTokenAddress,
     getErrorForTransaction as getSolanaErrorForTransaction,
     convertMasterEditionV1ToV2 as convertSolanaMasterEditionV1ToV2,

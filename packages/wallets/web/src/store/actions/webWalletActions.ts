@@ -14,9 +14,9 @@ import type { ThunkAction } from 'redux-thunk';
 import type { FinalExecutionOutcome } from 'near-api-js/lib/providers';
 
 import { notify } from '@mindblox-wallet-adapter/react';
-import { ChainNetworks } from '@/chains';
-import type { Send, MintNearNft } from '@/networks';
-import { mintNearNft } from '@/networks';
+import { ChainNetworks } from '../../chains';
+import type { Send, MintNearNft } from '../../networks';
+import { mintNearNft } from '../../networks';
 import {
     // encryptText,
     generateWallet,
@@ -27,7 +27,7 @@ import {
     getBalance,
     sendFundsTransaction,
     getChainProp,
-} from '@/networks';
+} from '../../networks';
 import {
     type IndexDbWallet,
     getSavedIndexDbUsers,
@@ -46,7 +46,7 @@ import {
     getSavedIndexDbMints,
     saveIndexDbMint,
     getSavedIndexDbUserById,
-} from '@/indexDb';
+} from '../../indexDb';
 import {
     CREATE_WALLET_SUCCESS as _CREATE_WALLET_SUCCESS,
     RESTORE_WALLET_SUCCESS as _RESTORE_WALLET_SUCCESS,

@@ -22,10 +22,4 @@ export {
     getUserWallets as getIndexDbUserWallets,
 } from './api';
 export * from './constants';
-export {
-    IndexDbAppDatabase,
-    User as IndexDbUser,
-    Profile as IndexDbProfile,
-    Mint as IndexDbMint,
-    Wallet as IndexDbWallet,
-} from './db';
+export * from './db';

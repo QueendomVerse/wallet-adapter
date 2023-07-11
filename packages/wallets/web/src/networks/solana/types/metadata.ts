@@ -2,7 +2,7 @@ import { SystemProgram, SYSVAR_RENT_PUBKEY, TransactionInstruction } from '@sola
 import { deserializeUnchecked, serialize } from 'borsh';
 import type BN from 'bn.js';
 
-import type { StringPublicKey } from '@/networks';
+import type { StringPublicKey } from '../../../networks';
 import { emptyKey } from '../constants';
 import { programIds } from '../utils';
 import { findProgramAddress, toPublicKey } from '../utils';

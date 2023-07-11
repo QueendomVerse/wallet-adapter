@@ -4,8 +4,8 @@ import { ENV as ChainId } from '@solana/spl-token-registry';
 import { Keypair, clusterApiUrl, Connection } from '@solana/web3.js';
 import * as dotenv from 'dotenv';
 
-import { asyncEnsureRpcConnection, fetchWithRetry, useQuerySearch } from '@/utils';
-import { useLocalStorageState } from '@/hooks';
+import { asyncEnsureRpcConnection, fetchWithRetry, useQuerySearch } from '../../../utils';
+import { useLocalStorageState } from '../../../hooks';
 
 import { getTokenListContainerPromise } from '../../solana';
 

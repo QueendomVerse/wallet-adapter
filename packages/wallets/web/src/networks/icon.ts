@@ -1,6 +1,6 @@
 import { PhantomWalletAdapter } from '@mindblox-wallet-adapter/phantom';
 import { ChainNetworks } from '../chains';
-import { BrowserWalletAdapter as NearBrowserWalletAdapter } from '../networks/near';
+// import { BrowserWalletAdapter as NearBrowserWalletAdapter } from '../networks/near';
 
 import { getChainProp } from './tickers';
 // import { NearIcon } from '../../contexts/wallet/near/view/icon/near';

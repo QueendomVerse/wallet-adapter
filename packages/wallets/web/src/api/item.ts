@@ -1,17 +1,17 @@
-import type { LocalItemStore } from '@/store';
-import type { SolanaAttribute } from '@/networks';
+import type { LocalItemStore } from '../store';
+import type { SolanaAttribute } from '../networks';
 import type { ApiClient, FetchOptions } from './client';
 import { emptyItem } from './empty';
-import type { Item } from './types';
+import type { ApiItem } from './types';
 
 export class ItemApiClient {
-    static emptyItem: Item = emptyItem;
+    static emptyItem: ApiItem = emptyItem;
 
     constructor(private apiClient: ApiClient = apiClient) {}
 
-    createItem = async (item: LocalItemStore): Promise<Item | null> => {
+    createItem = async (item: LocalItemStore): Promise<ApiItem | null> => {
         const endpoint = '/items';
-        console.debug(`Creating Item: ${JSON.stringify(item)} ...`);
+        console.debug(`Creating ApiItem: ${JSON.stringify(item)} ...`);
 
         const fetchOptions: FetchOptions = {
             method: 'POST',
@@ -22,7 +22,7 @@ export class ItemApiClient {
             body: JSON.stringify(item),
         };
         const response = await this.apiClient.fetch(endpoint, fetchOptions);
-        return this.apiClient.handleResponse<Item>(response, ItemApiClient.emptyItem);
+        return this.apiClient.handleResponse<ApiItem>(response, ItemApiClient.emptyItem);
     };
 
     removeItem = async (id: string): Promise<boolean> => {
@@ -41,7 +41,7 @@ export class ItemApiClient {
         return response.status === 200;
     };
 
-    findItems = async (): Promise<Item[] | null> => {
+    findItems = async (): Promise<ApiItem[] | null> => {
         const endpoint = '/items';
         console.debug(`Finding all items...`);
 
@@ -53,10 +53,10 @@ export class ItemApiClient {
             },
         };
         const response = await this.apiClient.fetch(endpoint, fetchOptions);
-        return await this.apiClient.handleResponse<Item[]>(response, [ItemApiClient.emptyItem]);
+        return await this.apiClient.handleResponse<ApiItem[]>(response, [ItemApiClient.emptyItem]);
     };
 
-    findOneItem = async (id: string): Promise<Item | null> => {
+    findOneItem = async (id: string): Promise<ApiItem | null> => {
         const endpoint = `/items/${id}`;
         console.debug(`Finding item by id: '${id}'...`);
 
@@ -68,10 +68,10 @@ export class ItemApiClient {
             },
         };
         const response = await this.apiClient.fetch(endpoint, fetchOptions);
-        return await this.apiClient.handleResponse<Item>(response, ItemApiClient.emptyItem);
+        return await this.apiClient.handleResponse<ApiItem>(response, ItemApiClient.emptyItem);
     };
 
-    findOneItemByIdentifier = async (tokenIdentifier: string): Promise<Item | null> => {
+    findOneItemByIdentifier = async (tokenIdentifier: string): Promise<ApiItem | null> => {
         const endpoint = `/items/byTokenIdentifier/${tokenIdentifier}`;
         console.debug(`Finding item by token identifier: '${tokenIdentifier}'...`);
 
@@ -83,10 +83,10 @@ export class ItemApiClient {
             },
         };
         const response = await this.apiClient.fetch(endpoint, fetchOptions);
-        return await this.apiClient.handleResponse<Item>(response, ItemApiClient.emptyItem);
+        return await this.apiClient.handleResponse<ApiItem>(response, ItemApiClient.emptyItem);
     };
 
-    findOneItemByMint = async (mint: string): Promise<Item | null> => {
+    findOneItemByMint = async (mint: string): Promise<ApiItem | null> => {
         const endpoint = `/items/byMint/${mint}`;
         console.debug(`Finding item by mint: '${mint}'...`);
 
@@ -98,10 +98,10 @@ export class ItemApiClient {
             },
         };
         const response = await this.apiClient.fetch(endpoint, fetchOptions);
-        return await this.apiClient.handleResponse<Item>(response, ItemApiClient.emptyItem);
+        return await this.apiClient.handleResponse<ApiItem>(response, ItemApiClient.emptyItem);
     };
 
-    findOneItemByPublicKey = async (publicKey: string): Promise<Item | null> => {
+    findOneItemByPublicKey = async (publicKey: string): Promise<ApiItem | null> => {
         const endpoint = `/items/byPublicKey/${publicKey}`;
         console.debug(`Finding item by public key: '${publicKey}'...`);
 
@@ -113,10 +113,10 @@ export class ItemApiClient {
             },
         };
         const response = await this.apiClient.fetch(endpoint, fetchOptions);
-        return await this.apiClient.handleResponse<Item>(response, ItemApiClient.emptyItem);
+        return await this.apiClient.handleResponse<ApiItem>(response, ItemApiClient.emptyItem);
     };
 
-    findOneItemByTokenMint = async (tokenMint: string): Promise<Item | null> => {
+    findOneItemByTokenMint = async (tokenMint: string): Promise<ApiItem | null> => {
         const endpoint = `/items/byTokenMint/${tokenMint}`;
         console.debug(`Finding item by token mint: '${tokenMint}'...`);
 
@@ -128,7 +128,7 @@ export class ItemApiClient {
             },
         };
         const response = await this.apiClient.fetch(endpoint, fetchOptions);
-        return await this.apiClient.handleResponse<Item>(response, ItemApiClient.emptyItem);
+        return await this.apiClient.handleResponse<ApiItem>(response, ItemApiClient.emptyItem);
     };
 
     updateItemTokenMint = async (mint: string, tokenMint: string): Promise<boolean> => {

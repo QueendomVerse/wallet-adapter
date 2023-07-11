@@ -3,7 +3,7 @@ import { createContext, useContext } from 'react';
 
 import type { Wallet } from '@mindblox-wallet-adapter/react';
 
-import type { WebWalletAdapter } from '@/adapter';
+import type { WebWalletAdapter } from '../../../adapter';
 
 import type {
     WalletName,

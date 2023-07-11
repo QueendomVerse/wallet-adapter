@@ -14,7 +14,7 @@ import type { TokenInfo, ENV as ChainId } from '@solana/spl-token-registry';
 // import cf from 'cross-fetch';
 // import fetch from 'fetch-retry';
 
-import { asyncEnsureRpcConnection } from '@/utils';
+import { asyncEnsureRpcConnection } from '../../../../utils';
 import { ConnectionError } from '../../errors';
 
 // Attempt at preventing infinite recursions

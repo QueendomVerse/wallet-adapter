@@ -1,9 +1,9 @@
 import type { ApiClient, FetchOptions } from './client';
 import { emptyProfile } from './empty';
-import type { Profile } from './types';
+import type { ApiProfile } from './types';
 
 export class ProfileApiClient {
-    static EmptyApiProfile: Profile = emptyProfile;
+    static EmptyApiProfile: ApiProfile = emptyProfile;
 
     constructor(private apiClient: ApiClient = apiClient) {}
 
@@ -16,7 +16,7 @@ export class ProfileApiClient {
         email?: string,
         avatarUrl?: string,
         address?: string
-    ): Promise<Profile | null> => {
+    ): Promise<ApiProfile | null> => {
         const endpoint = '/profiles/saveProfile';
         const profileData = {
             name,
@@ -41,10 +41,10 @@ export class ProfileApiClient {
         };
 
         const response = await this.apiClient.fetch(endpoint, fetchOptions);
-        return this.apiClient.handleResponse<Profile>(response, ProfileApiClient.EmptyApiProfile);
+        return this.apiClient.handleResponse<ApiProfile>(response, ProfileApiClient.EmptyApiProfile);
     };
 
-    getProfileByAddress = async (address: string): Promise<Profile | null> => {
+    getProfileByAddress = async (address: string): Promise<ApiProfile | null> => {
         const endpoint = `/profiles/byAddress/${address}`;
         console.debug(`Getting profile by address: ${address} ...`);
 
@@ -56,10 +56,10 @@ export class ProfileApiClient {
             },
         };
         const response = await this.apiClient.fetch(endpoint, fetchOptions);
-        return this.apiClient.handleResponse<Profile | null>(response, ProfileApiClient.EmptyApiProfile);
+        return this.apiClient.handleResponse<ApiProfile | null>(response, ProfileApiClient.EmptyApiProfile);
     };
 
-    getProfileByEmail = async (email: string): Promise<Profile | null> => {
+    getProfileByEmail = async (email: string): Promise<ApiProfile | null> => {
         const endpoint = `/profiles/byEmail/${email}`;
         console.debug(`Getting profile by email: ${email} ...`);
 
@@ -71,6 +71,6 @@ export class ProfileApiClient {
             },
         };
         const response = await this.apiClient.fetch(endpoint, fetchOptions);
-        return this.apiClient.handleResponse<Profile | null>(response, ProfileApiClient.EmptyApiProfile);
+        return this.apiClient.handleResponse<ApiProfile | null>(response, ProfileApiClient.EmptyApiProfile);
     };
 }

@@ -6,5 +6,4 @@ export * from './ids';
 export * from './interfaceToType';
 export * from './programIds';
 export * from './shortvec';
-export * from './strings';
 export * from './token';

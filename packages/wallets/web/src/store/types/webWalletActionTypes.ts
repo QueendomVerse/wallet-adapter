@@ -22,22 +22,22 @@ import type {
     CREATE_ITEM_SUCCESS,
     FETCH_ITEMS_SUCCESS,
 } from './webWalletActionStates';
-import type { Item, Profile, User, Wallet } from './webWalletTypes';
+import type { LocalItemStore, LocalProfileStore, LocalUserStore, LocalWalletStore } from './webWalletTypes';
 
-// User Actions
+// LocalUserStore Actions
 interface createUserAction {
     type: typeof CREATE_USER_SUCCESS;
-    payload: User[];
+    payload: LocalUserStore[];
 }
 
 interface fetchUsersAction {
     type: typeof FETCH_USERS_SUCCESS;
-    payload: User[];
+    payload: LocalUserStore[];
 }
 
 interface fetchUserAction {
     type: typeof FETCH_USER_SUCCESS;
-    payload: User;
+    payload: LocalUserStore;
 }
 
 interface toggleUserAction {
@@ -47,53 +47,53 @@ interface toggleUserAction {
 
 interface UpdateUserAction {
     type: typeof UPDATED_USER_SUCCESS;
-    payload: User[];
+    payload: LocalUserStore[];
 }
 
 interface removeUserAction {
     type: typeof REMOVE_USER_SUCCESS;
-    payload: User;
+    payload: LocalUserStore;
 }
 
 interface createProfileAction {
     type: typeof CREATE_PROFILE_SUCCESS;
-    payload: Profile[];
+    payload: LocalProfileStore[];
 }
 
 interface fetchProfilesAction {
     type: typeof FETCH_PROFILES_SUCCESS;
-    payload: Profile[];
+    payload: LocalProfileStore[];
 }
 
-// Wallet Actions
+// LocalWalletStore Actions
 interface createWalletAction {
     type: typeof CREATE_WALLET_SUCCESS;
-    payload: Wallet[];
+    payload: LocalWalletStore[];
 }
 
 interface restoreWalletAction {
     type: typeof RESTORE_WALLET_SUCCESS;
-    payload: Wallet[];
+    payload: LocalWalletStore[];
 }
 
 interface fetchWalletAction {
     type: typeof FETCH_WALLET_SUCCESS;
-    payload: Wallet;
+    payload: LocalWalletStore;
 }
 
 interface removeWalletAction {
     type: typeof REMOVE_WALLET_SUCCESS;
-    payload: Wallet;
+    payload: LocalWalletStore;
 }
 
 interface fetchWalletsAction {
     type: typeof FETCH_WALLETS_SUCCESS;
-    payload: Wallet[];
+    payload: LocalWalletStore[];
 }
 
 interface UpdateWalletAction {
     type: typeof UPDATED_WALLET_SUCCESS;
-    payload: Wallet[];
+    payload: LocalWalletStore[];
 }
 
 interface toggleWalletAction {
@@ -103,38 +103,38 @@ interface toggleWalletAction {
 
 interface createAirdropAction {
     type: typeof CREATE_AIRDROP_SUCCESS;
-    payload: Wallet[];
+    payload: LocalWalletStore[];
 }
 
 interface createTransactionAction {
     type: typeof CREATE_TRANSACTION_SUCCESS;
-    payload: Wallet[];
+    payload: LocalWalletStore[];
 }
 
 interface createMintNftAction {
     type: typeof MINT_NFT_SUCCESS;
-    payload: Wallet[];
+    payload: LocalWalletStore[];
 }
 
 interface fetchTransactionAction {
     type: typeof FETCH_TRANSACTION_SUCCESS;
-    payload: Wallet[];
+    payload: LocalWalletStore[];
 }
 
 interface createMintAction {
     type: typeof CREATE_MINT_SUCCESS;
-    payload: Wallet[];
+    payload: LocalWalletStore[];
 }
 
-// Item Actions
+// LocalItemStore Actions
 interface createItemAction {
     type: typeof CREATE_ITEM_SUCCESS;
-    payload: Item[];
+    payload: LocalItemStore[];
 }
 
 interface fetchItemsAction {
     type: typeof FETCH_ITEMS_SUCCESS;
-    payload: Item[];
+    payload: LocalItemStore[];
 }
 
 export type UserActionTypes =

@@ -1,6 +1,6 @@
 // import crossFetch, {Response as CrossResponse} from 'cross-fetch';
 // import fetchRetry from 'fetch-retry';
-import { Connection } from '@solana/web3.js';
+// import { Connection } from '@solana/web3.js';
 import type {
     RequestInfo as NodeRequestInfo,
     RequestInit as NodeRequestInit,

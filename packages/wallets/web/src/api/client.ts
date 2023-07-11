@@ -6,7 +6,7 @@ import type { FormData } from 'formdata-node';
 
 import { UserApiClient } from './user';
 import { WalletApiClient } from './wallet';
-import type { Profile } from './types';
+import type { ApiProfile } from './types';
 import { emptyProfile } from './empty';
 import { ItemApiClient } from './item';
 import { ProfileApiClient } from './profile';
@@ -97,7 +97,7 @@ export class ApiClient extends EventEmitter {
         return response.ok;
     };
 
-    getRegisteration = async (email: string): Promise<Profile | null> => {
+    getRegisteration = async (email: string): Promise<ApiProfile | null> => {
         const endpoint = `/registeration/${email}`;
         const emailData = { email };
 
@@ -112,6 +112,6 @@ export class ApiClient extends EventEmitter {
             body: JSON.stringify(emailData),
         });
 
-        return this.handleResponse<Profile>(response, emptyProfile);
+        return this.handleResponse<ApiProfile>(response, emptyProfile);
     };
 }

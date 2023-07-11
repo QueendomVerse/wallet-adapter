@@ -30,14 +30,14 @@ import {
 } from '@mindblox-wallet-adapter/base';
 
 import { notify } from '@mindblox-wallet-adapter/react';
-import { WebWalletAdapter } from '@/adapter';
-import { useLocalStorageStringState } from '@/hooks';
+import { WebWalletAdapter } from '../../../adapter';
+import { useLocalStorageStringState } from '../../../hooks';
 
 import type { WalletContextState } from '../hooks/useWallet';
 import { useWallet, WalletContext } from '../hooks/useWallet';
-import { BrowserWalletAdapter, BrowserWalletAdapter as NearBrowserWalletAdapter } from '@/networks/near';
+import { BrowserWalletAdapter, BrowserWalletAdapter as NearBrowserWalletAdapter } from '../../../networks/near';
 import { intArrayToString } from '../utils';
-import type { ExtendedAdapter, ExtendedWallet } from '@/networks';
+import type { ExtendedAdapter, ExtendedWallet } from '../../../networks';
 
 const { Panel } = Collapse;
 

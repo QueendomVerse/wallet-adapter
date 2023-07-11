@@ -1,6 +1,6 @@
 import { WalletDatabaseError, printError } from '@mindblox-wallet-adapter/base';
-import type { IndexDbAppDatabase, User, Profile } from './db';
-import { Wallet, Mint } from './db';
+import type { IndexDbAppDatabase, IndexDbUser, IndexDbProfile } from './db';
+import { IndexDbWallet, IndexDbMint } from './db';
 import Dexie from 'dexie';
 
 const getArray = async (col: Dexie.Collection | Dexie.Table) => {
@@ -33,7 +33,7 @@ export const openDatabase = async (db: IndexDbAppDatabase) => {
 
 // Users Database Functions
 /**
- * Clear all User tables
+ * Clear all IndexDbUser tables
  */
 export const clearAllUserTables = async (db: IndexDbAppDatabase) => {
     await Promise.all([db.users.clear()]);
@@ -42,25 +42,25 @@ export const clearAllUserTables = async (db: IndexDbAppDatabase) => {
 /**
  * Read all Users
  */
-export const readAllUsers = async (db: IndexDbAppDatabase): Promise<User[]> => {
+export const readAllUsers = async (db: IndexDbAppDatabase): Promise<IndexDbUser[]> => {
     return await getArray(db.users);
 };
 
 /**
- * Create a User
+ * Create a IndexDbUser
  *
  * Note that since the user is guaranteed
  * to have a unique ID we are using `put`
  * to update the database.
  */
-export const createUser = async (db: IndexDbAppDatabase, user: User): Promise<string> => {
+export const createUser = async (db: IndexDbAppDatabase, user: IndexDbUser): Promise<string> => {
     return await db.users.put(user);
 };
 
 /**
- * Read a User
+ * Read a IndexDbUser
  */
-export const readUser = async (db: IndexDbAppDatabase, userGID: string): Promise<User | undefined> => {
+export const readUser = async (db: IndexDbAppDatabase, userGID: string): Promise<IndexDbUser | undefined> => {
     return await db.users.get(userGID);
 };
 
@@ -68,25 +68,28 @@ export const readUser = async (db: IndexDbAppDatabase, userGID: string): Promise
  * Load Wallets records and
  * update the corresponding user id fields.
  */
-export const loadUsersByWalletAddress = async (db: IndexDbAppDatabase, walletAddress: string): Promise<User[]> => {
+export const loadUsersByWalletAddress = async (
+    db: IndexDbAppDatabase,
+    walletAddress: string
+): Promise<IndexDbUser[]> => {
     console.debug('pulling user', walletAddress);
     return await getArray(db.users.where('walletAddress').equals(walletAddress));
 };
 
-export const loadUsersByEmail = async (db: IndexDbAppDatabase, email: string): Promise<User[]> => {
+export const loadUsersByEmail = async (db: IndexDbAppDatabase, email: string): Promise<IndexDbUser[]> => {
     console.debug('pulling user', email);
     return await getArray(db.users.where('email').equals(email));
 };
 
-export const loadUsersById = async (db: IndexDbAppDatabase, id: string): Promise<User[]> => {
+export const loadUsersById = async (db: IndexDbAppDatabase, id: string): Promise<IndexDbUser[]> => {
     console.debug('pulling user', id);
     return await getArray(db.users.where('id').equals(id));
 };
 
 /**
- * Update a User
+ * Update a IndexDbUser
  */
-// export const amendUser = async (db: IndexDbAppDatabase, user: User) => {
+// export const amendUser = async (db: IndexDbAppDatabase, user: IndexDbUser) => {
 //   console.debug(`amending user: ${user.id}`)
 //   console.dir(user)
 //   const result = await db.users.put(user);
@@ -95,7 +98,7 @@ export const loadUsersById = async (db: IndexDbAppDatabase, id: string): Promise
 //   return result;
 // };
 
-export const amendUser = async (db: IndexDbAppDatabase, user: User) => {
+export const amendUser = async (db: IndexDbAppDatabase, user: IndexDbUser) => {
     if (!user || user.gid) return;
 
     console.debug(`amending user: ${user.gid} - ${user.isSelected}`);
@@ -114,9 +117,9 @@ export const amendUser = async (db: IndexDbAppDatabase, user: User) => {
 };
 
 /**
- * Update a User
+ * Update a IndexDbUser
  */
-export const modifyUser = async (db: IndexDbAppDatabase, user: User) => {
+export const modifyUser = async (db: IndexDbAppDatabase, user: IndexDbUser) => {
     if (!user.gid) throw new Error(`${user.email} gid not found!`);
 
     console.debug(`DB gid(${user.gid}): changing user ${user.email} selection-> ${user.isSelected}`);
@@ -127,7 +130,7 @@ export const modifyUser = async (db: IndexDbAppDatabase, user: User) => {
     return await db.users.update(user.gid, user);
 };
 
-export const addUserWallet = async (db: IndexDbAppDatabase, user: User) => {
+export const addUserWallet = async (db: IndexDbAppDatabase, user: IndexDbUser) => {
     if (!user.gid) throw new Error(`${user.email} gid not found!`);
     if (!user.wallets) throw new Error(`${user.email} has no wallets!`);
 
@@ -142,41 +145,41 @@ export const addUserWallet = async (db: IndexDbAppDatabase, user: User) => {
 };
 
 /**
- * Create a Profile
+ * Create a IndexDbProfile
  *
  * Note that since the profile is guaranteed
  * to have a unique ID we are using `put`
  * to update the databse.
  */
-export const createProfile = async (db: IndexDbAppDatabase, profile: Profile): Promise<string> => {
+export const createProfile = async (db: IndexDbAppDatabase, profile: IndexDbProfile): Promise<string> => {
     return await db.profiles.put(profile);
 };
 
 /**
- * Read a Profile
+ * Read a IndexDbProfile
  */
 export const readProfile = async (db: IndexDbAppDatabase, profileGID: string) => {
     return await db.profiles.get(profileGID);
 };
 
 /**
- * Update Profile
+ * Update IndexDbProfile
  */
-export const amendProfile = async (db: IndexDbAppDatabase, profile: Profile) => {
+export const amendProfile = async (db: IndexDbAppDatabase, profile: IndexDbProfile) => {
     return await db.profiles.put(profile);
 };
 
 /**
- * Load Profile records and
+ * Load IndexDbProfile records and
  * update the corresponding user id fields.
  */
-export const loadUserProfiles = async (userGID: string, db: IndexDbAppDatabase): Promise<Profile[]> => {
+export const loadUserProfiles = async (userGID: string, db: IndexDbAppDatabase): Promise<IndexDbProfile[]> => {
     return await getArray(db.profiles.where('userGID').equals(userGID));
 };
 
 // Wallets Database Functions
 /**
- * Clear all Wallet tables
+ * Clear all IndexDbWallet tables
  */
 export const clearAllWalletTables = async (db: IndexDbAppDatabase) => {
     await Promise.all([db.wallets.clear()]);
@@ -185,7 +188,7 @@ export const clearAllWalletTables = async (db: IndexDbAppDatabase) => {
 /**
  * Read all Wallets
  */
-export const readAllWallets = async (db: IndexDbAppDatabase): Promise<Wallet[]> => {
+export const readAllWallets = async (db: IndexDbAppDatabase): Promise<IndexDbWallet[]> => {
     return await getArray(db.wallets);
 };
 
@@ -193,7 +196,7 @@ export const readAllWallets = async (db: IndexDbAppDatabase): Promise<Wallet[]> 
  * Load Wallets records and
  * update the corresponding user id fields.
  */
-export const loadUserWallets = async (userGID: string, db: IndexDbAppDatabase): Promise<Wallet[]> => {
+export const loadUserWallets = async (userGID: string, db: IndexDbAppDatabase): Promise<IndexDbWallet[]> => {
     return await getArray(db.wallets.where('userGID').equals(userGID));
 };
 
@@ -201,32 +204,32 @@ export const loadUserWallets = async (userGID: string, db: IndexDbAppDatabase): 
  * Load Wallets records and
  * update the corresponding user id fields.
  */
-export const loadWalletsByPublicKey = async (db: IndexDbAppDatabase, pubKey: string): Promise<Wallet[]> => {
+export const loadWalletsByPublicKey = async (db: IndexDbAppDatabase, pubKey: string): Promise<IndexDbWallet[]> => {
     return await getArray(db.wallets.where('pubKey').equals(pubKey));
 };
 
 /**
- * Create a Wallet
+ * Create a IndexDbWallet
  *
  * Note that since the wallet is guaranteed
  * to have a unique ID we are using `put`
  * to update the databse.
  */
-export const createWallet = async (db: IndexDbAppDatabase, wallet: Wallet): Promise<string> => {
+export const createWallet = async (db: IndexDbAppDatabase, wallet: IndexDbWallet): Promise<string> => {
     return await db.wallets.put(wallet);
 };
 
 /**
- * Read a Wallet
+ * Read a IndexDbWallet
  */
-export const readWallet = async (db: IndexDbAppDatabase, walletGID: string): Promise<Wallet | undefined> => {
+export const readWallet = async (db: IndexDbAppDatabase, walletGID: string): Promise<IndexDbWallet | undefined> => {
     return await db.wallets.get(walletGID);
 };
 
 /**
- * Update a Wallet
+ * Update a IndexDbWallet
  */
-export const amendWallet = async (db: IndexDbAppDatabase, wallet: Wallet) => {
+export const amendWallet = async (db: IndexDbAppDatabase, wallet: IndexDbWallet) => {
     console.debug('amending wallet', `'${wallet.gid}'`);
     if (!wallet || !wallet.gid) return;
     console.debug('amending wallet 2');
@@ -247,9 +250,9 @@ export const amendWallet = async (db: IndexDbAppDatabase, wallet: Wallet) => {
 };
 
 /**
- * Update a Wallet
+ * Update a IndexDbWallet
  */
-export const modifyWallet = async (db: IndexDbAppDatabase, wallet: Wallet) => {
+export const modifyWallet = async (db: IndexDbAppDatabase, wallet: IndexDbWallet) => {
     if (!wallet.gid) throw new Error(`${wallet.chain} ${wallet.label} ${wallet.pubKey} gid not found!`);
 
     console.debug(
@@ -270,9 +273,9 @@ export const modifyWallet = async (db: IndexDbAppDatabase, wallet: Wallet) => {
 };
 
 /**
- * Delete a Wallet
+ * Delete a IndexDbWallet
  */
-export const deleteWallet = async (db: IndexDbAppDatabase, wallet: Wallet) => {
+export const deleteWallet = async (db: IndexDbAppDatabase, wallet: IndexDbWallet) => {
     console.warn('func: deleteWallet');
     console.dir(wallet);
     if (!wallet.gid) throw new Error(`${wallet.chain} ${wallet.label} ${wallet.pubKey} gid not found!`);
@@ -283,9 +286,9 @@ export const deleteWallet = async (db: IndexDbAppDatabase, wallet: Wallet) => {
 };
 
 /**
- * Delete a User
+ * Delete a IndexDbUser
  */
-export const deleteUser = async (db: IndexDbAppDatabase, user: User) => {
+export const deleteUser = async (db: IndexDbAppDatabase, user: IndexDbUser) => {
     if (!user.gid) throw new Error(`${user.email} gid not found!`);
     console.debug(`removing user: ${user.email}`);
     // console.debug(`user gid: ${user.gid}`);
@@ -294,9 +297,9 @@ export const deleteUser = async (db: IndexDbAppDatabase, user: User) => {
 };
 
 /**
- * Delete a Profile
+ * Delete a IndexDbProfile
  */
-export const deleteProfile = async (db: IndexDbAppDatabase, profile: Profile) => {
+export const deleteProfile = async (db: IndexDbAppDatabase, profile: IndexDbProfile) => {
     if (!profile.gid) return;
     console.debug(`removing profile: ${profile.email}`);
     console.debug(`profile gid: ${profile.gid}`);
@@ -305,30 +308,30 @@ export const deleteProfile = async (db: IndexDbAppDatabase, profile: Profile) =>
 };
 
 /**
- * Create a Mint
+ * Create a IndexDbMint
  *
  * Note that since the mint is guaranteed
  * to have a unique ID we are using `put`
  * to update the databse.
  */
-export const createMint = async (db: IndexDbAppDatabase, mint: Mint) => {
+export const createMint = async (db: IndexDbAppDatabase, mint: IndexDbMint) => {
     return await db.mints.put(mint);
 };
 
 /**
- * Load Mint records and
- * update the corresponding Wallet id fields.
+ * Load IndexDbMint records and
+ * update the corresponding IndexDbWallet id fields.
  */
-export const loadWalletMints = async (walletGID: string, db: IndexDbAppDatabase): Promise<Mint[]> => {
+export const loadWalletMints = async (walletGID: string, db: IndexDbAppDatabase): Promise<IndexDbMint[]> => {
     return await getArray(db.mints.where('walletId').equals(walletGID));
 };
 
-export const saveDbWallet = async (wallet: Wallet, db: IndexDbAppDatabase): Promise<string> => {
+export const saveDbWallet = async (wallet: IndexDbWallet, db: IndexDbAppDatabase): Promise<string> => {
     return await db.transaction('rw', db.wallets, async (): Promise<string> => {
         const { chain, label, pubKey, encryptedSeedPhrase, encryptedPrivKey, balance, privKey, seed, seedPhrase } =
             wallet;
         const isSelected = true;
-        const newWallet = new Wallet(
+        const newWallet = new IndexDbWallet(
             chain,
             label,
             pubKey,
@@ -345,21 +348,21 @@ export const saveDbWallet = async (wallet: Wallet, db: IndexDbAppDatabase): Prom
     });
 };
 
-export const saveDbMint = async (id: string, mintObject: Mint, db: IndexDbAppDatabase) => {
+export const saveDbMint = async (id: string, mintObject: IndexDbMint, db: IndexDbAppDatabase) => {
     await db.transaction('rw', db.wallets, db.mints, async () => {
         const { mint, owner, address } = mintObject;
-        await createMint(db, new Mint(id, mint, owner, address));
+        await createMint(db, new IndexDbMint(id, mint, owner, address));
     });
 };
 
-export const getSavedDbWallets = async (db: IndexDbAppDatabase): Promise<Wallet[] | void> => {
-    return await db.transaction('rw', db.wallets, async (): Promise<Wallet[] | void> => {
+export const getSavedDbWallets = async (db: IndexDbAppDatabase): Promise<IndexDbWallet[] | void> => {
+    return await db.transaction('rw', db.wallets, async (): Promise<IndexDbWallet[] | void> => {
         return await readAllWallets(db);
     });
 };
 
-export const getSavedDbMints = async (walletId: string, db: IndexDbAppDatabase): Promise<Mint[] | void> => {
-    return await db.transaction('rw', db.wallets, db.mints, async (): Promise<Mint[] | void> => {
+export const getSavedDbMints = async (walletId: string, db: IndexDbAppDatabase): Promise<IndexDbMint[] | void> => {
+    return await db.transaction('rw', db.wallets, db.mints, async (): Promise<IndexDbMint[] | void> => {
         return await loadWalletMints(walletId, db);
     });
 };

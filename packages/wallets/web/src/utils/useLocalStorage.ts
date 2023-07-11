@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+// import { useCallback, useState } from 'react';
 
 type StorageReturn = {
     getItem: (key: string) => string | null;

@@ -29,7 +29,7 @@ import { getTransactionInstructionError, isTransactionInstructionError } from '.
 import { chunks, sleep } from './utils';
 import { notify } from '@mindblox-wallet-adapter/react';
 import { ExplorerLink } from '@mindblox-wallet-adapter/react';
-import { asyncEnsureRpcConnection } from '@/utils';
+import { asyncEnsureRpcConnection } from '../../utils';
 
 interface BlockhashAndFeeCalculator {
     blockhash: Blockhash;

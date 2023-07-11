@@ -25,8 +25,8 @@ import {
     deleteWallet,
     createMint,
 } from './utils';
-import type { Profile as IndexDbProfile } from './db';
-import { db, User as IndexDbUser, Wallet as IndexDbWallet, Mint as IndexDbMint } from './db';
+import type { IndexDbProfile } from './db';
+import { db, IndexDbUser, IndexDbWallet, IndexDbMint } from './db';
 import type {
     LocalUserStore,
     LocalWalletStore,

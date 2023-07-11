@@ -1,8 +1,8 @@
-import { MetadataCategory } from '@/networks/solana';
-import type { Item, Items, Profile, Profiles, User, Users, Wallet, Wallets } from './types';
-import { ArtType } from './types';
+import { MetadataCategory } from '../networks/solana';
+import type { ApiItem, ApiItems, ApiProfile, ApiProfiles, ApiUser, ApiUsers, ApiWallet, ApiWallets } from './types';
+import { ArtType } from '.';
 
-export const emptyItem: Item = {
+export const emptyItem: ApiItem = {
     id: '',
     identifier: '',
     uri: '',
@@ -42,11 +42,11 @@ export const emptyItem: Item = {
     updatedAt: '',
 };
 
-export const emptyItems: Items = {
+export const emptyItems: ApiItems = {
     data: [emptyItem],
 };
 
-export const emptyProfile: Profile = {
+export const emptyProfile: ApiProfile = {
     id: '',
     name: '',
     url: '',
@@ -60,11 +60,11 @@ export const emptyProfile: Profile = {
     updatedAt: '',
 };
 
-export const emptyProfiles: Profiles = {
+export const emptyProfiles: ApiProfiles = {
     data: [emptyProfile],
 };
 
-export const emptyUser: User = {
+export const emptyUser: ApiUser = {
     id: '',
     name: '',
     email: '',
@@ -81,11 +81,11 @@ export const emptyUser: User = {
     updatedAt: '',
 };
 
-export const emptyUsers: Users = {
+export const emptyUsers: ApiUsers = {
     data: [emptyUser],
 };
 
-export const emptyWallet: Wallet = {
+export const emptyWallet: ApiWallet = {
     userId: '',
     chain: '',
     label: '',
@@ -97,6 +97,6 @@ export const emptyWallet: Wallet = {
     updatedAt: '',
 };
 
-export const emptyWallets: Wallets = {
+export const emptyWallets: ApiWallets = {
     data: [emptyWallet],
 };

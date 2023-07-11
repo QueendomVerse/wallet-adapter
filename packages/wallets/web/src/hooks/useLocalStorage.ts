@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 
-import { useLocalStorage } from '@/utils';
+import { useLocalStorage } from '../utils';
 
 interface LocalStorageListener {
     key: string;

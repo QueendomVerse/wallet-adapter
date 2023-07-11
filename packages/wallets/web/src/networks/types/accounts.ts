@@ -1,9 +1,9 @@
 import type { WalletReadyState } from '@mindblox-wallet-adapter/base';
 import type { Wallet } from '@mindblox-wallet-adapter/react';
 
-import type { ExtendedAdapter } from '@/networks';
-import type { SolanaAccount, SendSolana } from '@/networks/solana';
-import type { NearAccount, SendNear } from '@/networks/near';
+import type { ExtendedAdapter } from '../../networks';
+import type { SolanaAccount, SendSolana } from '../../networks/solana';
+import type { NearAccount, SendNear } from '../../networks/near';
 
 export const USE_SOLANA_ACCOUNT = 'USE_SOLANA_ACCOUNT';
 export const USE_NEAR_ACCOUNT = 'USE_NEAR_ACCOUNT';

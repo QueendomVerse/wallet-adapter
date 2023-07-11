@@ -6,7 +6,7 @@ import { Spin } from 'antd';
 import { LoadingOutlined } from '@ant-design/icons';
 // import { ParsedUrlQuery } from 'querystring';
 import { useShareableWalletConnectedState } from '@mindblox-wallet-adapter/react';
-import type { QueryParams } from '@/utils';
+import type { QueryParams } from '../../../utils';
 
 // import { useLocation } from 'react-router-dom';
 

@@ -12,7 +12,7 @@ import {
 } from '@solana/web3.js';
 
 import { WalletAdapterNetwork } from '@mindblox-wallet-adapter/base';
-import { fetchWithRetry } from '@/utils';
+import { fetchWithRetry } from '../../../utils';
 import { ConnectionError } from '../errors';
 
 export interface SendSolana {

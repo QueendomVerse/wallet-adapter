@@ -1,40 +1,58 @@
-import type { LocalItemStore, LocalProfileStore, LocalUserStore, LocalWalletStore } from '@/store';
+import type { LocalItemStore, LocalProfileStore, LocalUserStore, LocalWalletStore } from '../store';
 
-export interface Item extends LocalItemStore {
+export interface ApiItem extends LocalItemStore {
     createdAt: string;
     updatedAt: string;
 }
 
-export interface Items {
-    data: Item[];
+export interface ApiItems {
+    data: ApiItem[];
 }
 
-export interface Profile extends LocalProfileStore {
+export interface ApiProfile extends LocalProfileStore {
     createdAt: string;
     updatedAt: string;
 }
 
-export interface Profiles {
-    data: Profile[];
+export interface ApiProfiles {
+    data: ApiProfile[];
 }
 
-export interface User extends LocalUserStore {
+interface LocalUserStore2 {
+    gid?: string;
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+    walletAddress: string;
+    image: string;
+    avatar: string;
+    banner: string;
+    roles: string[]; //@TODO enum instead? role type?
+    settings: string[];
+    isSelected?: boolean;
+    password?: string; //@TODO change name to (encoded/encrypted)Password?
+    hashedPassword?: string;
+    wallets?: LocalWalletStore[];
+}
+
+export interface ApiUser extends LocalUserStore {
     createdAt: string;
     updatedAt: string;
 }
 
-export interface Users {
-    data: User[];
+export interface ApiUsers {
+    data: ApiUser[];
 }
 
-export interface Wallet extends LocalWalletStore {
+export interface ApiWallet extends LocalWalletStore {
     userId: string;
     createdAt: string;
     updatedAt: string;
 }
 
-export interface Wallets {
-    data: Wallet[];
+export interface ApiWallets {
+    data: ApiWallet[];
 }
 
 export type ApiResponse = {

@@ -1,9 +1,9 @@
-import type { ArtType, Artist } from '@/api';
-import type { Attribute, Creator, FileOrString, MetadataCategory } from '@/networks/solana';
+import type { ArtType, Artist } from '../../api';
+import type { Attribute, Creator, FileOrString, MetadataCategory } from '../../networks/solana';
 
 // @TODO: make url, bio, twitter, site, avatarUrl, and walletAddress optional => ?
 // @NOTES ensure corresponding changes are propagated to local and backend User schema
-export interface User {
+export interface LocalUserStore {
     gid?: string;
     id: string;
     name: string;
@@ -18,10 +18,10 @@ export interface User {
     isSelected?: boolean;
     password?: string; //@TODO change name to (encoded/encrypted)Password?
     hashedPassword?: string;
-    wallets?: Wallet[];
+    wallets?: LocalWalletStore[];
 }
 
-export interface Profile {
+export interface LocalProfileStore {
     id: string;
     name: string;
     url: string;
@@ -33,7 +33,7 @@ export interface Profile {
     walletAddress: string;
 }
 
-export interface KeyPair {
+export interface LocalKeyPairStore {
     chain: string;
     publicKey: string;
     privateKey?: string;
@@ -41,7 +41,7 @@ export interface KeyPair {
 }
 
 // @TODO reorder logically; label, chain, pubKey ....=
-export interface Wallet {
+export interface LocalWalletStore {
     gid?: string;
     chain: string;
     label: string;
@@ -53,17 +53,17 @@ export interface Wallet {
     privKey?: Uint8Array;
     seed?: Uint8Array;
     seedPhrase?: string;
-    transactions?: Transaction[];
+    transactions?: LocalTransactionStore[];
 }
 
-export interface Mint {
+export interface LocalMintStore {
     walletId: string;
     mint: string;
     owner: string;
     address: string;
 }
 
-export interface Item {
+export interface LocalItemStore {
     gid?: string;
     id: string;
     identifier: string;
@@ -91,7 +91,7 @@ export interface Item {
     publicKey?: string;
 }
 
-export interface Transaction {
+export interface LocalTransactionStore {
     blockTime: number | null | undefined;
     slot: number;
     amount: number;
