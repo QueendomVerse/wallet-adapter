@@ -22,12 +22,12 @@ export type useChainAccount = useSolanaAccount | useNearAccount;
 
 export type ChainAccount = SolanaAccount | NearAccount;
 
-export interface Solana {
+interface Solana {
     type: 'solana';
     account: SolanaAccount;
 }
 
-export interface Near {
+interface Near {
     type: 'near';
     account: NearAccount;
 }

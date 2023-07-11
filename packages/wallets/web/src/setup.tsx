@@ -8,16 +8,13 @@ import { WebWalletAdapter } from './adapter';
 import { BrowserWalletAdapter as NearBrowserWalletAdapter } from './networks/near';
 import { getAdapterNetwork } from './networks/solana';
 import { clusterApiUrl } from '@solana/web3.js';
+import { getSolanaNetwork } from './networks';
 
 dotenv.config();
 
-const getNetwork = (net?: string) => {
-    return net != 'localnet' ? getAdapterNetwork(net) : net;
-};
-
 export const initializeWallets = () => {
     const network: WalletAdapterNetwork = getAdapterNetwork(process.env.NEXT_PUBLIC_SOLANA_NETWORK);
-    console.info(`walletProvider.rpc network: ${getNetwork(process.env.NEXT_PUBLIC_SOLANA_NETWORK)}`);
+    console.info(`walletProvider.rpc network: ${getSolanaNetwork(process.env.NEXT_PUBLIC_SOLANA_NETWORK)}`);
     const nodeUri = clusterApiUrl(network);
     console.info(`walletProvider.rpc node: ${nodeUri}`);
 

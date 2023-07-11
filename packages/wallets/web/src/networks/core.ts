@@ -1,15 +1,15 @@
 import { ChainTickers } from '@/chains';
 import type {
-    LocalKeyPair,
-    // LocalWallet,
+    LocalKeyPairStore,
+    // LocalWalletStore,
 } from '@/store';
-import type { LocalWallet } from '@/store';
+import type { LocalWalletStore } from '@/store';
 import type { IndexDbWallet } from '@/indexDb';
 import { getBalance as getSolanaBalance, sendFundsTransaction as sendSolanaFundsTransaction } from './solana';
 import { getBalance as getNearBalance, sendFundsTransaction as sendNearFundsTransaction } from './near';
 import type { SendNear, SendSolana } from '.';
 
-export const getBalance = async (ticker: string, keypair: LocalKeyPair) => {
+export const getBalance = async (ticker: string, keypair: LocalKeyPairStore) => {
     // console.debug(`Getting balance (${ticker}): ${keypair.publicKey}`);
     if (!keypair.privateKey) return;
 
@@ -25,7 +25,7 @@ export const getBalance = async (ticker: string, keypair: LocalKeyPair) => {
 
 export const sendFundsTransaction = async (
     ticker: string,
-    keypair: LocalKeyPair,
+    keypair: LocalKeyPairStore,
     toAddress: string,
     amount: string
 ): Promise<SendSolana | SendNear | undefined> => {
@@ -43,14 +43,14 @@ export const sendFundsTransaction = async (
     }
 };
 
-export const getValidWallets = (wallets: (LocalWallet | undefined)[]) => {
-    return wallets.filter((w): w is LocalWallet => !!w);
+export const getValidWallets = (wallets: (LocalWalletStore | undefined)[]) => {
+    return wallets.filter((w): w is LocalWalletStore => !!w);
 };
 
 export const getValidDbWallets = (wallets: (IndexDbWallet | undefined)[]) => {
     return wallets.filter((w): w is IndexDbWallet => !!w);
 };
 
-export const getPrimaryWallet = (wallets: LocalWallet[]) => {
+export const getPrimaryWallet = (wallets: LocalWalletStore[]) => {
     return wallets.find((w) => w.label === 'primary');
 };

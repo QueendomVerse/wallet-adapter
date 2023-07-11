@@ -11,11 +11,15 @@ import {
 } from '@solana/web3.js';
 import * as dotenv from 'dotenv';
 
-import type { LocalKeyPair } from '../../store/types';
+import type { LocalKeyPairStore } from '../../store/types';
 import type { SolanaKeys } from './types/keypair';
 import type { WalletAdapterNetwork } from '@mindblox-wallet-adapter/base';
 
 dotenv.config();
+
+export const getNetwork = (net?: string) => {
+    return net != 'localnet' ? getAdapterNetwork(net) : net;
+};
 
 // async due to how other networks handle connections.
 const nodeRpcUrl: string = process.env.NEXT_PUBLIC_SOLANA_RPC_HOST ?? '';
@@ -41,7 +45,7 @@ export const getKeyPairFromSeedPhrase = (seedPhrase: string) => {
         chain: ChainNetworks.SOL,
         privateKey: encodedKeypair,
         publicKey: encodedPublicKey,
-    } as LocalKeyPair;
+    } as LocalKeyPairStore;
 };
 
 export const getNativeKeyPairFromPrivateKey = (privateKey: string): SolanaKeys => {
@@ -50,7 +54,7 @@ export const getNativeKeyPairFromPrivateKey = (privateKey: string): SolanaKeys =
     };
 };
 
-export const getKeyPairFromPrivateKey = (privateKey: string): LocalKeyPair => {
+export const getKeyPairFromPrivateKey = (privateKey: string): LocalKeyPairStore => {
     const { keypair } = getNativeKeyPairFromPrivateKey(privateKey);
 
     const encodedKeypair = encodeBs58(Buffer.from(keypair.secretKey));
@@ -59,7 +63,7 @@ export const getKeyPairFromPrivateKey = (privateKey: string): LocalKeyPair => {
         chain: ChainNetworks.SOL,
         privateKey: encodedKeypair,
         publicKey: encodedPublicKey,
-    } as LocalKeyPair;
+    } as LocalKeyPairStore;
 };
 
 export const getPublicKey = (publicKey: string) => {
@@ -68,7 +72,7 @@ export const getPublicKey = (publicKey: string) => {
     return {
         chain: ChainNetworks.SOL,
         publicKey: pubKey.toBase58(),
-    } as LocalKeyPair;
+    } as LocalKeyPairStore;
 };
 
 //@TODO: configure network;

@@ -1,6 +1,6 @@
 import {
     type WalletActionTypes,
-    type LocalWallet,
+    type LocalWalletStore,
     FETCH_WALLETS_SUCCESS as _FETCH_WALLETS_SUCCESS,
     CREATE_WALLET_SUCCESS as _CREATE_WALLET_SUCCESS,
     TOGGLE_SELECT_WALLET as _TOGGLE_SELECT_WALLET,
@@ -10,9 +10,9 @@ import {
     CREATE_MINT_SUCCESS as _CREATE_MINT_SUCCESS,
 } from '../types';
 
-const initialWalletsState: LocalWallet[] = [];
+const initialWalletsState: LocalWalletStore[] = [];
 
-export const walletReducer = (state: LocalWallet[] = initialWalletsState, action: WalletActionTypes) => {
+export const walletReducer = (state: LocalWalletStore[] = initialWalletsState, action: WalletActionTypes) => {
     switch (action.type) {
         case _TOGGLE_SELECT_WALLET:
             return state.map((wlt) => {

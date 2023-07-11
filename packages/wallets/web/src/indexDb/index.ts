@@ -19,7 +19,7 @@ export {
     removeWallet as removeIndexDbWallet,
     getSavedMints as getSavedIndexDbMints,
     saveMint as saveIndexDbMint,
-    getUserWallets as getIndexDbUserWallets
+    getUserWallets as getIndexDbUserWallets,
 } from './api';
 export * from './constants';
 export {
@@ -27,5 +27,5 @@ export {
     User as IndexDbUser,
     Profile as IndexDbProfile,
     Mint as IndexDbMint,
-    Wallet as IndexDbWallet
+    Wallet as IndexDbWallet,
 } from './db';

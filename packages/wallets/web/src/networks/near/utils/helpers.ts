@@ -4,7 +4,7 @@ import { isBase58, isHex } from '@mindblox-wallet-adapter/base';
 import { fetchPublicKeys } from './helper-api';
 
 export const isValidAccount = async (account: string) => {
-    if (isValidNearName(account) || (await getImplicitId(account)) || (isHex(account) && account.length == 64)) {
+    if (isValidName(account) || (await getImplicitId(account)) || (isHex(account) && account.length == 64)) {
         console.debug(`Valid near account: '${account}'`);
         return true;
     }
@@ -12,7 +12,7 @@ export const isValidAccount = async (account: string) => {
     return false;
 };
 
-export const isValidNearName = (name: string) => {
+export const isValidName = (name: string) => {
     if (!name || isBase58(name)) return;
 
     const valid = name.includes('.near') || name.includes('.testnet');
@@ -21,7 +21,7 @@ export const isValidNearName = (name: string) => {
 };
 
 export const getImplicitId = async (name: string) => {
-    const valid = isValidNearName(name);
+    const valid = isValidName(name);
     if (!valid) return;
 
     const ids = await getImplicitIdsFromName(name);

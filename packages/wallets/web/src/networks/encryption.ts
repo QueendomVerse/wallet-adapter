@@ -7,7 +7,7 @@ import SimpleCrypto from 'simple-crypto-js';
 
 import type { Chains as LocalChains } from '../chains';
 
-import type { LocalWallet } from '../store';
+import type { LocalWalletStore } from '../store';
 import { IndexDbWallet } from '../indexDb';
 import { getKeyPairFromSeedPhrase, getKeyPairFromPrivateKey } from './keypairs';
 import { thunkUpdateWallet } from '../store';
@@ -149,7 +149,7 @@ export const generateWallet = async (label: string, chain: string, password: str
     const encryptedPrivateKey = await encryptText(keypair.privateKey ?? '', password);
     console.debug(`Hashed secret key (${chain}/${label}): ${encryptedPrivateKey}`);
 
-    const wallet: LocalWallet = {
+    const wallet: LocalWalletStore = {
         chain: chain,
         label: label,
         pubKey: keypair.publicKey,
@@ -164,7 +164,7 @@ export const generateWallet = async (label: string, chain: string, password: str
     return wallet;
 };
 
-export const decryptWallet = async (wallet: LocalWallet, password: string) => {
+export const decryptWallet = async (wallet: LocalWalletStore, password: string) => {
     // Get a decrypted wallet
     if (!password) {
         throw new Error("Can't decrypt wallet without specifying a password!");
@@ -200,7 +200,7 @@ export const decryptWallet = async (wallet: LocalWallet, password: string) => {
         privKey: Buffer.from(decodeBs58(privKey)),
         seed: seed,
         seedPhrase: seedPhrase,
-    } as LocalWallet;
+    } as LocalWalletStore;
 };
 
 export const decryptDbWallet = async (wallet: IndexDbWallet, password: string): Promise<IndexDbWallet | undefined> => {

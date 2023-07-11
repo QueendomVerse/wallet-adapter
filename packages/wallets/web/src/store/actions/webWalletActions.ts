@@ -61,14 +61,14 @@ import {
     CREATE_MINT_SUCCESS as _CREATE_MINT_SUCCESS,
     FETCH_ITEMS_SUCCESS as _FETCH_ITEMS_SUCCESS,
     CREATE_ITEM_SUCCESS as _CREATE_ITEM_SUCCESS,
-    type LocalWallet,
-    type LocalKeyPair,
-    type LocalTransaction,
+    type LocalWalletStore,
+    type LocalKeyPairStore,
+    type LocalTransactionStore,
 } from '../types';
-import type { RootState } from '..';
+import type { StoreRootState } from '..';
 
 export const thunkCheckWalletSelections =
-    (wallets: IndexDbWallet[]): ThunkAction<void, RootState, unknown, Action<string>> =>
+    (wallets: IndexDbWallet[]): ThunkAction<void, StoreRootState, unknown, Action<string>> =>
     async (dispatch) => {
         console.debug(`Checking ${wallets?.length} wallet selections ...`);
         try {
@@ -80,7 +80,7 @@ export const thunkCheckWalletSelections =
     };
 
 export const thunkResetWalletSelections =
-    (): ThunkAction<void, RootState, unknown, Action<string>> => async (dispatch) => {
+    (): ThunkAction<void, StoreRootState, unknown, Action<string>> => async (dispatch) => {
         const wallets = await getSavedIndexDbWallets();
         const selectedWallets = wallets.filter((wallet) => wallet.isSelected);
         console.debug(`Resetting ${wallets?.length} wallet selections ...`);
@@ -212,7 +212,7 @@ export const resetUnSelectedWalletsEncryption = async (wallets: IndexDbWallet[])
 //   return account ? account.lamports / LAMPORTS_PER_SOL : 0;
 // };
 
-const createWalletAction = (payload: LocalWallet) => {
+const createWalletAction = (payload: LocalWalletStore) => {
     const result = {
         type: _CREATE_WALLET_SUCCESS,
         payload,
@@ -221,13 +221,13 @@ const createWalletAction = (payload: LocalWallet) => {
 };
 
 export const thunkCreateWallet =
-    (password: string, label: string, chain: string): ThunkAction<void, RootState, unknown, Action<string>> =>
+    (password: string, label: string, chain: string): ThunkAction<void, StoreRootState, unknown, Action<string>> =>
     // async (dispatch, getState) => {
     async (dispatch) => {
         if (!password || !label || !chain) return;
         console.info(`Creating ${chain} wallet: ${label} ...`);
 
-        // const { wallets } = getState() as { wallets: LocalWallet[] };
+        // const { wallets } = getState() as { wallets: LocalWalletStore[] };
         try {
             // Generated a new wallet
             const newWallet = await generateWallet(label, chain, password);
@@ -254,7 +254,7 @@ export const thunkCreateWallet =
         }
     };
 
-const restoreWalletAction = (payload: LocalWallet) => {
+const restoreWalletAction = (payload: LocalWalletStore) => {
     const result = {
         type: _RESTORE_WALLET_SUCCESS,
         payload,
@@ -263,7 +263,7 @@ const restoreWalletAction = (payload: LocalWallet) => {
 };
 
 export const thunkRestoreWallet =
-    (wallet: IndexDbWallet, password: string): ThunkAction<void, RootState, unknown, Action<string>> =>
+    (wallet: IndexDbWallet, password: string): ThunkAction<void, StoreRootState, unknown, Action<string>> =>
     // async (dispatch, getState) => {
     async (dispatch) => {
         if (!password || !wallet) return;
@@ -306,12 +306,12 @@ export const thunkRestoreWallet =
 //     encodedPrivateKey: string,
 //     // decodedPrivateKey: string,
 //     publicKey: string,
-//  ): ThunkAction<void, RootState, unknown, Action<string>> =>
+//  ): ThunkAction<void, StoreRootState, unknown, Action<string>> =>
 //   async (dispatch, getState) => {
 //     if (!label || !encodedPrivateKey || !seed) return;
 //     console.info(`Importing wallet (${label}): ${publicKey} ...`);
 
-//     const { wallets } = getState() as { wallets: LocalWallet[] };
+//     const { wallets } = getState() as { wallets: LocalWalletStore[] };
 //     try {
 //       const keypairFromSecretKey = getKeyPairFromPrivateKey(
 //         chain,
@@ -337,7 +337,7 @@ export const thunkRestoreWallet =
 //       const encryptedSeedPhrase = await encryptText(seedPhrase, password);
 //       const encryptedPrivateKey = await encryptText(encodedPrivateKey, password );
 
-//       const importedWallet: LocalWallet = {
+//       const importedWallet: LocalWalletStore = {
 //         label,
 //         seed: seed,
 //         encryptedSeedPhrase: encryptedSeedPhrase,
@@ -377,12 +377,12 @@ export const thunkRestoreWallet =
 //   };
 
 export const thunkImportWallet =
-    (wallet: IndexDbWallet): ThunkAction<void, RootState, unknown, Action<string>> =>
+    (wallet: IndexDbWallet): ThunkAction<void, StoreRootState, unknown, Action<string>> =>
     async (dispatch, getState) => {
         if (!wallet) return;
         console.info(`Importing wallet (${wallet.label}): ${wallet.pubKey} ...`);
 
-        const { wallets } = getState() as { wallets: LocalWallet[] };
+        const { wallets } = getState() as { wallets: LocalWalletStore[] };
         try {
             // const keypairFromSecretKey = getKeyPairFromPrivateKey(
             //   chain,
@@ -408,7 +408,7 @@ export const thunkImportWallet =
             // const encryptedSeedPhrase = await encryptText(seedPhrase, password);
             // const encryptedPrivateKey = await encryptText(encodedPrivateKey, password );
 
-            // const importedWallet: LocalWallet = {
+            // const importedWallet: LocalWalletStore = {
             //   label,
             //   seed: seed,
             //   encryptedSeedPhrase: encryptedSeedPhrase,
@@ -446,7 +446,7 @@ export const thunkImportWallet =
     };
 
 export const thunkWalletSelection =
-    (wallet: IndexDbWallet, selection: boolean): ThunkAction<void, RootState, unknown, Action<string>> =>
+    (wallet: IndexDbWallet, selection: boolean): ThunkAction<void, StoreRootState, unknown, Action<string>> =>
     // async (dispatch, getState) => {
     async (dispatch) => {
         if (!wallet) return;
@@ -487,7 +487,7 @@ export const thunkWalletSelection =
         }
     };
 
-const updateWalletAction = (payload: LocalWallet) => {
+const updateWalletAction = (payload: LocalWalletStore) => {
     const result = {
         type: _UPDATED_WALLET_SUCCESS,
         payload,
@@ -496,7 +496,7 @@ const updateWalletAction = (payload: LocalWallet) => {
 };
 
 export const thunkUpdateWallet =
-    (wallet: IndexDbWallet): ThunkAction<void, RootState, unknown, Action<string>> =>
+    (wallet: IndexDbWallet): ThunkAction<void, StoreRootState, unknown, Action<string>> =>
     async (dispatch) => {
         if (!wallet) return;
 
@@ -533,7 +533,7 @@ export const thunkUpdateWallet =
         }
     };
 
-const removeWalletAction = (payload: LocalWallet[]) => {
+const removeWalletAction = (payload: LocalWalletStore[]) => {
     const result = {
         type: _REMOVE_WALLET_SUCCESS,
         payload,
@@ -542,7 +542,7 @@ const removeWalletAction = (payload: LocalWallet[]) => {
 };
 
 export const thunkRemoveWallet =
-    (wallet: IndexDbWallet): ThunkAction<void, RootState, unknown, Action<string>> =>
+    (wallet: IndexDbWallet): ThunkAction<void, StoreRootState, unknown, Action<string>> =>
     async (dispatch, getState) => {
         console.warn(`Removing wallet: ${wallet.chain} ${wallet.label} ${wallet.pubKey}...`);
         try {
@@ -554,10 +554,12 @@ export const thunkRemoveWallet =
 
             dbWallets.forEach(async (w) => await removeIndexDbWallet(w));
 
-            const { wallets } = getState() as { wallets: LocalWallet[] };
+            const { wallets } = getState() as { wallets: LocalWalletStore[] };
             console.debug(`wallets: ${wallets.length}`);
             // console.table(wallets);
-            const updatedWallets: LocalWallet[] = wallets.flatMap((wlt) => (wlt.pubKey === wallet.pubKey ? [] : wlt));
+            const updatedWallets: LocalWalletStore[] = wallets.flatMap((wlt) =>
+                wlt.pubKey === wallet.pubKey ? [] : wlt
+            );
 
             dispatch(removeWalletAction(updatedWallets));
         } catch (err) {
@@ -570,7 +572,7 @@ export const thunkRemoveWallet =
         }
     };
 
-export const fetchWallets = (wallets: LocalWallet[]) => {
+export const fetchWallets = (wallets: LocalWalletStore[]) => {
     return {
         type: _FETCH_WALLETS_SUCCESS,
         payload: wallets,
@@ -578,7 +580,7 @@ export const fetchWallets = (wallets: LocalWallet[]) => {
 };
 
 export const thunkFetchWallets =
-    (checkDups?: boolean): ThunkAction<void, RootState, unknown, Action<string>> =>
+    (checkDups?: boolean): ThunkAction<void, StoreRootState, unknown, Action<string>> =>
     async (dispatch) => {
         console.debug(`Fetching wallets ...`);
         try {
@@ -613,10 +615,10 @@ export const thunkCreateTransaction =
     (
         chain: string,
         label: string,
-        keypair: LocalKeyPair,
+        keypair: LocalKeyPairStore,
         toAddress: string,
         amount: string
-    ): ThunkAction<void, RootState, unknown, Action<string>> =>
+    ): ThunkAction<void, StoreRootState, unknown, Action<string>> =>
     async (dispatch, getState) => {
         console.debug(`thunkCreateTransaction: creating transaction ...`);
         //@TODO network should derive from Env var like the rest.
@@ -672,7 +674,7 @@ export const thunkCreateTransaction =
             });
         }
         console.debug(`thunkCreateTransaction: tx: '${result}'`);
-        const { wallets } = getState() as { wallets: LocalWallet[] };
+        const { wallets } = getState() as { wallets: LocalWalletStore[] };
         const _updatedWallets = wallets.map((wallet) => {
             if (wallet.isSelected) {
                 return {
@@ -695,7 +697,7 @@ export const thunkCreateTransaction =
         // };
     };
 
-const createTransaction = (payload: LocalWallet[]) => {
+const createTransaction = (payload: LocalWalletStore[]) => {
     return {
         type: _CREATE_TRANSACTION_SUCCESS,
         payload,
@@ -706,11 +708,11 @@ export const thunkMintNft =
     (
         chain: string,
         label: string,
-        keypair: LocalKeyPair,
+        keypair: LocalKeyPairStore,
         toAddress: string,
         quantity: string,
         props: MintNearNft
-    ): ThunkAction<void, RootState, unknown, Action<string>> =>
+    ): ThunkAction<void, StoreRootState, unknown, Action<string>> =>
     async (/*dispatch, getState*/) => {
         console.debug(`thunkMintNft: minting NFT ...`);
         //@TODO network should derive from Env var like the rest.
@@ -776,7 +778,7 @@ export const thunkMintNft =
                 }
 
                 console.debug(`thunkMintNft: tx: '${result}'`);
-                // const { wallets } = getState() as { wallets: LocalWallet[] };
+                // const { wallets } = getState() as { wallets: LocalWalletStore[] };
                 // const _updatedWallets = wallets.map(wallet => {
                 //   if (wallet.isSelected) {
                 //     return {
@@ -808,7 +810,7 @@ export const thunkMintNft =
         }
     };
 
-// const mintNft = (payload: LocalWallet[]) => {
+// const mintNft = (payload: LocalWalletStore[]) => {
 //   return {
 //     type: MINT_NFT_SUCCESS,
 //     payload,
@@ -817,9 +819,9 @@ export const thunkMintNft =
 
 export const thunkFetchTransaction =
     (
-        keypair: Keypair, // keypair: LocalKeyPair,
+        keypair: Keypair, // keypair: LocalKeyPairStore,
         gid: string
-    ): ThunkAction<void, RootState, unknown, Action<string>> =>
+    ): ThunkAction<void, StoreRootState, unknown, Action<string>> =>
     async (dispatch, getState) => {
         console.debug(`thunkFetchTransaction: fetching transactions ...`);
         try {
@@ -828,7 +830,7 @@ export const thunkFetchTransaction =
             const signatures = await connection?.getSignaturesForAddress(keypair.publicKey);
             const signatureArray = signatures.map((sig) => sig.signature);
 
-            const transactions: LocalTransaction[] = [];
+            const transactions: LocalTransactionStore[] = [];
             for (let i = 0; i < signatureArray.length; i++) {
                 const transaction = await connection?.getTransaction(signatureArray[i]);
                 if (!transaction) {
@@ -859,7 +861,7 @@ export const thunkFetchTransaction =
                 transactions.push(newTransaction);
             }
 
-            const { wallets } = getState() as { wallets: LocalWallet[] };
+            const { wallets } = getState() as { wallets: LocalWalletStore[] };
             const _updatedWallets = wallets.map((wallet) => {
                 if (wallet.gid === gid) {
                     return {
@@ -880,7 +882,7 @@ export const thunkFetchTransaction =
         }
     };
 
-const fetchTransaction = (payload: LocalWallet[]) => {
+const fetchTransaction = (payload: LocalWalletStore[]) => {
     return {
         type: _FETCH_TRANSACTION_SUCCESS,
         payload,
@@ -888,11 +890,11 @@ const fetchTransaction = (payload: LocalWallet[]) => {
 };
 
 export const thunkCreateAndSendMint =
-    (toAddress: string): ThunkAction<void, RootState, unknown, Action<string>> =>
+    (toAddress: string): ThunkAction<void, StoreRootState, unknown, Action<string>> =>
     async (dispatch, getState) => {
         console.debug(`thunkCreateAndSendMint: sending mint ...`);
         try {
-            const { wallets } = getState() as { wallets: LocalWallet[] };
+            const { wallets } = getState() as { wallets: LocalWalletStore[] };
             const [selectedWallet] = wallets.filter((wallet) => wallet.isSelected);
             if (!selectedWallet.privKey) return;
 
@@ -975,7 +977,7 @@ export const thunkCreateAndSendMint =
         }
     };
 
-const createMintAction = (wallets: LocalWallet[]) => {
+const createMintAction = (wallets: LocalWalletStore[]) => {
     return {
         type: _CREATE_MINT_SUCCESS,
         payload: wallets,
@@ -984,9 +986,9 @@ const createMintAction = (wallets: LocalWallet[]) => {
 
 // NOT INVOKED
 export const thunkFetchTokens =
-    (): ThunkAction<void, RootState, unknown, Action<string>> => async (dispatch, getState) => {
+    (): ThunkAction<void, StoreRootState, unknown, Action<string>> => async (dispatch, getState) => {
         try {
-            const { wallets } = getState() as { wallets: LocalWallet[] };
+            const { wallets } = getState() as { wallets: LocalWalletStore[] };
             const [selectedWallet] = wallets.filter((wallet) => wallet.isSelected);
             if (!selectedWallet.gid || !selectedWallet.privKey) return;
 
@@ -1033,10 +1035,10 @@ export const thunkFetchTokens =
 
 // NOT INVOKED
 export const thunkSendTokens =
-    (toAddress: string): ThunkAction<void, RootState, unknown, Action<string>> =>
+    (toAddress: string): ThunkAction<void, StoreRootState, unknown, Action<string>> =>
     async (dispatch, getState) => {
         try {
-            const { wallets } = getState() as { wallets: LocalWallet[] };
+            const { wallets } = getState() as { wallets: LocalWalletStore[] };
             const [selectedWallet] = wallets.filter((wallet) => wallet.isSelected);
             if (!selectedWallet.privKey) return;
 

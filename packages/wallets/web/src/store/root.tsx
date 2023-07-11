@@ -3,7 +3,7 @@ import thunkMiddleware from 'redux-thunk';
 import { combineReducers } from 'redux';
 
 import { walletReducer } from './reducers/webWalletReducers';
-import { store } from './dispatch';
+import type { store } from './dispatch';
 
 export type RootState = ReturnType<typeof store.getState>;
 

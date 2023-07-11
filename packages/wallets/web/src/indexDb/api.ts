@@ -28,8 +28,8 @@ import {
 import type { Profile as IndexDbProfile } from './db';
 import { db, User as IndexDbUser, Wallet as IndexDbWallet, Mint as IndexDbMint } from './db';
 import type {
-    LocalUser,
-    LocalWallet,
+    LocalUserStore,
+    LocalWalletStore,
     // Profile as lProfile
 } from '../store';
 
@@ -42,11 +42,11 @@ import type {
 // Interfaces
 
 export interface LocalUsers {
-    data: LocalUser[];
+    data: LocalUserStore[];
 }
 
 export interface LocalWallets {
-    data: LocalWallet[];
+    data: LocalWalletStore[];
 }
 export interface lMint {
     mint: string;
@@ -149,7 +149,7 @@ export const getSavedUserById = async (id: string): Promise<IndexDbUser | undefi
     return dbUsers.find((usr) => usr.id === id);
 };
 
-export const saveUser = async (apiUser: ApiUser, wallets: LocalWallet[]): Promise<IndexDbUser> => {
+export const saveUser = async (apiUser: ApiUser, wallets: LocalWalletStore[]): Promise<IndexDbUser> => {
     console.debug(`IndexDB: saving user id: ${apiUser.id} ...`);
     const dbUser = await db.transaction('rw', db.users, async (): Promise<IndexDbUser> => {
         const {
@@ -348,7 +348,7 @@ export const getSavedWallet = async (publicKey: string): Promise<IndexDbWallet |
     return dbWallets.find((usr) => usr.pubKey === publicKey);
 };
 
-export const saveWallet = async (lwallet: LocalWallet): Promise<IndexDbWallet> => {
+export const saveWallet = async (lwallet: LocalWalletStore): Promise<IndexDbWallet> => {
     console.debug(`IndexDB: saving ${lwallet.chain} ${lwallet.label} wallet: ${lwallet.pubKey} ...`);
     const dbWallet = await db.transaction('rw', db.wallets, async (): Promise<IndexDbWallet> => {
         const {

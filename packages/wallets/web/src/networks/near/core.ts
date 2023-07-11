@@ -12,7 +12,7 @@ import {
     // NftProps,
     // MetadataProps
 } from '../../networks/near';
-import { type LocalKeyPair } from '../../store';
+import { type LocalKeyPairStore } from '../../store';
 
 // import { connect, Contract, InMemorySigner, KeyPair } from 'near-api-js';
 // import {
@@ -54,7 +54,7 @@ export const getKeyPairFromSeedPhrase = async (seedPhrase: string) => {
     return await generateNearKeys(seedPhrase);
 };
 
-export const getKeyPairFromPrivateKey = (privateKey: string): LocalKeyPair | undefined => {
+export const getKeyPairFromPrivateKey = (privateKey: string): LocalKeyPairStore | undefined => {
     const { keypair } = getNativeKeyPairFromPrivateKey(privateKey);
     if (!keypair) return;
 
@@ -67,7 +67,7 @@ export const getKeyPairFromPrivateKey = (privateKey: string): LocalKeyPair | und
         privateKey: privateKey,
         publicKey: pubKeyBase58,
         implicitId: accountID,
-    } as LocalKeyPair;
+    } as LocalKeyPairStore;
 };
 
 export const getPublicKey = (publicKey: string) => {
@@ -81,7 +81,7 @@ export const getPublicKey = (publicKey: string) => {
         chain: ChainNetworks.NEAR,
         publicKey: pubKeyBase58,
         implicitId: accountID,
-    } as LocalKeyPair;
+    } as LocalKeyPairStore;
 };
 
 export const getBalance = async (privateKey: string) => {

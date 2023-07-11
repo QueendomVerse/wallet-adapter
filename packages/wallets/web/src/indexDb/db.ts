@@ -1,8 +1,8 @@
 import Dexie from 'dexie';
 import { createId } from '@paralleldrive/cuid2';
-import type { LocalTransaction } from '../store';
+import type { LocalTransactionStore } from '../store';
 import { INDEXED_DB_VERSION } from './constants';
-// import { LocalWallet } from '../store';
+// import { LocalWalletStore } from '../store';
 
 abstract class AbstractEntity {
     constructor(public gid?: string) {
@@ -107,7 +107,7 @@ export class Wallet extends AbstractEntity {
         public privKey?: Uint8Array,
         public seed?: Uint8Array,
         public seedPhrase?: string,
-        public transactions?: LocalTransaction[],
+        public transactions?: LocalTransactionStore[],
         gid?: string
     ) {
         super(gid);

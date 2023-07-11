@@ -23,9 +23,9 @@ import type { ContractWithMint } from './hooks';
 import type { IndexDbWallet } from '../../indexDb';
 // import { getSavedWallets, updateWallet } from '../../../localDB/api';
 // import {
-//   User as LocalUser,
-//   LocalWallet,
-//   Item as LocalItem,
+//   User as LocalUserStore,
+//   LocalWalletStore,
+//   Item as LocalItemStore,
 // } from '../../../store';
 // import {
 //   getKeyPairFromPrivateKey,
@@ -33,7 +33,7 @@ import type { IndexDbWallet } from '../../indexDb';
 // } from '../../../utils/wallets';
 // import { SolanaKeys } from '../../../utils/wallets/solana';
 import { removeEd25519, KeyType } from './utils';
-import type { LocalKeyPair } from '../../store';
+import type { LocalKeyPairStore } from '../../store';
 import CryptoJS from 'crypto-js';
 import type { Near, ConnectedWalletAccount } from 'near-api-js';
 import {
@@ -166,7 +166,7 @@ export class BrowserWallet extends React.Component<Props, State, BrowserWalletAd
     private _connection: WalletConnection | null;
     private _account: ConnectedWalletAccount | null;
     private _config: BrowserWalletConfig;
-    // private _keypair: LocalKeyPair | null;
+    // private _keypair: LocalKeyPairStore | null;
     private _keypair: KeyPair | undefined;
     private _nearPublicKey: NearPublicKey | null;
     private _solanaPublicKey: SolanaPublicKey | null;
@@ -255,7 +255,7 @@ export class BrowserWallet extends React.Component<Props, State, BrowserWalletAd
             chain: ChainNetworks.NEAR,
             publicKey: pubKeyBase58,
             implicitId: accountID,
-        } as LocalKeyPair;
+        } as LocalKeyPairStore;
     };
 
     async componentDidMount() {

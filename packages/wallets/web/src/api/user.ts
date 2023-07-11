@@ -1,33 +1,17 @@
 import { FormData } from 'formdata-node';
 
-import type { ApiManager, FetchOptions } from './manager';
-import { ApiResponse } from './manager';
-import type { LocalUser, LocalWallet } from '../store';
-
-export interface ApiUser extends LocalUser {
-    createdAt: string;
-    updatedAt: string;
-}
+import type { ApiClient, FetchOptions } from './client';
+import type { LocalWalletStore } from '../store';
+import { emptyUser } from './empty';
+import type {
+    // ApiResponse,
+    User,
+} from './types';
 
 export class UserApiClient {
-    static EmptyApiUser: ApiUser = {
-        id: '',
-        name: '',
-        email: '',
-        role: '',
-        walletAddress: '',
-        image: '',
-        avatar: '',
-        banner: '',
-        roles: [],
-        settings: ['setting'],
-        wallets: [],
-        isSelected: false,
-        createdAt: '',
-        updatedAt: '',
-    };
+    static EmptyApiUser: User = emptyUser;
 
-    constructor(private apiManager: ApiManager = apiManager) {}
+    constructor(private apiClient: ApiClient = apiClient) {}
 
     createUser = async (
         name: string,
@@ -37,8 +21,8 @@ export class UserApiClient {
         hashedPassword = '',
         roles: string[] = [],
         settings: string[] = [],
-        wallets: LocalWallet[] = []
-    ): Promise<ApiUser | null> => {
+        wallets: LocalWalletStore[] = []
+    ): Promise<User | null> => {
         const endpoint = '/users';
         const userData = {
             name,
@@ -74,8 +58,8 @@ export class UserApiClient {
             },
         };
 
-        const response = await this.apiManager.fetch(endpoint, fetchOptions);
-        return this.apiManager.handleResponse<ApiUser>(response, UserApiClient.EmptyApiUser);
+        const response = await this.apiClient.fetch(endpoint, fetchOptions);
+        return this.apiClient.handleResponse<User>(response, UserApiClient.EmptyApiUser);
     };
 
     removeUser = async (id: string): Promise<boolean | null> => {
@@ -90,12 +74,12 @@ export class UserApiClient {
                 'Content-Type': 'application/json',
             },
         };
-        const response = await this.apiManager.fetch(endpoint, fetchOptions);
-        const isSuccess = this.apiManager.handleResponse<boolean>(response, false);
+        const response = await this.apiClient.fetch(endpoint, fetchOptions);
+        const isSuccess = this.apiClient.handleResponse<boolean>(response, false);
         return isSuccess;
     };
 
-    findAllUsers = async (): Promise<ApiUser[] | null> => {
+    findAllUsers = async (): Promise<User[] | null> => {
         const endpoint = '/users';
 
         console.debug(`Getting all users...`);
@@ -107,11 +91,11 @@ export class UserApiClient {
                 'Content-Type': 'application/json',
             },
         };
-        const response = await this.apiManager.fetch(endpoint, fetchOptions);
-        return await this.apiManager.handleResponse<ApiUser[] | null>(response, null);
+        const response = await this.apiClient.fetch(endpoint, fetchOptions);
+        return await this.apiClient.handleResponse<User[] | null>(response, null);
     };
 
-    findOneUserById = async (id: string): Promise<ApiUser | null> => {
+    findOneUserById = async (id: string): Promise<User | null> => {
         const endpoint = `/users/${id}`;
 
         console.debug(`Finding user by id: '${id}'...`);
@@ -123,11 +107,11 @@ export class UserApiClient {
                 'Content-Type': 'application/json',
             },
         };
-        const response = await this.apiManager.fetch(endpoint, fetchOptions);
-        return await this.apiManager.handleResponse<ApiUser | null>(response, null);
+        const response = await this.apiClient.fetch(endpoint, fetchOptions);
+        return await this.apiClient.handleResponse<User | null>(response, null);
     };
 
-    findOneUserByAddress = async (address: string): Promise<ApiUser | null> => {
+    findOneUserByAddress = async (address: string): Promise<User | null> => {
         const endpoint = `/users/byWallet/${address}`;
         console.debug(`Finding user by address: ${address} ...`);
 
@@ -138,11 +122,11 @@ export class UserApiClient {
                 'Content-Type': 'application/json',
             },
         };
-        const response = await this.apiManager.fetch(endpoint, fetchOptions);
-        return await this.apiManager.handleResponse<ApiUser | null>(response, null);
+        const response = await this.apiClient.fetch(endpoint, fetchOptions);
+        return await this.apiClient.handleResponse<User | null>(response, null);
     };
 
-    findOneUserByEmail = async (email: string): Promise<ApiUser | null> => {
+    findOneUserByEmail = async (email: string): Promise<User | null> => {
         const endpoint = `/users/byEmail/${email}`;
 
         console.debug(`Finding user by email: ${email} ...`);
@@ -154,8 +138,8 @@ export class UserApiClient {
                 'Content-Type': 'application/json',
             },
         };
-        const response = await this.apiManager.fetch(endpoint, fetchOptions);
-        return await this.apiManager.handleResponse<ApiUser | null>(response, null);
+        const response = await this.apiClient.fetch(endpoint, fetchOptions);
+        return await this.apiClient.handleResponse<User | null>(response, null);
     };
 
     async uploadUserAvatar(userId: string, avatar: File) {
@@ -170,11 +154,11 @@ export class UserApiClient {
             formData,
         };
 
-        const response = await this.apiManager.fetch(endpoint, fetchOptions);
-        return await this.apiManager.handleResponse(response);
+        const response = await this.apiClient.fetch(endpoint, fetchOptions);
+        return await this.apiClient.handleResponse(response);
     }
 
-    updateUserAvatar = async (id: string, url: string): Promise<ApiUser | null> => {
+    updateUserAvatar = async (id: string, url: string): Promise<User | null> => {
         const endpoint = `/users/updateAvatar`;
         const userData = {
             id,
@@ -183,7 +167,7 @@ export class UserApiClient {
 
         console.debug(`Updating user avatar: ${id}`);
 
-        const response = await this.apiManager.fetch(endpoint, {
+        const response = await this.apiClient.fetch(endpoint, {
             method: 'POST',
             headers: {
                 Accept: 'application/json',
@@ -191,7 +175,7 @@ export class UserApiClient {
             },
             body: JSON.stringify(userData),
         });
-        return this.apiManager.handleResponse<ApiUser>(response, UserApiClient.EmptyApiUser);
+        return this.apiClient.handleResponse<User>(response, UserApiClient.EmptyApiUser);
     };
 
     async uploadUserImage(userId: string, image: File) {
@@ -206,25 +190,25 @@ export class UserApiClient {
             formData,
         };
 
-        const response = await this.apiManager.fetch(endpoint, fetchOptions);
-        return await this.apiManager.handleResponse(response);
+        const response = await this.apiClient.fetch(endpoint, fetchOptions);
+        return await this.apiClient.handleResponse(response);
     }
 
     downloadUserImage = async (id: string): Promise<ImageData | null> => {
         const endpoint = `/users/images/${id}`;
         console.debug(`Downloading user image: ${id}`);
 
-        const response = await this.apiManager.fetch(endpoint, {
+        const response = await this.apiClient.fetch(endpoint, {
             method: 'GET',
             headers: {
                 Accept: 'image/png',
                 'Content-Type': 'image/png',
             },
         });
-        return this.apiManager.handleResponse<ImageData | null>(response, null);
+        return this.apiClient.handleResponse<ImageData | null>(response, null);
     };
 
-    updateUserImage = async (id: string, url: string): Promise<ApiUser | null> => {
+    updateUserImage = async (id: string, url: string): Promise<User | null> => {
         const endpoint = `/users/updateImage`;
         const userData = {
             id,
@@ -233,7 +217,7 @@ export class UserApiClient {
 
         console.debug(`Updating user image: ${id}`);
 
-        const response = await this.apiManager.fetch(endpoint, {
+        const response = await this.apiClient.fetch(endpoint, {
             method: 'POST',
             headers: {
                 Accept: 'application/json',
@@ -241,7 +225,7 @@ export class UserApiClient {
             },
             body: JSON.stringify(userData),
         });
-        return this.apiManager.handleResponse<ApiUser>(response, UserApiClient.EmptyApiUser);
+        return this.apiClient.handleResponse<User>(response, UserApiClient.EmptyApiUser);
     };
 
     async uploadBannerImage(userId: string, banner: File) {
@@ -256,11 +240,11 @@ export class UserApiClient {
             formData,
         };
 
-        const response = await this.apiManager.fetch(endpoint, fetchOptions);
-        return await this.apiManager.handleResponse(response);
+        const response = await this.apiClient.fetch(endpoint, fetchOptions);
+        return await this.apiClient.handleResponse(response);
     }
 
-    updateUserBanner = async (id: string, url: string): Promise<ApiUser | null> => {
+    updateUserBanner = async (id: string, url: string): Promise<User | null> => {
         const endpoint = `/users/updateBanner`;
         const userData = {
             id,
@@ -269,7 +253,7 @@ export class UserApiClient {
 
         console.debug(`Updating user banner: ${id}`);
 
-        const response = await this.apiManager.fetch(endpoint, {
+        const response = await this.apiClient.fetch(endpoint, {
             method: 'POST',
             headers: {
                 Accept: 'application/json',
@@ -277,10 +261,10 @@ export class UserApiClient {
             },
             body: JSON.stringify(userData),
         });
-        return this.apiManager.handleResponse<ApiUser>(response, UserApiClient.EmptyApiUser);
+        return this.apiClient.handleResponse<User>(response, UserApiClient.EmptyApiUser);
     };
 
-    saveUserSetting = async (id: string, settings: string[]): Promise<ApiUser | null> => {
+    saveUserSetting = async (id: string, settings: string[]): Promise<User | null> => {
         const endpoint = `/users/saveSetting`;
         const userData = {
             id,
@@ -289,7 +273,7 @@ export class UserApiClient {
 
         console.debug(`Saving user setting: ${id}`);
 
-        const response = await this.apiManager.fetch(endpoint, {
+        const response = await this.apiClient.fetch(endpoint, {
             method: 'POST',
             headers: {
                 Accept: 'application/json',
@@ -297,10 +281,10 @@ export class UserApiClient {
             },
             body: JSON.stringify(userData),
         });
-        return this.apiManager.handleResponse<ApiUser>(response, UserApiClient.EmptyApiUser);
+        return this.apiClient.handleResponse<User>(response, UserApiClient.EmptyApiUser);
     };
 
-    saveUserWallets = async (id: string, wallets: LocalWallet[]): Promise<ApiUser | null> => {
+    saveUserWallets = async (id: string, wallets: LocalWalletStore[]): Promise<User | null> => {
         const endpoint = `/users/saveWallets`;
         const userData = {
             id,
@@ -309,7 +293,7 @@ export class UserApiClient {
 
         console.debug(`Saving user wallets: ${id}`);
 
-        const response = await this.apiManager.fetch(endpoint, {
+        const response = await this.apiClient.fetch(endpoint, {
             method: 'POST',
             headers: {
                 Accept: 'application/json',
@@ -317,10 +301,10 @@ export class UserApiClient {
             },
             body: JSON.stringify(userData),
         });
-        return this.apiManager.handleResponse<ApiUser>(response, UserApiClient.EmptyApiUser);
+        return this.apiClient.handleResponse<User>(response, UserApiClient.EmptyApiUser);
     };
 
-    updateUserRoles = async (id: string, roles: string[]): Promise<ApiUser | null> => {
+    updateUserRoles = async (id: string, roles: string[]): Promise<User | null> => {
         const endpoint = `/users/updateRoles`;
         const userData = {
             id,
@@ -329,7 +313,7 @@ export class UserApiClient {
 
         console.debug(`Updating user roles: ${id}`);
 
-        const response = await this.apiManager.fetch(endpoint, {
+        const response = await this.apiClient.fetch(endpoint, {
             method: 'POST',
             headers: {
                 Accept: 'application/json',
@@ -337,6 +321,6 @@ export class UserApiClient {
             },
             body: JSON.stringify(userData),
         });
-        return this.apiManager.handleResponse<ApiUser>(response, UserApiClient.EmptyApiUser);
+        return this.apiClient.handleResponse<User>(response, UserApiClient.EmptyApiUser);
     };
 }

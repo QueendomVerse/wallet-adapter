@@ -1,3 +1,11 @@
 export {
-    Connection as NearConnection
-} from 'near-api-js'
+    Near,
+    Account as NearAccount,
+    Connection as NearConnection,
+    Contract as NearContract,
+    KeyPair as NearKeyPair,
+    Signer as NearSigner,
+    InMemorySigner as NearInMemorySigner,
+    WalletConnection as NearWalletConnection,
+    connect as nearConnect,
+} from 'near-api-js';

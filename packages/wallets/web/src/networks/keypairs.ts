@@ -13,7 +13,7 @@ import {
     getNativeKeyPairFromPrivateKey as getNearNativeKeypairFromPrivateKey,
     getPublicKey as getNearPublicKey,
 } from '../networks/near';
-import type { LocalKeyPair } from '../store';
+import type { LocalKeyPairStore } from '../store';
 
 export type NativeKeypair<T> = T extends {
     chain: string;
@@ -33,7 +33,7 @@ export const getKeyPairFromSeedPhrase = async (chain: string, seedPhrase: string
     }
 };
 
-export const getKeyPairFromPrivateKey = (chain: string, privateKey: string): LocalKeyPair | undefined => {
+export const getKeyPairFromPrivateKey = (chain: string, privateKey: string): LocalKeyPairStore | undefined => {
     console.debug(`Getting ${chain} keypair from privateKey: ${privateKey} `);
     switch (chain) {
         case ChainNetworks.SOL:

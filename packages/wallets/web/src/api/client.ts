@@ -2,22 +2,18 @@ import type { BodyInit, Response } from 'node-fetch';
 import nodeFetch from 'node-fetch';
 import EventEmitter from 'events';
 import { URL } from 'url';
-
 import type { FormData } from 'formdata-node';
 
 import { UserApiClient } from './user';
 import { WalletApiClient } from './wallet';
+import type { Profile } from './types';
+import { emptyProfile } from './empty';
+import { ItemApiClient } from './item';
+import { ProfileApiClient } from './profile';
 
 type CorsMode = 'cors' | 'no-cors' | 'same-origin';
 
 type FetchHeaders = { [header: string]: string };
-
-export interface FetchOptions extends RequestInit {
-    headers?: FetchHeaders;
-    body?: BodyInit;
-    formData?: FormData;
-    mode?: CorsMode;
-}
 
 interface RequestInit {
     method?: string;
@@ -26,29 +22,38 @@ interface RequestInit {
     formData?: FormData;
 }
 
-interface ApiManagerProps {
+export interface FetchOptions extends RequestInit {
+    headers?: FetchHeaders;
+    body?: BodyInit;
+    formData?: FormData;
+    mode?: CorsMode;
+}
+
+interface ApiClientProps {
     apiUrl: string;
     corsMode?: CorsMode;
 }
 
-export type ApiResponse = {
-    data: string;
-    path: string;
-};
-
-export class ApiManager extends EventEmitter {
-    public userApiClient: UserApiClient;
-    public walletApiClient: WalletApiClient;
+export class ApiClient extends EventEmitter {
+    public user: UserApiClient;
+    public wallet: WalletApiClient;
+    public item: ItemApiClient;
+    public profile: ProfileApiClient;
 
     private apiUrl: string;
     private corsMode: CorsMode;
 
-    constructor({ apiUrl, corsMode = 'no-cors' }: ApiManagerProps) {
+    constructor({ apiUrl, corsMode = 'no-cors' }: ApiClientProps) {
         super();
+
+        if (!apiUrl) throw new Error('ApiClient: apiUrl is required!');
+
         this.apiUrl = apiUrl;
         this.corsMode = corsMode;
-        this.userApiClient = new UserApiClient(this);
-        this.walletApiClient = new WalletApiClient(this);
+        this.item = new ItemApiClient(this);
+        this.profile = new ProfileApiClient(this);
+        this.user = new UserApiClient(this);
+        this.wallet = new WalletApiClient(this);
     }
 
     fetch = async (endpoint: string, options: FetchOptions = { method: 'GET' }): Promise<Response> => {
@@ -87,8 +92,26 @@ export class ApiManager extends EventEmitter {
               })();
     };
 
-    public async getHealth(): Promise<boolean> {
+    getHealth = async (): Promise<boolean> => {
         const response = await this.fetch('/health');
         return response.ok;
-    }
+    };
+
+    getRegisteration = async (email: string): Promise<Profile | null> => {
+        const endpoint = `/registeration/${email}`;
+        const emailData = { email };
+
+        console.debug(`Getting registeration for email: ${email}`);
+
+        const response = await this.fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(emailData),
+        });
+
+        return this.handleResponse<Profile>(response, emptyProfile);
+    };
 }

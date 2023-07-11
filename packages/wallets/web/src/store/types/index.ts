@@ -1,11 +1,11 @@
 export * from './webWalletActionStates';
 export * from './webWalletActionTypes';
 export type {
-    Item as LocalItem,
-    KeyPair as LocalKeyPair,
-    Mint as LocalMint,
-    Profile as LocalProfile,
-    Transaction as LocalTransaction,
-    User as LocalUser,
-    Wallet as LocalWallet,
+    Item as LocalItemStore,
+    KeyPair as LocalKeyPairStore,
+    Mint as LocalMintStore,
+    Profile as LocalProfileStore,
+    Transaction as LocalTransactionStore,
+    User as LocalUserStore,
+    Wallet as LocalWalletStore,
 } from './webWalletTypes';

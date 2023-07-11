@@ -1,10 +1,6 @@
-import type { WalletName } from '@mindblox-wallet-adapter/base';
 import { capitalizeFirst } from '@mindblox-wallet-adapter/base';
 
 import { ChainTickers, ChainNetworks } from '../chains';
-
-import type { LocalKeyPair } from '../store';
-import type { IndexDbWallet } from '../indexDb';
 
 interface TickerProp {
     ticker: string;
@@ -89,10 +85,3 @@ export const getChainProp = (chain: string): TickerProp => {
 };
 
 // const { Option } = Select;
-
-//@TODO move this to a better location
-export interface SelectedWallet {
-    name: WalletName;
-    wallet: IndexDbWallet;
-    keypair: LocalKeyPair;
-}

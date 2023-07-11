@@ -3,7 +3,7 @@ import { type PublicKey as NearPublicKey } from 'near-api-js/lib/utils';
 import { parseSeedPhrase } from './nearSeedPhrase';
 
 import { ChainNetworks } from '../../../chains';
-import { type LocalKeyPair } from '../../../store';
+import { type LocalKeyPairStore } from '../../../store';
 // import bs58 from 'bs58';
 export {
     // baseEncode as base_encode,
@@ -154,7 +154,7 @@ export const generateNearKeys = async (recoverySeedPhrase: string) => {
         chain: ChainNetworks.NEAR,
         privateKey: privKeyBase58,
         publicKey: pubKeyBase58,
-    } as LocalKeyPair;
+    } as LocalKeyPairStore;
 };
 
 export const removeEd25519 = (text: string) => {

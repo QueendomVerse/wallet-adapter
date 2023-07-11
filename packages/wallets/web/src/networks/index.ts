@@ -2,7 +2,8 @@ export type {
     SendNear,
     NearAccount,
     NearKeypair,
-    MintNft as MintNearNft, 
+    ContractWithMint as NearContractWithMint,
+    MintNft as MintNearNft,
     WalletContextState as NearWalletContextState,
     ENDPOINT_NAME as NEAR_ENDPOINT_NAME,
     BrowserWalletAdapterConfig as NearBrowserWalletAdapterConfig,
@@ -29,6 +30,7 @@ export {
     getNativeKeyPairFromPrivateKey as getNearNativeKeyPairFromPrivateKey,
     getPublicKey as getNearPublicKey,
     mintNft as mintNearNft,
+    getFiat as getNearFiat,
     sendFundsTransaction as sendNearFundsTransaction,
     useAccount as useNearAccount,
     useBrowserWallet as useNearBrowserWallet,
@@ -36,7 +38,7 @@ export {
     BrowserWalletProvider as NearBrowserWalletProvider,
     getNetworkConfig as getNearNetworkConfig,
     isValidAccount as isValidNearAccount,
-    isValidNearName as isValidNearName,
+    isValidName as isValidNearName,
     getImplicitId as getNearImplicitId,
     isImplicitAddress as isNearImplicitAddress,
     KeyType as NearKeyType,
@@ -70,9 +72,7 @@ export type {
     IMetadataExtension as SolanaIMetadataExtension,
     MetadataCreationParams as SolanaMetadataCreationParams,
 } from './solana';
-export type {
-    SolanaConnection
-} from '../hooks/useConnection';
+export type { SolanaConnection } from '../hooks/useConnection';
 export {
     TEN,
     HALF_WAD,
@@ -144,8 +144,7 @@ export {
     convertMasterEditionV1ToV2 as convertSolanaMasterEditionV1ToV2,
     createMetadata as createSolanaMetadata,
     createMasterEdition as createSolanaMasterEdition,
-
-
+    getNetwork as getSolanaNetwork,
 } from './solana';
 export * from './core';
 export * from './encryption';

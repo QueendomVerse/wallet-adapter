@@ -27,7 +27,7 @@ import type {
 import { getSavedIndexDbWallets, updateIndexDbWallet } from './indexDb';
 import { store } from './store';
 
-import type { LocalWallet } from './store';
+import type { LocalWalletStore } from './store';
 import {
     // getPublicKey,
     getKeyPairFromPrivateKey,
@@ -37,7 +37,7 @@ import {
 } from './networks';
 import type { SolanaKeys } from './networks/solana';
 // import { NearKeypair } from '../../utils/wallets/near';
-import type { LocalKeyPair } from './store';
+import type { LocalKeyPairStore } from './store';
 import { SOLANA_NETWORK } from './constants';
 
 abstract class WebWalletAdapter extends Emitter {
@@ -79,7 +79,7 @@ interface Props {
     focus?: boolean;
 }
 interface State {
-    wallets: LocalWallet[];
+    wallets: LocalWalletStore[];
 }
 
 export class WebWallet extends React.Component<Props, State, WebWalletAdapter> {
@@ -89,7 +89,7 @@ export class WebWallet extends React.Component<Props, State, WebWalletAdapter> {
     private _connection: Connection;
     private _config: WebWalletConfig;
     private _name: WalletName | null;
-    private _keypair: LocalKeyPair | null;
+    private _keypair: LocalKeyPairStore | null;
     private _loaded: boolean;
     private _selected: boolean;
     private _connected: boolean;
@@ -199,7 +199,7 @@ export class WebWallet extends React.Component<Props, State, WebWalletAdapter> {
 
         console.debug('Loading IndexDB pubKeys');
         // const keypairs: Keypair[] = this.wallets?.filter(({seed}) => seed).map(({seed}) => Keypair.fromSeed(Buffer.from(seed)));
-        // const keypairs: LocalKeyPair[] = this.wallets?.filter(({seed}) => seed).map(({seed}) => Keypair.fromSeed(Buffer.from(seed)));
+        // const keypairs: LocalKeyPairStore[] = this.wallets?.filter(({seed}) => seed).map(({seed}) => Keypair.fromSeed(Buffer.from(seed)));
 
         // const wallet = keypairs?.find(key => key.secretKey.toString() === privateKey)
         const keypair = getKeyPairFromPrivateKey(chain, privateKey);
@@ -350,7 +350,7 @@ export class WebWallet extends React.Component<Props, State, WebWalletAdapter> {
             return;
         }
 
-        // let keypair: LocalKeyPair | undefined;
+        // let keypair: LocalKeyPairStore | undefined;
         // if (this.loaded && this.wallets && privateKey) {
 
         //   keypair = privateKey
@@ -390,7 +390,7 @@ export class WebWallet extends React.Component<Props, State, WebWalletAdapter> {
             return;
         }
 
-        // let keypair: LocalKeyPair | undefined;
+        // let keypair: LocalKeyPairStore | undefined;
         // if (this.loaded && this.wallets && chain && label && privateKey) {
         //   const walletName = `${capitalizeFirst(chain)}${capitalizeFirst(label)}WebWallet` as WalletName;
 
@@ -448,7 +448,7 @@ export class WebWallet extends React.Component<Props, State, WebWalletAdapter> {
             return;
         }
 
-        let keypair: LocalKeyPair | undefined;
+        let keypair: LocalKeyPairStore | undefined;
         if (this.loaded && this.wallets && chain && privateKey) {
             keypair = privateKey
                 ? // ? await this._loadDbWallet(chain, privateKey)
