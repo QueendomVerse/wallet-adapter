@@ -3,12 +3,15 @@ import thunkMiddleware from 'redux-thunk';
 import { combineReducers } from 'redux';
 
 import { walletReducer } from './reducers/webWalletReducers';
+import { store } from './dispatch';
+
+export type RootState = ReturnType<typeof store.getState>;
 
 const rootReducer = combineReducers({
     wallets: walletReducer,
 });
 
-const getStore = () => {
+export const getStore = () => {
     const store = configureStore({
         reducer: rootReducer,
         middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(thunkMiddleware),
@@ -18,8 +21,6 @@ const getStore = () => {
     // console.debug('store.getState().wallets.length', store.getState().wallets.length)
     return store;
 };
-
-export default getStore;
 
 // Usage
 /*

@@ -20,7 +20,7 @@ import { WalletError } from '@mindblox-wallet-adapter/base';
 import { ChainNetworks } from '../../chains';
 
 import type { ContractWithMint } from './hooks';
-import type { DbWallet } from '../../indexDb';
+import type { IndexDbWallet } from '../../indexDb';
 // import { getSavedWallets, updateWallet } from '../../../localDB/api';
 // import {
 //   User as LocalUser,
@@ -31,7 +31,7 @@ import type { DbWallet } from '../../indexDb';
 //   getKeyPairFromPrivateKey,
 //   getNativeKeyPairFromPrivateKey,
 // } from '../../../utils/wallets';
-// import { SolanaKeypair } from '../../../utils/wallets/solana';
+// import { SolanaKeys } from '../../../utils/wallets/solana';
 import { removeEd25519, KeyType } from './utils';
 import type { LocalKeyPair } from '../../store';
 import CryptoJS from 'crypto-js';
@@ -160,7 +160,7 @@ interface State {
 
 export class BrowserWallet extends React.Component<Props, State, BrowserWalletAdapter> {
     public readonly emitter = new Emitter();
-    public wallets: DbWallet[] | null;
+    public wallets: IndexDbWallet[] | null;
 
     private _near: Near | null;
     private _connection: WalletConnection | null;
@@ -177,7 +177,7 @@ export class BrowserWallet extends React.Component<Props, State, BrowserWalletAd
     private _loading = false;
     private _autoConnect = false;
 
-    // private _dbWallets: DbWallet[] | null;
+    // private _dbWallets: IndexDbWallet[] | null;
     private unsubscribeStore: Unsubscribe | null;
     private keyStore: keyStores.BrowserLocalStorageKeyStore = new keyStores.BrowserLocalStorageKeyStore();
     private provider: JsonRpcProvider;
@@ -770,7 +770,7 @@ export class BrowserWallet extends React.Component<Props, State, BrowserWalletAd
         // const { keypair } = getNativeKeyPairFromPrivateKey(
         //   ChainNetworks.SOL,
         //   this._keypair?.privateKey ?? '',
-        // ) as SolanaKeypair;
+        // ) as SolanaKeys;
 
         // console.debug('transaction', transaction);
         // const newTx = new SolanaTransaction();

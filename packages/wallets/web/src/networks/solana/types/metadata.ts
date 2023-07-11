@@ -502,7 +502,7 @@ export const updateMetadata = async (
     return metadataAccount;
 };
 
-export interface NewMetaData {
+export interface MetadataCreationParams {
     data: Data;
     updateAuthority: StringPublicKey;
     mintKey: StringPublicKey;
@@ -518,7 +518,7 @@ export const createMetadata = async ({
     mintAuthorityKey,
     instructions,
     payer,
-}: NewMetaData) => {
+}: MetadataCreationParams) => {
     console.info('func: createMetadata');
     const metadataProgramId = programIds().metadata;
     console.info('metadataProgramId', metadataProgramId);

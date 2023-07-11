@@ -1,5 +1,5 @@
 import { ChainNetworks } from '../chains';
-import type { SolanaKeypair } from '../networks/solana';
+import type { SolanaKeys } from '../networks/solana';
 import {
     getKeyPairFromSeedPhrase as getSolanaKeypairFromSeedPhrase,
     getKeyPairFromPrivateKey as getSolanaKeypairFromPrivateKey,
@@ -48,7 +48,7 @@ export const getKeyPairFromPrivateKey = (chain: string, privateKey: string): Loc
 export const getNativeKeyPairFromPrivateKey = (
     chain: string,
     privateKey: string
-): NativeKeypair<SolanaKeypair | NearKeypair> | undefined => {
+): NativeKeypair<SolanaKeys | NearKeypair> | undefined => {
     console.debug(`Getting ${chain} keypair from privateKey: ${privateKey} `);
     switch (chain) {
         case ChainNetworks.SOL:

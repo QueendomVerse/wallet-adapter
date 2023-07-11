@@ -4,7 +4,7 @@ import type {
     // LocalWallet,
 } from '@/store';
 import type { LocalWallet } from '@/store';
-import type { DbWallet } from '@/indexDb';
+import type { IndexDbWallet } from '@/indexDb';
 import { getBalance as getSolanaBalance, sendFundsTransaction as sendSolanaFundsTransaction } from './solana';
 import { getBalance as getNearBalance, sendFundsTransaction as sendNearFundsTransaction } from './near';
 import type { SendNear, SendSolana } from '.';
@@ -47,8 +47,8 @@ export const getValidWallets = (wallets: (LocalWallet | undefined)[]) => {
     return wallets.filter((w): w is LocalWallet => !!w);
 };
 
-export const getValidDbWallets = (wallets: (DbWallet | undefined)[]) => {
-    return wallets.filter((w): w is DbWallet => !!w);
+export const getValidDbWallets = (wallets: (IndexDbWallet | undefined)[]) => {
+    return wallets.filter((w): w is IndexDbWallet => !!w);
 };
 
 export const getPrimaryWallet = (wallets: LocalWallet[]) => {

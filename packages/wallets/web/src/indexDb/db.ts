@@ -141,7 +141,7 @@ export class Mint extends AbstractEntity {
     }
 }
 
-export class AppDatabase extends Dexie {
+export class IndexDbAppDatabase extends Dexie {
     public users!: Dexie.Table<User, string>;
     public profiles!: Dexie.Table<Profile, string>;
     public wallets!: Dexie.Table<Wallet, string>;
@@ -172,4 +172,4 @@ export class AppDatabase extends Dexie {
     }
 }
 
-export const db = new AppDatabase();
+export const db = new IndexDbAppDatabase();

@@ -21,11 +21,11 @@ import { notify } from '@mindblox-wallet-adapter/react';
 import { ChainNetworks } from './chains';
 
 import type {
-    DbWallet,
-    // User as DbUser
+    IndexDbWallet,
+    // User as IndexDbUser
 } from './indexDb';
-import { getSavedWallets, updateWallet } from './indexDb';
-import { store } from './store/store';
+import { getSavedIndexDbWallets, updateIndexDbWallet } from './indexDb';
+import { store } from './store';
 
 import type { LocalWallet } from './store';
 import {
@@ -35,7 +35,7 @@ import {
     // getBalance,
     // NativeKeypair,
 } from './networks';
-import type { SolanaKeypair } from './networks/solana';
+import type { SolanaKeys } from './networks/solana';
 // import { NearKeypair } from '../../utils/wallets/near';
 import type { LocalKeyPair } from './store';
 import { SOLANA_NETWORK } from './constants';
@@ -84,7 +84,7 @@ interface State {
 
 export class WebWallet extends React.Component<Props, State, WebWalletAdapter> {
     public readonly emitter = new Emitter();
-    public wallets: DbWallet[] | null;
+    public wallets: IndexDbWallet[] | null;
 
     private _connection: Connection;
     private _config: WebWalletConfig;
@@ -94,7 +94,7 @@ export class WebWallet extends React.Component<Props, State, WebWalletAdapter> {
     private _selected: boolean;
     private _connected: boolean;
 
-    // private _dbWallets: DbWallet[] | null;
+    // private _dbWallets: IndexDbWallet[] | null;
     private unsubscribeStore: Unsubscribe | null;
 
     constructor(config: WebWalletConfig, props: Props) {
@@ -146,9 +146,9 @@ export class WebWallet extends React.Component<Props, State, WebWalletAdapter> {
                     const _updatedWallet = {
                         ..._wallet,
                         isSelected: false,
-                    } as DbWallet;
+                    } as IndexDbWallet;
 
-                    const result = await updateWallet(_updatedWallet)
+                    const result = await updateIndexDbWallet(_updatedWallet)
                         .then((wallet) => {
                             return wallet;
                         })
@@ -180,7 +180,7 @@ export class WebWallet extends React.Component<Props, State, WebWalletAdapter> {
     };
 
     _fetchDbWallets = async () => {
-        const _wallets = await getSavedWallets();
+        const _wallets = await getSavedIndexDbWallets();
         this.wallets = _wallets || [];
         this._loaded = Boolean(_wallets);
         return _wallets;
@@ -217,7 +217,7 @@ export class WebWallet extends React.Component<Props, State, WebWalletAdapter> {
     };
 
     _loadSelectedDbWallet = async (chain: string, privateKey: string, force?: boolean) => {
-        let wallets: DbWallet[] | void = [];
+        let wallets: IndexDbWallet[] | void = [];
         if (!this.loaded) {
             wallets = await this._fetchDbWallets();
         }
@@ -316,7 +316,7 @@ export class WebWallet extends React.Component<Props, State, WebWalletAdapter> {
     }
 
     async loadDb() {
-        let wallets: DbWallet[] | void = [];
+        let wallets: IndexDbWallet[] | void = [];
         if (!this.loaded) {
             console.debug('loading IndexDb ...');
             wallets = await this._fetchDbWallets();
@@ -514,7 +514,7 @@ export class WebWallet extends React.Component<Props, State, WebWalletAdapter> {
         const { keypair } = getNativeKeyPairFromPrivateKey(
             ChainNetworks.SOL,
             this._keypair?.privateKey ?? ''
-        ) as SolanaKeypair;
+        ) as SolanaKeys;
 
         console.debug('transaction', transaction);
         return new Promise<Transaction>((resolve /*reject*/) => {

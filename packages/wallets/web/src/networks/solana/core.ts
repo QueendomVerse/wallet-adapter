@@ -12,7 +12,7 @@ import {
 import * as dotenv from 'dotenv';
 
 import type { LocalKeyPair } from '../../store/types';
-import type { SolanaKeypair } from './types/keypair';
+import type { SolanaKeys } from './types/keypair';
 import type { WalletAdapterNetwork } from '@mindblox-wallet-adapter/base';
 
 dotenv.config();
@@ -44,7 +44,7 @@ export const getKeyPairFromSeedPhrase = (seedPhrase: string) => {
     } as LocalKeyPair;
 };
 
-export const getNativeKeyPairFromPrivateKey = (privateKey: string): SolanaKeypair => {
+export const getNativeKeyPairFromPrivateKey = (privateKey: string): SolanaKeys => {
     return {
         keypair: Keypair.fromSecretKey(decodeBs58(privateKey)),
     };

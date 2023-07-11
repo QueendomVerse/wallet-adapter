@@ -1,5 +1,5 @@
 import type { Keypair } from '@solana/web3.js';
 
-export interface SolanaKeypair {
+export interface SolanaKeys {
     keypair: Keypair;
 }

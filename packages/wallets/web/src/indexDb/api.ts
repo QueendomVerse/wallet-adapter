@@ -25,8 +25,8 @@ import {
     deleteWallet,
     createMint,
 } from './utils';
-import type { Profile as DbProfile } from './db';
-import { db, User as DbUser, Wallet as DbWallet, Mint as DbMint } from './db';
+import type { Profile as IndexDbProfile } from './db';
+import { db, User as IndexDbUser, Wallet as IndexDbWallet, Mint as IndexDbMint } from './db';
 import type {
     LocalUser,
     LocalWallet,
@@ -78,9 +78,9 @@ export const removeAllUserData = async (): Promise<void> => {
     });
 };
 
-export const getSavedUsers = async (): Promise<DbUser[]> => {
+export const getSavedUsers = async (): Promise<IndexDbUser[]> => {
     console.debug(`IndexDB: getting users ...`);
-    const dbUsers = await db.transaction('rw', db.users, async (): Promise<DbUser[]> => {
+    const dbUsers = await db.transaction('rw', db.users, async (): Promise<IndexDbUser[]> => {
         return await readAllUsers(db).catch((error) => {
             console.warn(`IndexDB: unable to get saved users: ${error}`);
             notify({
@@ -94,9 +94,9 @@ export const getSavedUsers = async (): Promise<DbUser[]> => {
     return dbUsers;
 };
 
-export const getSavedUser = async (gid: string): Promise<DbUser | undefined> => {
+export const getSavedUser = async (gid: string): Promise<IndexDbUser | undefined> => {
     console.debug(`IndexDB: getting user gid: ${gid} ...`);
-    const dbUser = await db.transaction('rw', db.users, async (): Promise<DbUser | undefined> => {
+    const dbUser = await db.transaction('rw', db.users, async (): Promise<IndexDbUser | undefined> => {
         // fetch the user
         const currentUser = await readUser(db, gid);
         console.debug(`IndexDB: fetched saved user: ${currentUser?.gid ? `gid: ${currentUser.gid}` : 'failed'}`);
@@ -105,9 +105,9 @@ export const getSavedUser = async (gid: string): Promise<DbUser | undefined> => 
     return dbUser;
 };
 
-export const getSavedUserByAddress = async (walletAddress: string): Promise<DbUser | undefined> => {
+export const getSavedUserByAddress = async (walletAddress: string): Promise<IndexDbUser | undefined> => {
     console.debug(`IndexDB: getting user: ${walletAddress}`);
-    const dbUsers = await db.transaction('rw', db.users, async (): Promise<DbUser[]> => {
+    const dbUsers = await db.transaction('rw', db.users, async (): Promise<IndexDbUser[]> => {
         return await loadUsersByWalletAddress(db, walletAddress);
     });
     if (hasDuplicates(dbUsers)) {
@@ -117,13 +117,13 @@ export const getSavedUserByAddress = async (walletAddress: string): Promise<DbUs
     return dbUsers.find((usr) => usr.walletAddress === walletAddress);
 };
 
-export const getSavedUserByEmail = async (email: string): Promise<DbUser | undefined> => {
+export const getSavedUserByEmail = async (email: string): Promise<IndexDbUser | undefined> => {
     console.debug(`IndexDB: getting user: ${email}`);
     const usersByEmail = await loadUsersByEmail(db, email);
     if (!usersByEmail) {
         return undefined;
     }
-    const dbUsers = await db.transaction('rw', db.users, async (): Promise<DbUser[]> => {
+    const dbUsers = await db.transaction('rw', db.users, async (): Promise<IndexDbUser[]> => {
         return usersByEmail;
     });
     if (hasDuplicates(dbUsers)) {
@@ -133,13 +133,13 @@ export const getSavedUserByEmail = async (email: string): Promise<DbUser | undef
     return dbUsers.find((usr) => usr.email === email);
 };
 
-export const getSavedUserById = async (id: string): Promise<DbUser | undefined> => {
+export const getSavedUserById = async (id: string): Promise<IndexDbUser | undefined> => {
     console.debug(`IndexDB: getting user id: ${id}`);
     const usersById = await loadUsersById(db, id);
     if (!usersById) {
         return undefined;
     }
-    const dbUsers = await db.transaction('rw', db.users, async (): Promise<DbUser[]> => {
+    const dbUsers = await db.transaction('rw', db.users, async (): Promise<IndexDbUser[]> => {
         return usersById;
     });
     if (hasDuplicates(dbUsers)) {
@@ -149,9 +149,9 @@ export const getSavedUserById = async (id: string): Promise<DbUser | undefined> 
     return dbUsers.find((usr) => usr.id === id);
 };
 
-export const saveUser = async (apiUser: ApiUser, wallets: LocalWallet[]): Promise<DbUser> => {
+export const saveUser = async (apiUser: ApiUser, wallets: LocalWallet[]): Promise<IndexDbUser> => {
     console.debug(`IndexDB: saving user id: ${apiUser.id} ...`);
-    const dbUser = await db.transaction('rw', db.users, async (): Promise<DbUser> => {
+    const dbUser = await db.transaction('rw', db.users, async (): Promise<IndexDbUser> => {
         const {
             id,
             name,
@@ -169,7 +169,7 @@ export const saveUser = async (apiUser: ApiUser, wallets: LocalWallet[]): Promis
             createdAt,
             updatedAt,
         } = apiUser;
-        const newUser = new DbUser(
+        const newUser = new IndexDbUser(
             id,
             name,
             email,
@@ -198,14 +198,14 @@ export const saveUser = async (apiUser: ApiUser, wallets: LocalWallet[]): Promis
         ...dbUser,
         gid: dbUser.gid,
         wallets: wallets,
-    } as DbUser;
+    } as IndexDbUser;
 
     const update = await updateUser(updatedUser);
     console.debug(`IndexDB: ${dbUser.email} update: ${update ? 'succeded' : 'failed'}`);
     return updatedUser;
 };
 
-export const updateUser = async (userObject: DbUser) => {
+export const updateUser = async (userObject: IndexDbUser) => {
     console.debug(`IndexDB: updating user id: ${userObject.id}} ...`);
     // console.dir(userObject)
     const result = await db.transaction('rw', db.users, db.profiles, db.wallets, async () => {
@@ -215,9 +215,9 @@ export const updateUser = async (userObject: DbUser) => {
     return result;
 };
 
-export const getUserProfiles = async (userId: string): Promise<DbProfile[]> => {
+export const getUserProfiles = async (userId: string): Promise<IndexDbProfile[]> => {
     console.debug(`IndexDB: getting profile for user id: ${userId} ...`);
-    const dbProfile = await db.transaction('rw', db.users, db.profiles, async (): Promise<DbProfile[]> => {
+    const dbProfile = await db.transaction('rw', db.users, db.profiles, async (): Promise<IndexDbProfile[]> => {
         return await loadUserProfiles(userId, db);
     });
     return dbProfile;
@@ -243,7 +243,7 @@ export const getUserProfiles = async (userId: string): Promise<DbProfile[]> => {
 //         createdAt,
 //         updatedAt,
 //       } = apiProfile;
-//       const newProfile = new DbProfile(
+//       const newProfile = new IndexDbProfile(
 //         userId,
 //         name,
 //         url,
@@ -287,7 +287,7 @@ export const getUserProfiles = async (userId: string): Promise<DbProfile[]> => {
 //         createdAt,
 //         updatedAt,
 //       } = apiProfile;
-//       const newProfile = new DbProfile(
+//       const newProfile = new IndexDbProfile(
 //         userId,
 //         name,
 //         url,
@@ -312,9 +312,9 @@ export const getUserProfiles = async (userId: string): Promise<DbProfile[]> => {
 // };
 
 // Wallet database functions
-export const getSavedWallets = async (): Promise<DbWallet[]> => {
+export const getSavedWallets = async (): Promise<IndexDbWallet[]> => {
     console.debug(`IndexDB: getting saved wallets ...`);
-    const dbWallet = await db.transaction('rw', db.wallets, async (): Promise<DbWallet[]> => {
+    const dbWallet = await db.transaction('rw', db.wallets, async (): Promise<IndexDbWallet[]> => {
         return await readAllWallets(db).catch((error) => {
             console.warn(`IndexDB: Unable to get saved wallets: ${error}`);
             notify({
@@ -328,17 +328,17 @@ export const getSavedWallets = async (): Promise<DbWallet[]> => {
     return dbWallet;
 };
 
-export const getSavedWalletMatches = async (publicKey: string): Promise<DbWallet[] | undefined> => {
+export const getSavedWalletMatches = async (publicKey: string): Promise<IndexDbWallet[] | undefined> => {
     console.debug(`IndexDB: getting saved wallets matching: ${publicKey}`);
-    const dbWallets = await db.transaction('rw', db.wallets, async (): Promise<DbWallet[]> => {
+    const dbWallets = await db.transaction('rw', db.wallets, async (): Promise<IndexDbWallet[]> => {
         return await loadWalletsByPublicKey(db, publicKey);
     });
     return dbWallets.filter((usr) => usr.pubKey === publicKey);
 };
 
-export const getSavedWallet = async (publicKey: string): Promise<DbWallet | undefined> => {
+export const getSavedWallet = async (publicKey: string): Promise<IndexDbWallet | undefined> => {
     console.debug(`IndexDB: getting saved wallet: ${publicKey}`);
-    const dbWallets = await db.transaction('rw', db.wallets, async (): Promise<DbWallet[]> => {
+    const dbWallets = await db.transaction('rw', db.wallets, async (): Promise<IndexDbWallet[]> => {
         return await loadWalletsByPublicKey(db, publicKey);
     });
     if (hasDuplicates(dbWallets)) {
@@ -348,9 +348,9 @@ export const getSavedWallet = async (publicKey: string): Promise<DbWallet | unde
     return dbWallets.find((usr) => usr.pubKey === publicKey);
 };
 
-export const saveWallet = async (lwallet: LocalWallet): Promise<DbWallet> => {
+export const saveWallet = async (lwallet: LocalWallet): Promise<IndexDbWallet> => {
     console.debug(`IndexDB: saving ${lwallet.chain} ${lwallet.label} wallet: ${lwallet.pubKey} ...`);
-    const dbWallet = await db.transaction('rw', db.wallets, async (): Promise<DbWallet> => {
+    const dbWallet = await db.transaction('rw', db.wallets, async (): Promise<IndexDbWallet> => {
         const {
             chain,
             label,
@@ -364,7 +364,7 @@ export const saveWallet = async (lwallet: LocalWallet): Promise<DbWallet> => {
             seedPhrase,
         } = lwallet;
 
-        const newWallet = new DbWallet(
+        const newWallet = new IndexDbWallet(
             chain,
             label,
             pubKey,
@@ -384,7 +384,7 @@ export const saveWallet = async (lwallet: LocalWallet): Promise<DbWallet> => {
     return dbWallet;
 };
 
-export const updateWallet = async (walletObject: DbWallet) => {
+export const updateWallet = async (walletObject: IndexDbWallet) => {
     console.debug(`IndexDB: updating wallet: ${walletObject.pubKey}}...`);
     const result = await db.transaction('rw', db.users, db.profiles, db.wallets, async () => {
         return await modifyWallet(db, walletObject);
@@ -393,7 +393,7 @@ export const updateWallet = async (walletObject: DbWallet) => {
     return result;
 };
 
-export const removeWallet = async (walletObject: DbWallet) => {
+export const removeWallet = async (walletObject: IndexDbWallet) => {
     console.debug(`IndexDB: Removing wallet: ${walletObject.chain} ${walletObject.label} ${walletObject.pubKey} ...`);
     const result = await db.transaction('rw', db.users, db.profiles, db.wallets, async () => {
         return await deleteWallet(db, walletObject);
@@ -401,9 +401,9 @@ export const removeWallet = async (walletObject: DbWallet) => {
     return result;
 };
 
-export const getSavedMints = async (walletId: string): Promise<DbMint[]> => {
+export const getSavedMints = async (walletId: string): Promise<IndexDbMint[]> => {
     console.debug(`IndexDB: getting wallet ${walletId} mints ...`);
-    const dbMint = await db.transaction('rw', db.wallets, db.mints, async (): Promise<DbMint[]> => {
+    const dbMint = await db.transaction('rw', db.wallets, db.mints, async (): Promise<IndexDbMint[]> => {
         return await loadWalletMints(walletId, db).catch((error) => {
             console.warn(`IndexDB: Unable to get saved mints: ${error}`);
             notify({
@@ -421,7 +421,7 @@ export const saveMint = async (id: string, lMint: lMint) => {
     console.debug(`IndexDB: saving mint ${id} ...`);
     const newMint = await db.transaction('rw', db.wallets, db.mints, async () => {
         const { mint, owner, address } = lMint;
-        const newMint = new DbMint(id, mint, owner, address);
+        const newMint = new IndexDbMint(id, mint, owner, address);
         const gid = await createMint(db, newMint);
         console.debug(`IndexDB: mint saved: ${gid ? `gid: ${gid}` : 'failed'}`);
     });
@@ -429,9 +429,9 @@ export const saveMint = async (id: string, lMint: lMint) => {
     return newMint;
 };
 
-export const getUserWallets = async (userId: string): Promise<DbWallet[]> => {
+export const getUserWallets = async (userId: string): Promise<IndexDbWallet[]> => {
     console.debug(`IndexDB: getting wallets for user id: ${userId} ...`);
-    const dbWallet = await db.transaction('rw', db.users, db.wallets, async (): Promise<DbWallet[]> => {
+    const dbWallet = await db.transaction('rw', db.users, db.wallets, async (): Promise<IndexDbWallet[]> => {
         return await loadUserWallets(userId, db);
     });
     return dbWallet;

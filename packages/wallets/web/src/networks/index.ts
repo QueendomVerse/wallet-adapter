@@ -2,9 +2,9 @@ export type {
     SendNear,
     NearAccount,
     NearKeypair,
+    MintNft as MintNearNft, 
     WalletContextState as NearWalletContextState,
     ENDPOINT_NAME as NEAR_ENDPOINT_NAME,
-    ENDPOINTS as NearEndpoints,
     BrowserWalletAdapterConfig as NearBrowserWalletAdapterConfig,
     BrowserWalletAdapter as NearBrowserWalletAdapter,
     NftMetaData as NearNftMetaData,
@@ -22,12 +22,13 @@ export {
     ConnectionProvider as NearConnectionProvider,
     getAccount as getNearAccount,
     getImplicitAccountId as getNearImplicitAccountId,
+    getImplicitIdsFromName as getNearImplicitIdsFromName,
     getBalance as getNearBalance,
     getKeyPairFromPrivateKey as getNearKeyPairFromPrivateKey,
     getKeyPairFromSeedPhrase as getNearKeyPairFromSeedPhrase,
     getNativeKeyPairFromPrivateKey as getNearNativeKeyPairFromPrivateKey,
     getPublicKey as getNearPublicKey,
-    mintNft as nearMintNft,
+    mintNft as mintNearNft,
     sendFundsTransaction as sendNearFundsTransaction,
     useAccount as useNearAccount,
     useBrowserWallet as useNearBrowserWallet,
@@ -46,7 +47,7 @@ export {
     parseSeedPhrase as parseNearSeedPhrase,
     findSeedPhraseKey as findNearSeedPhraseKey,
     getSign as getNearSign,
-    SCHEMA as NearSchema,
+    SCHEMA as NEAR_SCHEMA,
     BrowserWallet as NearBrowserWallet,
     toArray as toNearConfigArray,
     config as nearDefaultConfig,
@@ -54,7 +55,8 @@ export {
 export type {
     SendSolana,
     SolanaAccount,
-    SolanaKeypair,
+    SolanaKeys,
+    Attribute as SolanaAttribute,
     TokenAccount as SolanaTokenAccount,
     WalletContextState as SolanaWalletContextState,
     ENDPOINT_NAME as SOLANA_ENDPOINT_NAME,
@@ -66,8 +68,11 @@ export type {
     WalletModalContextState as SolanaWalletModalContextState,
     MetadataFile as SolanaMetadataFile,
     IMetadataExtension as SolanaIMetadataExtension,
-    NewMetaData as SolanaNewMetaData,
+    MetadataCreationParams as SolanaMetadataCreationParams,
 } from './solana';
+export type {
+    SolanaConnection
+} from '../hooks/useConnection';
 export {
     TEN,
     HALF_WAD,
@@ -107,7 +112,10 @@ export {
     Creator as SolanaCreator,
     Data as SolanaData,
     Metadata as SolanaMetadata,
+    SequenceType as SolanaSequenceType,
     METADATA_SCHEMA as SOLANA_METADATA_SCHEMA,
+    WRAPPED_SOL_MINT as SOLANA_WRAPPED_SOL_MINT,
+    SafetyDepositBox as SolanaSafetyDepositBox,
     toPublicKey as toSolanaPublicKey,
     pubkeyToString as solanaPubkeyToString,
     accountsEqual as solanaAccountsEqual,
@@ -126,14 +134,23 @@ export {
     setProgramIds as setSolanaProgramIds,
     programIds as solanaProgramIds,
     getStoreID as getSolanaStoreID,
+    sendTransactions as sendSolanaTransactions,
+    sendTransactionWithRetry as sendSolanaTransactionWithRetry,
+    sendTransactionsWithManualRetry as sendSolanaTransactionsWithManualRetry,
     toUTF8Array,
     fromUTF8Array,
     findAssociatedTokenAddress as findSolanaAssociatedTokenAddress,
     getErrorForTransaction as getSolanaErrorForTransaction,
+    convertMasterEditionV1ToV2 as convertSolanaMasterEditionV1ToV2,
+    createMetadata as createSolanaMetadata,
+    createMasterEdition as createSolanaMasterEdition,
+
+
 } from './solana';
 export * from './core';
 export * from './encryption';
 export * from './icon';
 export * from './keypairs';
+export * from './libs';
 export * from './tickers';
 export * from './types';

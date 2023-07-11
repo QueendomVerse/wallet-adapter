@@ -8,7 +8,7 @@ import SimpleCrypto from 'simple-crypto-js';
 import type { Chains as LocalChains } from '../chains';
 
 import type { LocalWallet } from '../store';
-import { DbWallet } from '../indexDb';
+import { IndexDbWallet } from '../indexDb';
 import { getKeyPairFromSeedPhrase, getKeyPairFromPrivateKey } from './keypairs';
 import { thunkUpdateWallet } from '../store';
 
@@ -203,7 +203,7 @@ export const decryptWallet = async (wallet: LocalWallet, password: string) => {
     } as LocalWallet;
 };
 
-export const decryptDbWallet = async (wallet: DbWallet, password: string): Promise<DbWallet | undefined> => {
+export const decryptDbWallet = async (wallet: IndexDbWallet, password: string): Promise<IndexDbWallet | undefined> => {
     if (!wallet || !password) return;
     console.info(`decrypting(${wallet.chain}/${wallet.label}): ${wallet.pubKey}`);
 
@@ -228,7 +228,7 @@ export const decryptDbWallet = async (wallet: DbWallet, password: string): Promi
         throw new Error(`failed to decrypt the private key: ${e}`);
     }
 
-    const decryptedWallet = new DbWallet(
+    const decryptedWallet = new IndexDbWallet(
         wallet.chain,
         wallet.label,
         wallet.pubKey,
@@ -245,11 +245,11 @@ export const decryptDbWallet = async (wallet: DbWallet, password: string): Promi
     return decryptedWallet;
 };
 
-export const closeDbWallet = async (wallet: DbWallet): Promise<DbWallet | undefined> => {
+export const closeDbWallet = async (wallet: IndexDbWallet): Promise<IndexDbWallet | undefined> => {
     if (!wallet) return;
     console.info(`closing(${wallet.chain}/${wallet.label}): ${wallet.pubKey}`);
 
-    const closeWallet = new DbWallet(
+    const closeWallet = new IndexDbWallet(
         wallet.chain,
         wallet.label,
         wallet.pubKey,
