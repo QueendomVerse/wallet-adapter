@@ -118,15 +118,9 @@ export const cache = {
     },
 
     byParser: (parser: AccountParser) => {
-        const result: string[] = [];
-        for (const id of keyToAccountParser.keys()) {
-            if (keyToAccountParser.get(id) === parser) {
-                result.push(id);
-            }
-        }
-
-        return result;
+        return Array.from(keyToAccountParser.keys()).filter(id => keyToAccountParser.get(id) === parser);
     },
+
     registerParser: (pubkey: SolanaPublicKey | string, parser: AccountParser) => {
         if (pubkey) {
             const address = typeof pubkey === 'string' ? pubkey : pubkey?.toBase58();

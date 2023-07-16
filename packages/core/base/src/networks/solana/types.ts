@@ -82,7 +82,7 @@ export interface SolanaSendOptions extends SendOptions {
 export interface SolanaSigner extends Signer {}
 
 export class SolanaTransaction extends Transaction {
-    public feePayer?: PublicKey | undefined = super.feePayer;
+    public feePayer?: PublicKey | undefined = this.feePayer;
     public partialSign = (...signers: Array<SolanaSigner>): void => {
         super.partialSign(...signers);
         super.serialize();

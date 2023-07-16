@@ -282,7 +282,7 @@ export class NearTransaction extends Transaction {
     private _near: Near | null = null;
     public keyType: KeyType;
     private _keypair: KeyPair | undefined;
-    public accountId = super.receiverId;
+    public accountId: string; 
     private _connection?: NearConnection;
     private solanaTransaction: SolanaTransaction;
     private config?: NearConnectionConfig;
@@ -292,6 +292,8 @@ export class NearTransaction extends Transaction {
         this.solanaTransaction = new SolanaTransaction();
         this.keyType = this._getKeyType();
         this._connection = connection;
+        this.accountId = this.receiverId;
+        this.keyType = this.publicKey.keyType;
     }
 
     public partialSign = (...signers: Array<NearSigner>) => {
@@ -302,7 +304,7 @@ export class NearTransaction extends Transaction {
         return this.solanaTransaction.serialize(config);
     };
 
-    private _getKeyType = () => super.publicKey.keyType;
+    private _getKeyType = () => this.keyType;
 
     // _getAccount = () => {
     //     if (!this._connection) return;
