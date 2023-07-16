@@ -1,23 +1,39 @@
-import type { Connection, PublicKey, SendOptions, Signer, Transaction, TransactionSignature } from '@solana/web3.js';
 import EventEmitter from 'eventemitter3';
-import type { WalletError } from './errors';
+import type { ChainTicker } from './chains';
+import type { WalletError as WalletChainError } from './errors';
 import { WalletNotConnectedError } from './errors';
-import type { MessageSignerWalletAdapter, SignerWalletAdapter } from './signer';
+import { SolanaPublicKey } from './networks/solana';
+import type {
+    ChainConnection,
+    ChainPublicKey,
+    ChainSendOptions,
+    ChainSigner,
+    ChainTransaction,
+    ChainTransactionSignature,
+} from './types';
+import { asyncEnsureRpcConnection } from './utils';
 
 export { EventEmitter };
 
-export interface WalletAdapterEvents {
+export interface WalletAdapterEvents<PublicKey extends ChainPublicKey, WalletError extends WalletChainError> {
     connect(publicKey: PublicKey): void;
     disconnect(): void;
     error(error: WalletError): void;
     readyStateChange(readyState: WalletReadyState): void;
 }
 
-export interface SendTransactionOptions extends SendOptions {
+export interface SendTransactionOptions<Signer, SendOptions> {
     signers?: Signer[];
+    sendOptions?: SendOptions;
 }
 
-export interface WalletAdapterProps<Name extends string = string> {
+export interface WalletAdapterProps<
+    PublicKey extends ChainPublicKey,
+    Transaction extends ChainTransaction,
+    Connection extends ChainConnection,
+    TransactionSignature extends ChainTransactionSignature,
+    Name extends string = string
+> {
     name: WalletName<Name>;
     url: string;
     icon: string;
@@ -28,24 +44,13 @@ export interface WalletAdapterProps<Name extends string = string> {
 
     connect(): Promise<void>;
     disconnect(): Promise<void>;
-    sendTransaction(
+    sendTransaction<Signer extends ChainSigner, SendOptions extends ChainSendOptions>(
         transaction: Transaction,
         connection: Connection,
-        options?: SendTransactionOptions
-    ): Promise<TransactionSignature>;
+        options?: SendTransactionOptions<Signer, SendOptions>
+    ): Promise<TransactionSignature | string | undefined>;
 }
 
-export type WalletAdapter<Name extends string = string> = WalletAdapterProps<Name> & EventEmitter<WalletAdapterEvents>;
-
-/**
- * A wallet's readiness describes a series of states that the wallet can be in,
- * depending on what kind of wallet it is. An installable wallet (eg. a browser
- * extension like Phantom) might be `Installed` if we've found the Phantom API
- * in the global scope, or `NotDetected` otherwise. A loadable, zero-install
- * runtime (eg. Torus Wallet) might simply signal that it's `Loadable`. Use this
- * metadata to personalize the wallet list for each user (eg. to show their
- * installed wallets first).
- */
 export enum WalletReadyState {
     /**
      * User-installable wallets can typically be detected by scanning for an API
@@ -66,20 +71,30 @@ export enum WalletReadyState {
     Unsupported = 'Unsupported',
 }
 
-export enum WalletAdapterNetwork {
-    Mainnet = 'mainnet-beta',
-    Testnet = 'testnet',
-    Devnet = 'devnet',
-}
-
-// WalletName is a nominal type that wallet adapters should use, e.g. `'MyCryptoWallet' as WalletName<'MyCryptoWallet'>`
-// https://medium.com/@KevinBGreene/surviving-the-typescript-ecosystem-branding-and-type-tagging-6cf6e516523d
 export type WalletName<T extends string = string> = T & { __brand__: 'WalletName' };
 
-export type Adapter = WalletAdapter | SignerWalletAdapter | MessageSignerWalletAdapter;
+export type WalletAdapter<
+    PublicKey extends ChainPublicKey,
+    Transaction extends ChainTransaction,
+    Connection extends ChainConnection,
+    TransactionSignature extends ChainTransactionSignature,
+    Name extends string = string
+> = WalletAdapterProps<PublicKey, Transaction, Connection, TransactionSignature, Name> &
+    EventEmitter<WalletAdapterEvents<PublicKey, WalletChainError>>;
 
-export abstract class BaseWalletAdapter extends EventEmitter<WalletAdapterEvents> implements WalletAdapter {
-    abstract name: WalletName;
+export abstract class BaseWalletAdapter<
+        PublicKey extends ChainPublicKey,
+        WalletError extends WalletChainError,
+        Transaction extends ChainTransaction,
+        Connection extends ChainConnection,
+        TransactionSignature extends ChainTransactionSignature,
+        Name extends string = string
+    >
+    extends EventEmitter<WalletAdapterEvents<PublicKey, WalletError>>
+    implements WalletAdapter<PublicKey, Transaction, Connection, TransactionSignature, Name>
+{
+    abstract chain: ChainTicker | null;
+    abstract name: WalletName<Name>;
     abstract url: string;
     abstract icon: string;
     abstract readyState: WalletReadyState;
@@ -92,24 +107,30 @@ export abstract class BaseWalletAdapter extends EventEmitter<WalletAdapterEvents
 
     abstract connect(): Promise<void>;
     abstract disconnect(): Promise<void>;
-    abstract sendTransaction(
-        transaction: Transaction,
-        connection: Connection,
-        options?: SendTransactionOptions
-    ): Promise<TransactionSignature>;
+    abstract sendTransaction<Signer extends ChainSigner, SendOptions extends ChainSendOptions>(
+        transaction: ChainTransaction,
+        connection: ChainConnection,
+        options?: SendTransactionOptions<Signer, SendOptions>
+    ): Promise<TransactionSignature | string | undefined>;
 
-    protected async prepareTransaction(transaction: Transaction, connection: Connection): Promise<Transaction> {
-        const publicKey = this.publicKey;
-        if (!publicKey) throw new WalletNotConnectedError();
+    protected prepareTransaction = async <Tx extends Transaction, Conn extends Connection>(
+        transaction: Tx,
+        connection: Conn
+    ): Promise<Transaction> => {
+        if (!this.publicKey) throw new WalletNotConnectedError();
 
+        const publicKey = new SolanaPublicKey(this.publicKey);
         transaction.feePayer = transaction.feePayer || publicKey;
-        transaction.recentBlockhash = transaction.recentBlockhash || (await connection.getLatestBlockhash()).blockhash;
+        // transaction.recentBlockhash = await getRecentBlockHash<ChainTicker>(this.chain, connection, transaction);
+        transaction.recentBlockhash =
+            transaction.recentBlockhash ||
+            (await (await asyncEnsureRpcConnection(connection)).getLatestBlockhash())?.blockhash;
 
         return transaction;
-    }
+    };
 }
 
-export function scopePollingDetectionStrategy(detect: () => boolean): void {
+export const scopePollingDetectionStrategy = (detect: () => boolean): void => {
     // Early return when server-side rendering
     if (typeof window === 'undefined' || typeof document === 'undefined') return;
 
@@ -150,4 +171,4 @@ export function scopePollingDetectionStrategy(detect: () => boolean): void {
 
     // Strategy #4: Detect synchronously, now.
     detectAndDispose();
-}
+};

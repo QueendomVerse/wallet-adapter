@@ -40,3 +40,45 @@ export const fromUTF8Array = (data: number[]): string =>
                       return String.fromCharCode((code >> 10) | 0xd800, (code & 0x03ff) | 0xdc00);
                   })());
     }, '');
+
+export const formatUSD = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+
+export const formatNumber = {
+    format: (val?: number) =>
+        val
+            ? new Intl.NumberFormat('en-US', {
+                  style: 'decimal',
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+              }).format(val)
+            : '--',
+};
+
+export const formatPct = new Intl.NumberFormat('en-US', {
+    style: 'percent',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+});
+
+const abbreviateNumber = (number: number, precision: number) => {
+    const tier = (Math.log10(number) / 3) | 0;
+    let scaled = number;
+    const suffix = ['', 'k', 'M', 'G', 'T', 'P', 'E'][tier];
+    if (tier !== 0) {
+        const scale = Math.pow(10, tier * 3);
+        scaled = number / scale;
+    }
+    return scaled.toFixed(precision) + suffix;
+};
+
+export const formatAmount = (val: number, precision = 2, abbr = true) =>
+    abbr ? abbreviateNumber(val, precision) : val.toFixed(precision);
+
+export const formatPriceNumber = new Intl.NumberFormat('en-US', {
+    style: 'decimal',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 8,
+});
+
+export const STABLE_COINS = new Set(['USDC', 'wUSDC', 'USDT']);
+export const intArrayToString = (array: Uint8Array) => JSON.stringify(Array.from(array));

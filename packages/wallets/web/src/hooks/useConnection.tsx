@@ -1,115 +1,45 @@
-import { useContext, useState } from 'react';
-// import { useBetween } from 'use-between';
-import type { Connection } from '@solana/web3.js';
-
-import { WalletError } from '@mindblox-wallet-adapter/base';
-import { ChainTickers } from '../chains';
+import type { ChainTicker, NearConnection, SolanaConnection } from '@mindblox-wallet-adapter/base';
+import { ChainTickers, WalletError } from '@mindblox-wallet-adapter/base';
 import type {
-    ENDPOINT_NAME as SOLANA_ENDPOINT_NAME,
-    WalletContextState as SolanaWalletContextState,
-} from '../networks/solana';
-import { ConnectionContext as SolanaConnectionContext, ENDPOINTS as SOLANA_ENDPOINTS } from '../networks/solana';
-import type {
-    ENDPOINT_NAME as NEAR_ENDPOINT_NAME,
-    WalletContextState as NearWalletContextState,
-} from '../networks/near';
+    SOLANA_ENDPOINT_NAME,
+    NEAR_ENDPOINT_NAME,
+    SolanaConnectionContextState,
+    NearConnectionContextState,
+} from '@mindblox-wallet-adapter/networks';
 import {
-    // ConnectionContext as NearConnectionContext,
-    ENDPOINTS as NEAR_ENDPOINTS,
-} from '../networks/near';
+    useSolanaConnection,
+    useNearConnection,
+    SOLANA_ENDPOINTS,
+    NEAR_ENDPOINTS,
+} from '@mindblox-wallet-adapter/networks';
 
-// import { holdUrHorses } from '../../utils';
-
-export type SolanaConnection = Connection;
+import { useTickerState } from './useSharedStates';
 
 export type ENDPOINT_NAME = SOLANA_ENDPOINT_NAME | NEAR_ENDPOINT_NAME;
+export type ConnectionContextState = SolanaConnectionContextState | NearConnectionContextState;
+export type Connection = SolanaConnection | NearConnection;
 
-export type WalletContextState = SolanaWalletContextState | NearWalletContextState;
-
-// const useShareableConnectionLastAccessedState = () => {
-//   const [lastAccessed, setLastAccessed] = useState<number | undefined>();
-//   console.debug(`>>> Setting connection last accessed state`, lastAccessed);
-//   return { lastAccessed, setLastAccessed };
-// };
-
-// const MIN_CONNECTION_ACCESS_INTERVAL = 10;
-
-export const useConnectionContext = (ticker?: string) => {
-    // console.debug(`Using '${ticker}' connection context.`);
-    // const { lastAccessed, setLastAccessed } = useBetween(useShareableConnectionLastAccessedState);
-    // if (lastAccessed < Date.now() - MIN_CONNECTION_ACCESS_INTERVAL)
-    // setLastAccessed(Date.now())
-    switch (ticker) {
+export const useConnection = <T extends ConnectionContextState>(chain?: ChainTicker): ConnectionContextState => {
+    const { selectedTicker } = useTickerState();
+    switch (selectedTicker) {
         case ChainTickers.SOL:
-            return useContext(SolanaConnectionContext);
-        // case ChainTickers.NEAR: return useContext(NearConnectionContext);
+            return useSolanaConnection() as T;
         case ChainTickers.NEAR:
-            return useContext(SolanaConnectionContext);
+            return useNearConnection() as T;
         default:
-            return useContext(SolanaConnectionContext);
-        // throw new WalletError(`Invalid chain ticker '${ticker}'!`);
+            throw new WalletError(`useNetworkConnection: Invalid chain ticker '${selectedTicker}'!`);
     }
 };
 
-export const getEndpoints = (ticker?: string) => {
-    // console.debug(`Got endpoints for '${ticker}'`);
-    switch (ticker) {
+export const getEndpoints = () => {
+    const { selectedTicker } = useTickerState();
+    console.debug(`Got endpoints for '${selectedTicker}'`);
+    switch (selectedTicker) {
         case ChainTickers.SOL:
             return SOLANA_ENDPOINTS;
         case ChainTickers.NEAR:
             return NEAR_ENDPOINTS;
-        // case ChainTickers.NEAR: return SOLANA_ENDPOINTS;
         default:
-            throw new WalletError(`Invalid chain ticker '${ticker}'!`);
+            throw new WalletError(`Invalid chain ticker '${selectedTicker}'!`);
     }
-};
-
-// export const useConnection = useSampleConnection
-
-export const useConnection = (ticker?: string): Connection => {
-    const onSolana = () => {
-        const connection = useContext(SolanaConnectionContext).connection;
-        return connection;
-    };
-
-    // const onNear = () => {
-    //   const connection =  useContext(NearConnectionContext).connection;
-    //   return connection;
-    // }
-
-    // console.debug(`Connecting via '${ticker}'`);
-    // const context = useConnectionContext(chain); //@BUG causes webpack error
-    switch (ticker) {
-        case ChainTickers.SOL:
-            return onSolana();
-        // case ChainTickers.NEAR: return onNear();
-        case ChainTickers.NEAR:
-            return onSolana();
-        default:
-            return onSolana();
-        //  throw new WalletError(`Invalid chain ticker '${ticker}'!`);
-    }
-};
-//   switch (chain) {
-//     case ChainTickers.SOL:
-//       return useConnectionContext(chain).connection;
-//     case ChainTickers.NEAR:
-//       return useConnectionContext(chain).connection;
-//     default:
-// throw new WalletError(`Invalid chain network '${chain}'!`);
-//   }
-// };
-
-export const useConnectionConfig = (chain?: string) => {
-    // console.debug(`Using '${chain}' connection configuration.`);
-    const context = useConnectionContext(chain);
-    return {
-        setEndpointMap: context.setEndpointMap,
-        setEndpoint: context.setEndpoint,
-        endpointMap: context.endpointMap,
-        endpoint: context.endpoint,
-        env: context.env,
-        tokens: context.tokens,
-        tokenMap: context.tokenMap,
-    };
 };

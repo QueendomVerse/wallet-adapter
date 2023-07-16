@@ -1,6 +1,6 @@
+import type { ApiProfile } from '@mindblox-wallet-adapter/base';
 import type { ApiClient, FetchOptions } from './client';
 import { emptyProfile } from './empty';
-import type { ApiProfile } from './types';
 
 export class ProfileApiClient {
     static EmptyApiProfile: ApiProfile = emptyProfile;

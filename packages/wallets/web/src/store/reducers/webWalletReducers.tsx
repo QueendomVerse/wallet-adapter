@@ -1,9 +1,6 @@
-import type { UserActionTypes, ItemActionTypes } from '../types';
+import type { LocalWalletStore, LocalUserStore, LocalItemStore } from '@mindblox-wallet-adapter/base';
+import type { UserActionTypes, ItemActionTypes, WalletActionTypes } from '../types';
 import {
-    type WalletActionTypes,
-    type LocalWalletStore,
-    type LocalItemStore,
-    type LocalUserStore,
     FETCH_USERS_SUCCESS,
     CREATE_USER_SUCCESS,
     CREATE_PROFILE_SUCCESS,

@@ -4,20 +4,38 @@
 
 'use strict';
 
-import type { Adapter, WalletName } from '@mindblox-wallet-adapter/base';
-import { BaseWalletAdapter, WalletError, WalletNotReadyError, WalletReadyState } from '@mindblox-wallet-adapter/base';
-import { PublicKey } from '@solana/web3.js';
+import type {
+    Adapter,
+    ChainConnection,
+    ChainPublicKey,
+    ChainTransaction,
+    ChainTransactionSignature,
+    WalletName,
+} from '@mindblox-wallet-adapter/base';
+import {
+    BaseWalletAdapter,
+    SolanaPublicKey,
+    ChainTickers,
+    WalletError,
+    WalletNotReadyError,
+    WalletReadyState,
+} from '@mindblox-wallet-adapter/base';
 import 'jest-localstorage-mock';
 import React, { createRef, forwardRef, useImperativeHandle } from 'react';
 import { createRoot } from 'react-dom/client';
 import { act } from 'react-dom/test-utils';
-import type { WalletContextState } from '../useWallet';
-import { useWallet } from '../useWallet';
-import type { WalletProviderProps } from '../WalletProvider';
-import { WalletProvider } from '../WalletProvider';
+import type { WalletContextState } from '../hooks';
+import { useWallet } from '../hooks';
+import type { WalletProviderProps } from '../providers/WalletProvider';
+import { WalletProvider } from '../providers/WalletProvider';
 
 type TestRefType = {
-    getWalletContextState(): WalletContextState;
+    getWalletContextState(): WalletContextState<
+        ChainPublicKey,
+        ChainTransaction,
+        ChainConnection,
+        ChainTransactionSignature
+    >;
 };
 
 const TestComponent = forwardRef(function TestComponentImpl(props, ref) {
@@ -41,9 +59,14 @@ describe('WalletProvider', () => {
     let fooWalletAdapter: MockWalletAdapter;
     let barWalletAdapter: MockWalletAdapter;
     let bazWalletAdapter: MockWalletAdapter;
-    let adapters: Adapter[];
+    let adapters: Adapter<ChainPublicKey, ChainTransaction, ChainConnection, ChainTransactionSignature>[];
 
-    function renderTest(props: Omit<WalletProviderProps, 'children' | 'wallets'>) {
+    function renderTest(
+        props: Omit<
+            WalletProviderProps<ChainPublicKey, ChainTransaction, ChainConnection, ChainTransactionSignature>,
+            'children' | 'wallets'
+        >
+    ) {
         act(() => {
             root.render(
                 <WalletProvider {...props} wallets={adapters}>
@@ -53,7 +76,13 @@ describe('WalletProvider', () => {
         });
     }
 
-    abstract class MockWalletAdapter extends BaseWalletAdapter {
+    abstract class MockWalletAdapter extends BaseWalletAdapter<
+        ChainPublicKey,
+        WalletError,
+        ChainTransaction,
+        ChainConnection,
+        ChainTransactionSignature
+    > {
         connectionPromise: null | Promise<void> = null;
         disconnectionPromise: null | Promise<void> = null;
         connectedValue = false;
@@ -90,22 +119,25 @@ describe('WalletProvider', () => {
         sendTransaction = jest.fn();
     }
     class FooWalletAdapter extends MockWalletAdapter {
+        chain = ChainTickers.SOL;
         name = 'FooWallet' as WalletName<'FooWallet'>;
         url = 'https://foowallet.com';
         icon = 'foo.png';
-        publicKey = new PublicKey('Foo11111111111111111111111111111111111111111');
+        publicKey = new SolanaPublicKey('Foo11111111111111111111111111111111111111111') as ChainPublicKey;
     }
     class BarWalletAdapter extends MockWalletAdapter {
+        chain = ChainTickers.SOL;
         name = 'BarWallet' as WalletName<'BarWallet'>;
         url = 'https://barwallet.com';
         icon = 'bar.png';
-        publicKey = new PublicKey('Bar11111111111111111111111111111111111111111');
+        publicKey = new SolanaPublicKey('Bar11111111111111111111111111111111111111111') as ChainPublicKey;
     }
     class BazWalletAdapter extends MockWalletAdapter {
+        chain = ChainTickers.SOL;
         name = 'BazWallet' as WalletName<'BazWallet'>;
         url = 'https://bazwallet.com';
         icon = 'baz.png';
-        publicKey = new PublicKey('Baz11111111111111111111111111111111111111111');
+        publicKey = new SolanaPublicKey('Baz11111111111111111111111111111111111111111') as ChainPublicKey;
     }
 
     beforeEach(() => {

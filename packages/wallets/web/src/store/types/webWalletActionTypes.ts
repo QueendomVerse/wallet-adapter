@@ -1,4 +1,10 @@
 import type {
+    LocalUserStore,
+    LocalProfileStore,
+    LocalWalletStore,
+    LocalItemStore,
+} from '@mindblox-wallet-adapter/base';
+import type {
     FETCH_USERS_SUCCESS,
     CREATE_USER_SUCCESS,
     CREATE_PROFILE_SUCCESS,
@@ -22,7 +28,6 @@ import type {
     CREATE_ITEM_SUCCESS,
     FETCH_ITEMS_SUCCESS,
 } from './webWalletActionStates';
-import type { LocalItemStore, LocalProfileStore, LocalUserStore, LocalWalletStore } from './webWalletTypes';
 
 // LocalUserStore Actions
 interface createUserAction {

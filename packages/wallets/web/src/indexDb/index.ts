@@ -21,6 +21,7 @@ export {
     saveMint as saveIndexDbMint,
     getUserWallets as getIndexDbUserWallets,
     getSavedUserMatches as getSavedIndexDbUserMatches,
+    getSavedItems as getSavedIndexDbItems,
     removeUser as removeIndexDbUser,
 } from './api';
 export * from './constants';

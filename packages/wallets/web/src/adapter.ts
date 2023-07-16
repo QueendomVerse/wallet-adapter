@@ -1,24 +1,25 @@
 import { EventEmitter as Emitter } from 'eventemitter3';
-import { type Connection, type PublicKey, type Transaction, Keypair, type TransactionSignature } from '@solana/web3.js';
-import { decode as decodeBs58 } from 'bs58';
+// import type { Cluster } from '@solana/web3.js';
+// import { type ChainConnection, type ChainPublicKey, type ChainTransaction, SolanaKeypair, type TransactionSignature } from '@solana/web3.js';
+import { decode as decodeBase58 } from 'bs58';
+import { Cluster } from '@solana/web3.js';
 
 import {
     // AdapterEvents,
     BaseMessageSignerWalletAdapter,
     type SendTransactionOptions,
     // BaseWalletAdapter,
-    type WalletAdapterNetwork,
     type WalletName,
     WalletReadyState,
     WalletError,
-    WalletDisconnectedError,
+    // WalletDisconnectedError,
     WalletSendTransactionError,
     WalletDisconnectionError,
     WalletNotConnectedError,
     WalletSelectionError,
     WalletConfigError,
-    WalletActivationError,
-    WalletNotActivatedError,
+    // WalletActivationError,
+    // WalletNotActivatedError,
     WalletLoadError,
     WalletKeypairError,
     WalletNotReadyError,
@@ -27,29 +28,82 @@ import {
     // WalletKeypairError,
     WalletSignTransactionError,
     WalletConnectionError,
+    SolanaKeypair,
+    ChainTickers,
 } from '@mindblox-wallet-adapter/base';
 
+// import type { PhantomWalletAdapter } from '@mindblox-wallet-adapter/phantom';
+import type {
+    Adapter,
+    ChainConnection,
+    ChainPublicKey,
+    ChainTransaction,
+    ChainTransactionSignature,
+    Wallet,
+    ChainTicker,
+    SolanaTransaction,
+    Chain,
+} from '@mindblox-wallet-adapter/base';
+import type {
+    ChainAdapterNetworks,
+    ChainAdapterNetwork,
+    NearBrowserWalletAdapter,
+} from '@mindblox-wallet-adapter/networks';
+import { getAdapterNetwork } from '@mindblox-wallet-adapter/networks';
+
 import { WebWallet } from './core';
-import type { Chain } from './chains';
+import { DEFAULT_NETWORK, DEFAULT_TICKER } from './constants';
 
 export interface WebWalletAdapterConfig {
-    name?: string;
-    network?: WalletAdapterNetwork;
-    node?: string;
+    name: WalletName | null;
+    chain: ChainTicker | null;
+    network: ChainAdapterNetworks | null;
 }
+
+export type EndpointMap = {
+    name: WalletName;
+    chain: ChainTicker;
+    network: ChainAdapterNetworks | null;
+};
+
+export const getEndpointMap = (chain: ChainTicker, network: ChainAdapterNetwork): EndpointMap => ({
+    name: 'WebWallet' as WalletName,
+    chain,
+    network: getAdapterNetwork(chain, network),
+});
 
 interface Notification {
     message: string;
     description: string;
 }
 
+export type ExtendedAdapter =
+    | WebWalletAdapter
+    | NearBrowserWalletAdapter
+    // | PhantomWalletAdapter
+    | Adapter<ChainPublicKey, ChainTransaction, ChainConnection, ChainTransactionSignature>;
+
+export interface ExtendedWallet
+    extends Wallet<ChainPublicKey, ChainTransaction, ChainConnection, ChainTransactionSignature> {
+    adapter?: ExtendedAdapter;
+    readyState: WalletReadyState;
+}
+
 // export const WebWalletName = 'WebWallet' as WalletName;
 
-export class WebWalletAdapter extends BaseMessageSignerWalletAdapter {
+export class WebWalletAdapter extends BaseMessageSignerWalletAdapter<
+    ChainPublicKey,
+    WalletError,
+    ChainTransaction,
+    ChainConnection,
+    ChainTransactionSignature
+> {
     // export class WebWalletAdapter extends BaseWalletAdapter {
     private readonly _emitter = new Emitter();
 
+    public chain: ChainTicker;
     public name: WalletName;
+    public network: ChainAdapterNetworks;
     url = 'https://chiefmetaverse.co';
     public icon =
         'data:image/svg+xml;utf8;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjxzdmcgeG1sbnM6ZGM9Imh0dHA6Ly9wdXJsLm9yZy9kYy9lbGVtZW50cy8xLjEvIiB4bWxuczpjYz0iaHR0cDovL2NyZWF0aXZlY29tbW9ucy5vcmcvbnMjIiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiIHhtbG5zOnN2Zz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgdmlld0JveD0iMCAwIDQ3LjUgNDcuNSIgc3R5bGU9ImVuYWJsZS1iYWNrZ3JvdW5kOm5ldyAwIDAgNDcuNSA0Ny41OyIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgdmVyc2lvbj0iMS4xIiBpZD0ic3ZnMiI+PGRlZnMgaWQ9ImRlZnM2Ij48Y2xpcFBhdGggaWQ9ImNsaXBQYXRoMTYiIGNsaXBQYXRoVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBpZD0icGF0aDE4IiBkPSJNIDAsMzggMzgsMzggMzgsMCAwLDAgMCwzOCBaIi8+PC9jbGlwUGF0aD48L2RlZnM+PGcgdHJhbnNmb3JtPSJtYXRyaXgoMS4yNSwwLDAsLTEuMjUsMCw0Ny41KSIgaWQ9ImcxMCI+PGcgaWQ9ImcxMiI+PGcgY2xpcC1wYXRoPSJ1cmwoI2NsaXBQYXRoMTYpIiBpZD0iZzE0Ij48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgzNyw1KSIgaWQ9ImcyMCI+PHBhdGggaWQ9InBhdGgyMiIgc3R5bGU9ImZpbGw6IzNiODhjMztmaWxsLW9wYWNpdHk6MTtmaWxsLXJ1bGU6bm9uemVybztzdHJva2U6bm9uZSIgZD0ibSAwLDAgYyAwLC0yLjIwOSAtMS43OTEsLTQgLTQsLTQgbCAtMjgsMCBjIC0yLjIwOSwwIC00LDEuNzkxIC00LDQgbCAwLDI4IGMgMCwyLjIwOSAxLjc5MSw0IDQsNCBsIDI4LDAgYyAyLjIwOSwwIDQsLTEuNzkxIDQsLTQgTCAwLDAgWiIvPjwvZz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgyNC4wODc5LDE1LjA2OTMpIiBpZD0iZzI0Ij48cGF0aCBpZD0icGF0aDI2IiBzdHlsZT0iZmlsbDojZmZmZmZmO2ZpbGwtb3BhY2l0eToxO2ZpbGwtcnVsZTpub256ZXJvO3N0cm9rZTpub25lIiBkPSJtIDAsMCBjIDAuNTI2LDEuMTc5IDAuNzQ0LDIuNTQyIDAuNzQ0LDMuOTY5IDAsMy42ODkgLTEuOTU0LDcuMTMxIC01LjgyOSw3LjEzMSAtMy44NzYsMCAtNS44MywtMy4zNzkgLTUuODMsLTcuMTMxIDAsLTMuNzgyIDEuODkyLC03LjEzMiA1LjgzLC03LjEzMiAwLjcxMiwwIDEuMzY0LDAuMDk0IDEuOTgzLDAuMjE4IGwgLTEuMTE1LDEuMDg1IGMgLTAuMzQyLDAuMzEgLTAuNTksMC44MDYgLTAuNTksMS4yNCAwLDEuMjA5IDAuODM4LDIuMjMyIDIuMTA5LDIuMjMyIDAuNDM0LDAgMC44MDUsLTAuMTU1IDEuMTc4LC0wLjQwMyBMIDAsMCBaIG0gMC4zNzEsLTYuMDc3IGMgLTEuNTE5LC0wLjg2OCAtMy4zNDgsLTEuMzY0IC01LjQ1NiwtMS4zNjQgLTYuMjk1LDAgLTEwLjY2Niw0Ljk5MiAtMTAuNjY2LDExLjQxIDAsNi40NDkgNC4zNCwxMS40MSAxMC42NjYsMTEuNDEgNi4yMzEsMCAxMC42NjUsLTUuMTE2IDEwLjY2NSwtMTEuNDEgMCwtMi43MjkgLTAuNzEzLC01LjIwOSAtMi4wNzgsLTcuMTYyIGwgMS43NjgsLTEuNTIgYyAwLjU4OSwtMC41MjcgMS4wODUsLTEuMDIzIDEuMDg1LC0xLjg5MSAwLC0xLjA4NSAtMS4wODUsLTEuOTU0IC0yLjEzOCwtMS45NTQgLTAuNjg0LDAgLTEuMjQsMC4yOCAtMi4wNzgsMC45OTMgbCAtMS43NjgsMS40ODggeiIvPjwvZz48L2c+PC9nPjwvZz4KCQoJPG1ldGFkYXRhPgoJCTxyZGY6UkRGIHhtbG5zOnJkZj0iaHR0cDovL3d3dy53My5vcmcvMTk5OS8wMi8yMi1yZGYtc3ludGF4LW5zIyIgeG1sbnM6cmRmcz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC8wMS9yZGYtc2NoZW1hIyIgeG1sbnM6ZGM9Imh0dHA6Ly9wdXJsLm9yZy9kYy9lbGVtZW50cy8xLjEvIj4KCQkJPHJkZjpEZXNjcmlwdGlvbiBhYm91dD0iaHR0cHM6Ly9pY29uc2NvdXQuY29tL2xlZ2FsI2xpY2Vuc2VzIiBkYzp0aXRsZT0iUSwgQ2hhcmFjdGVycywgQ2hhcmFjdGVyLCBBbHBoYWJldCwgTGV0dGVyIiBkYzpkZXNjcmlwdGlvbj0iUSwgQ2hhcmFjdGVycywgQ2hhcmFjdGVyLCBBbHBoYWJldCwgTGV0dGVyIiBkYzpwdWJsaXNoZXI9Ikljb25zY291dCIgZGM6ZGF0ZT0iMjAxNi0xMi0xNCIgZGM6Zm9ybWF0PSJpbWFnZS9zdmcreG1sIiBkYzpsYW5ndWFnZT0iZW4iPgoJCQkJPGRjOmNyZWF0b3I+CgkJCQkJPHJkZjpCYWc+CgkJCQkJCTxyZGY6bGk+VHdpdHRlciBFbW9qaTwvcmRmOmxpPgoJCQkJCTwvcmRmOkJhZz4KCQkJCTwvZGM6Y3JlYXRvcj4KCQkJPC9yZGY6RGVzY3JpcHRpb24+CgkJPC9yZGY6UkRGPgogICAgPC9tZXRhZGF0YT48L3N2Zz4K';
@@ -62,18 +116,26 @@ export class WebWalletAdapter extends BaseMessageSignerWalletAdapter {
     private _selecting: boolean;
     private _connecting: boolean;
     private _disconnecting: boolean;
-    private _keyPair: Keypair | null;
-    private _publicKey: PublicKey | null;
+    private _keyPair: SolanaKeypair | null;
+    private _publicKey: ChainPublicKey | null;
     private _secretKey: Uint8Array | null;
     private _wallet: WebWallet | null;
     private _readyState: WalletReadyState;
 
-    constructor(config: WebWalletAdapterConfig = {}) {
+    constructor(config: WebWalletAdapterConfig) {
         super();
-        this.name = (config.name ?? 'WebWallet') as WalletName;
+        this._config = config;
+
+        this.name = this.config.name ?? ('WebWallet' as WalletName);
+
+        const network = this._config.network ?? getAdapterNetwork(DEFAULT_TICKER, DEFAULT_NETWORK);
+        if (!network) {
+            throw new Error("Unable to set the web wallet's network");
+        }
+
+        this.network = network;
 
         this._activeNotification = false;
-        this._config = config;
         this._chain = null;
         this._autoConnect = false;
         this._label = null;
@@ -85,6 +147,7 @@ export class WebWalletAdapter extends BaseMessageSignerWalletAdapter {
         this._secretKey = null;
         this._wallet = null;
         this._readyState = typeof window === 'undefined' ? WalletReadyState.Unsupported : WalletReadyState.Loadable;
+        this.chain = ChainTickers.SOL;
     }
 
     private _disconnected = () => {
@@ -107,9 +170,9 @@ export class WebWalletAdapter extends BaseMessageSignerWalletAdapter {
         return this._autoConnect;
     }
 
-    get chain(): Chain | null {
-        return this._chain;
-    }
+    // get chain(): ChainTicker {
+    //     return this._chain;
+    // }
 
     get label(): string | null {
         return this._label;
@@ -139,11 +202,11 @@ export class WebWalletAdapter extends BaseMessageSignerWalletAdapter {
         return !!this._wallet?.disconnected;
     }
 
-    get keyPair(): Keypair | null {
+    get keyPair(): SolanaKeypair | null {
         return this._keyPair;
     }
 
-    get publicKey(): PublicKey | null {
+    get publicKey(): ChainPublicKey | null {
         return this._publicKey;
     }
 
@@ -155,15 +218,15 @@ export class WebWalletAdapter extends BaseMessageSignerWalletAdapter {
         return this._readyState;
     }
 
-    public async setCredentials(chain: string, label: string, privateKey: string): Promise<void> {
+    public async setCredentials(chain: Chain, label: string, privateKey: string): Promise<void> {
         console.debug(`WebWalletAdapter(setCrentials): Setting credentials for '${chain}' wallet ${label}`);
         this._label = label;
         this._secretKey = new Uint8Array(JSON.parse(privateKey));
-        this._publicKey = Keypair.fromSecretKey(this._secretKey).publicKey;
-        this._keyPair = Keypair.fromSecretKey(this._secretKey);
+        this._publicKey = SolanaKeypair.fromSecretKey(this._secretKey).publicKey;
+        this._keyPair = SolanaKeypair.fromSecretKey(this._secretKey);
     }
 
-    public async connect(chain?: string, label?: string, privateKey?: string): Promise<void> {
+    public async connect(chain?: Chain, label?: string, privateKey?: string): Promise<void> {
         console.debug(`WebWalletAdapter(connect): Connecting to '${chain}' wallet ${label}`);
         // console.warn('WebWalletAdapter(privateKey): ', privateKey)
         if (this.connected || this.connecting) return;
@@ -201,8 +264,9 @@ export class WebWalletAdapter extends BaseMessageSignerWalletAdapter {
         // }
 
         try {
+            //@TODO: change to default network
             if (!this._wallet) {
-                this._wallet = new WebWallet({ network: this._config.network }, {});
+                this._wallet = new WebWallet(this.config, {});
             }
             const wallet = this._wallet;
 
@@ -212,8 +276,8 @@ export class WebWalletAdapter extends BaseMessageSignerWalletAdapter {
                 this._connecting = false;
                 throw new WalletPrivateKeyError(`No private keys provided!`);
             }
-            const keypair = Keypair.fromSecretKey(decodeBs58(privateKey));
-            // this._keyPair = Keypair.fromSecretKey(privateKey)
+            const keypair = SolanaKeypair.fromSecretKey(decodeBase58(privateKey));
+            // this._keyPair = SolanaKeypair.fromSecretKey(privateKey)
             if (!keypair) {
                 this._connecting = false;
                 throw new WalletKeypairError(`Unable to create a keypair!`);
@@ -276,7 +340,7 @@ export class WebWalletAdapter extends BaseMessageSignerWalletAdapter {
             if (!wallet.connected) {
                 try {
                     console.debug(`connecting to webwallet: ${wallet.publicKey}`);
-                    await wallet.connect(chain, label, decodeBs58(privateKey));
+                    await wallet.connect(chain, label, decodeBase58(privateKey));
                 } catch (error) {
                     this._connecting = false;
                     const errMsg =
@@ -303,11 +367,11 @@ export class WebWalletAdapter extends BaseMessageSignerWalletAdapter {
             if (!wallet.publicKey) {
                 throw new WalletPublicKeyError(`No Public key found for Web Wallet Adapter(${wallet.name})!`);
             }
-            let publicKey: PublicKey;
+            let publicKey: ChainPublicKey;
 
             // try {
             //     const keyBytes = wallet?.publicKey;
-            //     publicKey = new PublicKey(keyBytes!);
+            //     publicKey = new ChainPublicKey(keyBytes!);
             // } catch (error) {
             //     let errMsg = error instanceof Error
             //         ? `Web Wallet Adapter(${wallet.name}) Public Key Error: ${error.message}`
@@ -406,7 +470,7 @@ export class WebWalletAdapter extends BaseMessageSignerWalletAdapter {
     }
 
     // public async select(
-    //     chain?: string,
+    //     chain?: Chain,
     //     privateKey?: string
     //     // force?: boolean,
     // ): Promise<void> {
@@ -458,49 +522,49 @@ export class WebWalletAdapter extends BaseMessageSignerWalletAdapter {
     //     console.info('Web Wallet selected');
     // }
 
-    public async sendTransaction(
-        transaction: Transaction,
-        connection: Connection,
-        options: SendTransactionOptions = {}
-    ): Promise<TransactionSignature> {
-        let emit = true;
-        try {
-            try {
-                transaction = await this.prepareTransaction(transaction, connection);
+    // public sendTransaction = async (
+    //     transaction: SolanaTransaction,
+    //     connection: SolanaConnection,
+    //     options: SendTransactionOptions<SolanaSigner, SolanaTransactionSignature> = {}
+    // ): Promise<TransactionSignature> => {
+    //     let emit = true;
+    //     try {
+    //         try {
+    //             transaction = await this.prepareTransaction(transaction, connection) as SolanaTransaction;
 
-                const { signers, ...sendOptions } = options;
-                signers?.length && transaction.partialSign(...signers);
+    //             const { signers, sendOptions } = options;
+    //             signers?.length && transaction.partialSign(...signers);
 
-                transaction = await this.signTransaction(transaction);
+    //             transaction = await this.signTransaction(transaction) as SolanaTransaction;
 
-                const rawTransaction = transaction.serialize();
+    //             const rawTransaction = transaction.serialize();
 
-                return await connection.sendRawTransaction(rawTransaction, sendOptions);
-            } catch (error) {
-                // If the error was thrown by `signTransaction`, rethrow it and don't emit a duplicate event
-                const errMsg = error instanceof Error ? error.message : 'Unknown error occurred';
+    //             return await connection.sendRawTransaction(rawTransaction, sendOptions);
+    //         } catch (error) {
+    //             // If the error was thrown by `signTransaction`, rethrow it and don't emit a duplicate event
+    //             const errMsg = error instanceof Error ? error.message : 'Unknown error occurred';
 
-                if (error instanceof WalletSignTransactionError) {
-                    emit = false;
-                    throw error;
-                }
+    //             if (error instanceof WalletSignTransactionError) {
+    //                 emit = false;
+    //                 throw error;
+    //             }
 
-                throw new WalletSendTransactionError(errMsg, error);
-            }
-        } catch (error) {
-            if (emit) {
-                const walletError =
-                    error instanceof WalletError
-                        ? error
-                        : new WalletError(error instanceof Error ? error.message : 'Unknown error occurred');
-                this.emit('error', walletError);
-            }
+    //             throw new WalletSendTransactionError(errMsg, error);
+    //         }
+    //     } catch (error) {
+    //         if (emit) {
+    //             const walletError =
+    //                 error instanceof WalletError
+    //                     ? error
+    //                     : new WalletError(error instanceof Error ? error.message : 'Unknown error occurred');
+    //             this.emit('error', walletError);
+    //         }
 
-            throw error;
-        }
-    }
+    //         throw error;
+    //     }
+    // }
 
-    public async signTransaction(transaction: Transaction): Promise<Transaction> {
+    public async signTransaction(transaction: ChainTransaction): Promise<ChainTransaction> {
         try {
             const wallet = this._wallet;
             if (!wallet) throw new WalletNotConnectedError();
@@ -521,7 +585,7 @@ export class WebWalletAdapter extends BaseMessageSignerWalletAdapter {
         }
     }
 
-    public async signAllTransactions(transactions: Transaction[]): Promise<Transaction[]> {
+    public async signAllTransactions(transactions: SolanaTransaction[]): Promise<ChainTransaction[]> {
         try {
             const wallet = this._wallet;
             if (!wallet) throw new WalletNotConnectedError();

@@ -1,4 +1,7 @@
+import type { ApiItem, ApiProfile, ApiUser, LocalMintStore, LocalWalletStore } from '@mindblox-wallet-adapter/base';
+import { ArtType } from '@mindblox-wallet-adapter/base';
 import { notify } from '@mindblox-wallet-adapter/react';
+
 import {
     deleteDatabase,
     readAllUsers,
@@ -34,35 +37,8 @@ import {
 } from './utils';
 import { IndexDbProfile } from './db';
 import { db, IndexDbUser, IndexDbWallet, IndexDbMint, IndexDbItem } from './db';
-import type {
-    LocalUserStore,
-    LocalWalletStore,
-    // LocalProfileStore
-} from '../store';
-
-import type { ApiItem, ApiProfile } from '../api';
-import {
-    ArtType,
-    type ApiUser,
-    // ApiWallet,
-    // ApiProfile,
-} from '../api';
 
 // Interfaces
-
-export interface LocalUsers {
-    data: LocalUserStore[];
-}
-
-export interface LocalWallets {
-    data: LocalWalletStore[];
-}
-export interface lMint {
-    mint: string;
-    owner: string;
-    address: string;
-}
-
 // Helper functions
 
 const hasDuplicates = <T>(arr: T[]): boolean => (arr.length > 1 ? true : false);
@@ -428,7 +404,7 @@ export const getSavedMints = async (walletId: string): Promise<IndexDbMint[]> =>
     return dbMint;
 };
 
-export const saveMint = async (id: string, lMint: lMint) => {
+export const saveMint = async (id: string, lMint: LocalMintStore) => {
     console.debug(`IndexDB: saving mint ${id} ...`);
     const newMint = await db.transaction('rw', db.wallets, db.mints, async () => {
         const { mint, owner, address } = lMint;

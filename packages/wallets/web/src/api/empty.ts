@@ -1,6 +1,17 @@
-import { MetadataCategory } from '../networks/solana';
-import type { ApiItem, ApiItems, ApiProfile, ApiProfiles, ApiUser, ApiUsers, ApiWallet, ApiWallets } from './types';
-import { ArtType } from '.';
+import type {
+    ApiItem,
+    ApiItems,
+    ApiProfile,
+    ApiProfiles,
+    ApiUser,
+    ApiUsers,
+    ApiWallet,
+    ApiWallets,
+} from '@mindblox-wallet-adapter/base';
+import { ArtType } from '@mindblox-wallet-adapter/base';
+import { MetadataCategory } from '@mindblox-wallet-adapter/solana';
+
+import { DEFAULT_CHAIN } from '../constants';
 
 export const emptyItem: ApiItem = {
     id: '',
@@ -35,7 +46,7 @@ export const emptyItem: ApiItem = {
             type: '',
         },
     ],
-    chain: '',
+    chain: DEFAULT_CHAIN,
     tokenMint: '',
     publicKey: '',
     createdAt: '',
@@ -87,7 +98,7 @@ export const emptyUsers: ApiUsers = {
 
 export const emptyWallet: ApiWallet = {
     userId: '',
-    chain: '',
+    chain: DEFAULT_CHAIN,
     label: '',
     pubKey: '',
     encryptedSeedPhrase: '',

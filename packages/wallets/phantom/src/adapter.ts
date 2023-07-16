@@ -1,8 +1,19 @@
-import type { Connection, SendOptions, Transaction, TransactionSignature } from '@solana/web3.js';
-import { PublicKey } from '@solana/web3.js';
-
-import type { EventEmitter, SendTransactionOptions, WalletName } from '@mindblox-wallet-adapter/base';
+import type {
+    EventEmitter,
+    SendTransactionOptions,
+    SolanaConnection,
+    SolanaSendOptions,
+    SolanaTransaction,
+    WalletName,
+    SolanaTransactionSignature,
+    ChainTicker,
+    SolanaSigner,
+    ChainSendOptions,
+    ChainSigner,
+} from '@mindblox-wallet-adapter/base';
 import {
+    SolanaPublicKey,
+    ChainTickers,
     BaseMessageSignerWalletAdapter,
     scopePollingDetectionStrategy,
     WalletAccountError,
@@ -19,25 +30,36 @@ import {
     WalletSignTransactionError,
     handleError,
 } from '@mindblox-wallet-adapter/base';
+import type { Transaction, TransactionSignature } from '@solana/web3.js';
+import type { Connection } from 'near-api-js';
 
 interface PhantomWalletEvents {
     connect(...args: unknown[]): unknown;
     disconnect(...args: unknown[]): unknown;
 }
 
-interface PhantomWallet extends EventEmitter<PhantomWalletEvents> {
+export interface PhantomWallet extends EventEmitter<PhantomWalletEvents> {
+    chain: ChainTicker | null;
+    name: WalletName;
     isPhantom?: boolean;
+    adapter?: PhantomWalletAdapter;
+    readyState: WalletReadyState;
     publicKey?: { toBytes(): Uint8Array };
     isConnected: boolean;
-    signTransaction(transaction: Transaction): Promise<Transaction>;
-    signAllTransactions(transactions: Transaction[]): Promise<Transaction[]>;
+    signTransaction(transaction: SolanaTransaction): Promise<SolanaTransaction>;
+    signAllTransactions(transactions: SolanaTransaction[]): Promise<SolanaTransaction[]>;
     signAndSendTransaction(
-        transaction: Transaction,
-        options?: SendOptions
-    ): Promise<{ signature: TransactionSignature }>;
+        transaction: SolanaTransaction,
+        options?: SolanaSendOptions
+    ): Promise<{ signature: SolanaTransactionSignature }>;
     signMessage(message: Uint8Array): Promise<{ signature: Uint8Array }>;
     connect(): Promise<void>;
     disconnect(): Promise<void>;
+    sendTransaction<Signer extends ChainSigner, SendOptions extends ChainSendOptions>(
+        transaction: Transaction,
+        connection: Connection,
+        options?: SendTransactionOptions<Signer, SendOptions>
+    ): Promise<TransactionSignature>;
     _handleDisconnect(...args: unknown[]): unknown;
 }
 
@@ -52,9 +74,16 @@ declare const window: PhantomWindow;
 
 export interface PhantomWalletAdapterConfig {}
 
-export const PhantomWalletName = 'Phantom' as WalletName<'Phantom'>;
+export const PhantomWalletName = 'Phantom' as WalletName;
 
-export class PhantomWalletAdapter extends BaseMessageSignerWalletAdapter {
+export class PhantomWalletAdapter extends BaseMessageSignerWalletAdapter<
+    SolanaPublicKey,
+    WalletError,
+    SolanaTransaction,
+    SolanaConnection,
+    SolanaTransactionSignature
+> {
+    chain = ChainTickers.SOL;
     name = PhantomWalletName;
     url = 'https://phantom.app';
     icon =
@@ -62,7 +91,7 @@ export class PhantomWalletAdapter extends BaseMessageSignerWalletAdapter {
 
     private _connecting: boolean;
     private _wallet: PhantomWallet | null;
-    private _publicKey: PublicKey | null;
+    private _publicKey: SolanaPublicKey | null;
     private _readyState: WalletReadyState =
         typeof window === 'undefined' || typeof document === 'undefined'
             ? WalletReadyState.Unsupported
@@ -86,7 +115,7 @@ export class PhantomWalletAdapter extends BaseMessageSignerWalletAdapter {
         }
     }
 
-    get publicKey(): PublicKey | null {
+    get publicKey(): SolanaPublicKey | null {
         return this._publicKey;
     }
 
@@ -122,9 +151,9 @@ export class PhantomWalletAdapter extends BaseMessageSignerWalletAdapter {
 
             if (!wallet.publicKey) throw new WalletAccountError();
 
-            let publicKey: PublicKey;
+            let publicKey: SolanaPublicKey;
             try {
-                publicKey = new PublicKey(wallet.publicKey.toBytes());
+                publicKey = new SolanaPublicKey(wallet.publicKey.toBytes());
             } catch (error: unknown) {
                 throw handleError(error, WalletPublicKeyError);
             }
@@ -161,11 +190,11 @@ export class PhantomWalletAdapter extends BaseMessageSignerWalletAdapter {
         this.emit('disconnect');
     }
 
-    async sendTransaction(
-        transaction: Transaction,
-        connection: Connection,
-        options: SendTransactionOptions = {}
-    ): Promise<TransactionSignature> {
+    sendTransaction = async (
+        transaction: SolanaTransaction,
+        connection: SolanaConnection,
+        options: SendTransactionOptions<SolanaSigner, SolanaSendOptions> = {}
+    ): Promise<SolanaTransactionSignature | undefined> => {
         try {
             const wallet = this._wallet;
             if (!wallet) throw new WalletNotConnectedError();
@@ -173,10 +202,12 @@ export class PhantomWalletAdapter extends BaseMessageSignerWalletAdapter {
             try {
                 transaction = await this.prepareTransaction(transaction, connection);
 
-                const { signers, ...sendOptions } = options;
+                const { signers, sendOptions } = options;
                 signers?.length && transaction.partialSign(...signers);
 
-                sendOptions.preflightCommitment = sendOptions.preflightCommitment || connection.commitment;
+                if (sendOptions) {
+                    sendOptions.preflightCommitment = sendOptions?.preflightCommitment ?? connection.commitment;
+                }
 
                 const { signature } = await wallet.signAndSendTransaction(transaction, sendOptions);
                 return signature;
@@ -187,9 +218,9 @@ export class PhantomWalletAdapter extends BaseMessageSignerWalletAdapter {
             this.emit('error', handleError(error, WalletSendTransactionError));
             throw error;
         }
-    }
+    };
 
-    async signTransaction(transaction: Transaction): Promise<Transaction> {
+    async signTransaction(transaction: SolanaTransaction): Promise<SolanaTransaction> {
         try {
             const wallet = this._wallet;
             if (!wallet) throw new WalletNotConnectedError();
@@ -205,7 +236,7 @@ export class PhantomWalletAdapter extends BaseMessageSignerWalletAdapter {
         }
     }
 
-    async signAllTransactions(transactions: Transaction[]): Promise<Transaction[]> {
+    async signAllTransactions(transactions: SolanaTransaction[]): Promise<SolanaTransaction[]> {
         try {
             const wallet = this._wallet;
             if (!wallet) throw new WalletNotConnectedError();

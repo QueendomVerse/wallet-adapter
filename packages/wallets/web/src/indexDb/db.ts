@@ -1,10 +1,10 @@
 import Dexie from 'dexie';
 import { createId } from '@paralleldrive/cuid2';
-import type { LocalTransactionStore } from '../store';
+
+import type { Artist, ArtType, Chain, LocalTransactionStore } from '@mindblox-wallet-adapter/base';
+import type { Creator, MetadataCategory, Attribute, FileOrString } from '@mindblox-wallet-adapter/solana';
+
 import { INDEXED_DB_VERSION } from './constants';
-import type { ArtType, Artist } from '../api';
-import type { Attribute, Creator, FileOrString, MetadataCategory } from '../networks/solana';
-// import { LocalWalletStore } from '../store';
 
 abstract class AbstractEntity {
     constructor(public gid?: string) {
@@ -99,7 +99,7 @@ export class IndexDbWallet extends AbstractEntity {
     mints!: IndexDbMint[];
 
     constructor(
-        public chain: string,
+        public chain: Chain,
         public label: string,
         public pubKey: string,
         public encryptedSeedPhrase: string,
@@ -166,7 +166,7 @@ export class IndexDbItem extends AbstractEntity {
         public story: string,
         public attributes: Attribute[],
         public files: FileOrString[],
-        public chain: string,
+        public chain: Chain,
         public tokenMint: string,
         public publicKey: string,
         public createdAt: string,

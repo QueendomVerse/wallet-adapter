@@ -1,9 +1,9 @@
 import { FormData } from 'formdata-node';
 
+import type { ApiUser, LocalWalletStore } from '@mindblox-wallet-adapter/base';
+
 import type { ApiClient, FetchOptions } from './client';
-import type { LocalWalletStore } from '../store';
 import { emptyUser } from './empty';
-import type { ApiUser } from './types';
 
 export class UserApiClient {
     static EmptyApiUser: ApiUser = emptyUser;

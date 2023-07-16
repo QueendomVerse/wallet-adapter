@@ -13,21 +13,24 @@ import { Token, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import type { ThunkAction } from 'redux-thunk';
 import type { FinalExecutionOutcome } from 'near-api-js/lib/providers';
 
+import type {
+    ApiUser,
+    ApiWallet,
+    ApiItem,
+    Chain,
+    LocalItemStore,
+    LocalKeypairStore,
+    LocalTransactionStore,
+    LocalUserStore,
+    LocalWalletStore,
+} from '@mindblox-wallet-adapter/base';
+import { getChainProp, ChainNetworks } from '@mindblox-wallet-adapter/base';
 import { notify } from '@mindblox-wallet-adapter/react';
-import { ChainNetworks } from '../../chains';
-import type { Send, MintNearNft } from '../../networks';
-import { mintNearNft } from '../../networks';
-import {
-    // encryptText,
-    generateWallet,
-    decryptDbWallet,
-    // getKeyPairFromPrivateKey,
-    // getKeyPairFromSeedPhrase,
-    getValidWallets,
-    getBalance,
-    sendFundsTransaction,
-    getChainProp,
-} from '../../networks';
+import type { Send, MintNearNft } from '@mindblox-wallet-adapter/networks';
+import { mintNearNft } from '@mindblox-wallet-adapter/networks';
+import { getBalance, sendFundsTransaction } from '@mindblox-wallet-adapter/networks';
+import { connectionManager, ConnectionError } from '@mindblox-wallet-adapter/solana';
+
 import type { IndexDbItem } from '../../indexDb';
 import {
     type IndexDbWallet,
@@ -51,13 +54,6 @@ import {
     removeIndexDbUser,
     // getSavedIndexDbUserById,
 } from '../../indexDb';
-import type {
-    LocalWalletStore,
-    LocalKeyPairStore,
-    LocalTransactionStore,
-    LocalItemStore,
-    LocalUserStore,
-} from '../types';
 import {
     CREATE_WALLET_SUCCESS as _CREATE_WALLET_SUCCESS,
     RESTORE_WALLET_SUCCESS as _RESTORE_WALLET_SUCCESS,
@@ -80,12 +76,11 @@ import {
     TOGGLE_SELECT_USER as _TOGGLE_SELECT_USER,
     UPDATED_USER_SUCCESS as _UPDATED_USER_SUCCESS,
 } from '../types';
-
-import type { ApiUser, ApiWallet, ApiItem } from '../../api';
-import { getSavedUsers, getSavedUserById, updateUser, saveUser, getSavedItems, saveItem } from '../../indexDb/api';
-import { connectionManager, ConnectionError } from '../../networks/solana';
 import { asyncEnsureRpcConnection } from '../../utils';
-import type { RootState } from '../root';
+import type { RootState } from '../store';
+import { getSavedUsers, getSavedUserById, updateUser, saveUser, getSavedItems, saveItem } from '../../indexDb/api';
+import { getValidWallets } from '../../indexDb/helpers';
+import { generateWallet, decryptDbWallet } from '../../utils/encryption';
 
 // User actions
 const fetchUsers = (users: LocalUserStore[]) => {
@@ -649,7 +644,7 @@ const createWalletAction = (payload: LocalWalletStore) => {
 };
 
 export const thunkCreateWallet =
-    (password: string, label: string, chain: string): ThunkAction<void, RootState, unknown, Action<string>> =>
+    (password: string, label: string, chain: Chain): ThunkAction<void, RootState, unknown, Action<string>> =>
     // async (dispatch, getState) => {
     async (dispatch) => {
         if (!password || !label || !chain) return;
@@ -730,7 +725,7 @@ export const thunkRestoreWallet =
 //     label: string,
 //     seed: Uint8Array,
 //     seedPhrase: string,
-//     chain: string,
+//     chain: Chain,
 //     encodedPrivateKey: string,
 //     // decodedPrivateKey: string,
 //     publicKey: string,
@@ -771,7 +766,7 @@ export const thunkRestoreWallet =
 //         encryptedSeedPhrase: encryptedSeedPhrase,
 //         chain: chain,
 //         encryptedPrivKey: encryptedPrivateKey,
-//         privKey: decodeBs58(keypair.privateKey ?? ""),
+//         privKey: decodeBase58(keypair.privateKey ?? ""),
 //         pubKey: keypair.publicKey,
 //         balance: 0,
 //         isSelected: true,
@@ -842,7 +837,7 @@ export const thunkImportWallet =
             //   encryptedSeedPhrase: encryptedSeedPhrase,
             //   chain: chain,
             //   encryptedPrivKey: encryptedPrivateKey,
-            //   privKey: decodeBs58(keypair.privateKey ?? ""),
+            //   privKey: decodeBase58(keypair.privateKey ?? ""),
             //   pubKey: keypair.publicKey,
             //   balance: 0,
             //   isSelected: true,
@@ -1101,9 +1096,9 @@ const airdropToAccount = (updatedWalletState: LocalWalletStore[]) => {
 
 export const thunkCreateTransaction =
     (
-        chain: string,
+        chain: Chain,
         label: string,
-        keypair: LocalKeyPairStore,
+        keypair: LocalKeypairStore,
         toAddress: string,
         amount: string
     ): ThunkAction<void, RootState, unknown, Action<string>> =>
@@ -1192,17 +1187,17 @@ const createTransaction = (payload: LocalWalletStore[]) => {
     };
 };
 
-export const thunkMintNft =
+export const thunkMintNearNft =
     (
-        chain: string,
+        chain: Chain,
         label: string,
-        keypair: LocalKeyPairStore,
+        keypair: LocalKeypairStore,
         toAddress: string,
         quantity: string,
         props: MintNearNft
     ): ThunkAction<void, RootState, unknown, Action<string>> =>
     async (/*dispatch, getState*/) => {
-        console.debug(`thunkMintNft: minting NFT ...`);
+        console.debug(`thunkMintNearNft: minting NFT ...`);
         //@TODO network should derive from Env var like the rest.
         // const balance = await getBalance(chain, keypair);
 
@@ -1216,7 +1211,7 @@ export const thunkMintNft =
         //   });
         //   return null;
         // }
-        console.debug('func: thunkMintNft', chain, label);
+        console.debug('func: thunkMintNearNft', chain, label);
         console.dir(keypair);
         console.info(toAddress, quantity);
         console.dir(props);
@@ -1242,7 +1237,7 @@ export const thunkMintNft =
                     attachedDeposit: props.attachedDeposit,
                     perpetualRoyalties: props.perpetualRoyalties,
                 });
-                console.debug('thunkMintNft result');
+                console.debug('thunkMintNearNft result');
                 console.dir(result);
 
                 // @TODO create chain specific transaction links.
@@ -1265,7 +1260,7 @@ export const thunkMintNft =
                     });
                 }
 
-                console.debug(`thunkMintNft: tx: '${result}'`);
+                console.debug(`thunkMintNearNft: tx: '${result}'`);
                 // const { wallets } = getState() as { wallets: LocalWalletStore[] };
                 // const _updatedWallets = wallets.map(wallet => {
                 //   if (wallet.isSelected) {
@@ -1307,7 +1302,7 @@ export const thunkMintNft =
 
 export const thunkFetchTransaction =
     (
-        keypair: Keypair, // keypair: LocalKeyPairStore,
+        keypair: Keypair, // keypair: LocalKeypairStore,
         gid: string
     ): ThunkAction<void, RootState, unknown, Action<string>> =>
     async (dispatch, getState) => {
@@ -1435,6 +1430,7 @@ export const thunkCreateAndSendMint =
 
             // Persist in local DB
             const newMint = {
+                walletId: new PublicKey(fromTokenAccount.mint).toBase58(),
                 mint: new PublicKey(fromTokenAccount.mint).toBase58(),
                 owner: new PublicKey(fromTokenAccount.owner).toBase58(),
                 address: new PublicKey(fromTokenAccount.address).toBase58(),

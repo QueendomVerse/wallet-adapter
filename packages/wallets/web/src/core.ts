@@ -1,24 +1,34 @@
-import {
-    type Cluster,
-    clusterApiUrl,
-    type Transaction,
-    PublicKey,
-    Keypair,
-    type Ed25519Keypair,
-    // sendAndConfirmTransaction,
-    Connection,
-    // TransactionInstruction,
-} from '@solana/web3.js';
 import { EventEmitter as Emitter } from 'eventemitter3';
-import { encode as encodeBs58, decode as decodeBs58 } from 'bs58';
+import { encode as encodeBase58, decode as decodeBase58 } from 'bs58';
 import nacl from 'tweetnacl';
 import React from 'react';
 import type { Unsubscribe } from 'redux';
 
-import type { WalletName } from '@mindblox-wallet-adapter/base';
+import type {
+    Chain,
+    ChainConnection,
+    ChainKeypair,
+    ChainPublicKey,
+    ChainTransaction,
+    LocalKeypairStore,
+    LocalWalletStore,
+    WalletName,
+} from '@mindblox-wallet-adapter/base';
+import { ChainNetworks, ChainTicker } from '@mindblox-wallet-adapter/base';
 import { notify } from '@mindblox-wallet-adapter/react';
-
-import { ChainNetworks } from './chains';
+import {
+    ChainAdapterNetwork,
+    ChainConnectionFactory,
+    ChainKeypairFactory,
+    ChainPublicKeyFactory,
+    getAdapterNetwork,
+    getKeyPairFromPrivateKey,
+    getNativeKeyPairFromPrivateKey,
+    SolanaConnectionFactory,
+    SolanaKeys,
+    SolanaWalletAdapterNetwork,
+    SOLANA_ENDPOINT_NAME,
+} from '@mindblox-wallet-adapter/networks';
 
 import type {
     IndexDbWallet,
@@ -26,38 +36,26 @@ import type {
 } from './indexDb';
 import { getSavedIndexDbWallets, updateIndexDbWallet } from './indexDb';
 import { store } from './store';
-
-import type { LocalWalletStore } from './store';
-import {
-    // getPublicKey,
-    getKeyPairFromPrivateKey,
-    getNativeKeyPairFromPrivateKey,
-    // getBalance,
-    // NativeKeypair,
-} from './networks';
-import type { SolanaKeys } from './networks/solana';
-// import { NearKeypair } from '../../utils/wallets/near';
-import type { LocalKeyPairStore } from './store';
-import { SOLANA_NETWORK } from './constants';
+import type { WebWalletAdapterConfig } from './adapter';
 
 abstract class WebWalletAdapter extends Emitter {
-    abstract get publicKey(): PublicKey | null;
+    abstract get publicKey(): ChainPublicKey | null;
     abstract get connected(): boolean;
 
     // abstract connect(privateKey?: string): Promise<string | void>;
     // abstract select(
     //   walletName: WalletName,
-    //   chain?: string,
+    //   chain?: Chain,
     //   privateKey?: string
     // ): Promise<string | void>;
-    abstract select(walletName: WalletName): // chain?: string,
+    abstract select(walletName: WalletName): // chain?: Chain,
     // label?: string,
     // privateKey?: Uint8Array
     Promise<string | void>;
-    abstract connect(chain?: string, label?: string, privateKey?: Uint8Array): Promise<string | void>;
+    abstract connect(chain?: Chain, label?: string, privateKey?: Uint8Array): Promise<string | void>;
     abstract disconnect(): Promise<void>;
-    abstract signTransaction(transaction: Transaction): Promise<Transaction>;
-    abstract signAllTransactions(transactions: Transaction[]): Promise<Transaction[]>;
+    abstract signTransaction(transaction: ChainTransaction): Promise<ChainTransaction>;
+    abstract signAllTransactions(transactions: ChainTransaction[]): Promise<ChainTransaction[]>;
     abstract signMessage(data: Uint8Array, display: 'hex' | 'utf8'): Promise<Uint8Array>;
 }
 
@@ -70,11 +68,6 @@ abstract class WebWalletAdapter extends Emitter {
 //   };
 // };
 
-export interface WebWalletConfig {
-    name?: string;
-    network?: Cluster;
-}
-
 interface Props {
     focus?: boolean;
 }
@@ -86,10 +79,10 @@ export class WebWallet extends React.Component<Props, State, WebWalletAdapter> {
     public readonly emitter = new Emitter();
     public wallets: IndexDbWallet[] | null;
 
-    private _connection: Connection;
-    private _config: WebWalletConfig;
+    private _connection: ChainConnection | null = null;
+    private _config: WebWalletAdapterConfig;
     private _name: WalletName | null;
-    private _keypair: LocalKeyPairStore | null;
+    private _keypair: LocalKeypairStore | null;
     private _loaded: boolean;
     private _selected: boolean;
     private _connected: boolean;
@@ -97,10 +90,10 @@ export class WebWallet extends React.Component<Props, State, WebWalletAdapter> {
     // private _dbWallets: IndexDbWallet[] | null;
     private unsubscribeStore: Unsubscribe | null;
 
-    constructor(config: WebWalletConfig, props: Props) {
+    constructor(config: WebWalletAdapterConfig, props: Props) {
         super(props);
-        this._connection = new Connection(clusterApiUrl(SOLANA_NETWORK));
         this._config = config;
+
         // this._dbWallets = null;
         this._name = null;
         this.wallets = [];
@@ -129,6 +122,9 @@ export class WebWallet extends React.Component<Props, State, WebWalletAdapter> {
 
     async componentDidMount() {
         this.unsubscribeStore = store.subscribe(this.updateStateFromStore);
+        if (this.chain && this.network) {
+            this._connection = ChainConnectionFactory.createConnection<ChainConnection>(this.chain, this.network);
+        }
     }
 
     async componentWillUnmount() {
@@ -186,7 +182,7 @@ export class WebWallet extends React.Component<Props, State, WebWalletAdapter> {
         return _wallets;
     };
 
-    _loadDbWallet = async (chain: string, privateKey: string) => {
+    _loadDbWallet = async (chain: Chain, privateKey: string) => {
         if (!this.loaded) {
             console.debug('Please first load the local database!');
             return;
@@ -199,7 +195,7 @@ export class WebWallet extends React.Component<Props, State, WebWalletAdapter> {
 
         console.debug('Loading IndexDB pubKeys');
         // const keypairs: Keypair[] = this.wallets?.filter(({seed}) => seed).map(({seed}) => Keypair.fromSeed(Buffer.from(seed)));
-        // const keypairs: LocalKeyPairStore[] = this.wallets?.filter(({seed}) => seed).map(({seed}) => Keypair.fromSeed(Buffer.from(seed)));
+        // const keypairs: LocalKeypairStore[] = this.wallets?.filter(({seed}) => seed).map(({seed}) => Keypair.fromSeed(Buffer.from(seed)));
 
         // const wallet = keypairs?.find(key => key.secretKey.toString() === privateKey)
         const keypair = getKeyPairFromPrivateKey(chain, privateKey);
@@ -216,7 +212,7 @@ export class WebWallet extends React.Component<Props, State, WebWalletAdapter> {
         return keypair;
     };
 
-    _loadSelectedDbWallet = async (chain: string, privateKey: string, force?: boolean) => {
+    _loadSelectedDbWallet = async (chain: Chain, privateKey: string, force?: boolean) => {
         let wallets: IndexDbWallet[] | void = [];
         if (!this.loaded) {
             wallets = await this._fetchDbWallets();
@@ -268,23 +264,21 @@ export class WebWallet extends React.Component<Props, State, WebWalletAdapter> {
         return 'Installed';
     }
 
-    get publicKey(): PublicKey | null {
-        if (!this._keypair) return null;
-        return new PublicKey(this._keypair.publicKey);
+    get publicKey(): ChainPublicKey | null {
+        if (!this.chain || !this._keypair?.publicKey) return null;
+        return (
+            this.secretKey && ChainPublicKeyFactory.createPublicKey<ChainPublicKey>(this.chain, this._keypair.publicKey)
+        );
     }
 
     get secretKey(): Uint8Array | null {
         if (!this._keypair || !this._keypair.privateKey) return null;
-        return decodeBs58(this._keypair.privateKey);
+        return decodeBase58(this._keypair.privateKey);
     }
 
-    get keypair(): Keypair | null {
-        if (!this.publicKey || !this.secretKey) return null;
-        const key = {
-            publicKey: decodeBs58(this.publicKey.toBase58()),
-            secretKey: this.secretKey,
-        } as Ed25519Keypair;
-        return new Keypair(key);
+    get keypair(): ChainKeypair | null {
+        if (!this.chain || !this.secretKey) return null;
+        return this.secretKey && ChainKeypairFactory.createKeypair<ChainKeypair>(this.chain, this.secretKey);
     }
 
     get loaded() {
@@ -315,6 +309,10 @@ export class WebWallet extends React.Component<Props, State, WebWalletAdapter> {
         return this._config.network;
     }
 
+    get chain() {
+        return this._config.chain;
+    }
+
     async loadDb() {
         let wallets: IndexDbWallet[] | void = [];
         if (!this.loaded) {
@@ -332,8 +330,8 @@ export class WebWallet extends React.Component<Props, State, WebWalletAdapter> {
         return wallets;
     }
 
-    // async selectWallet(chain: string, privateKey: string, force?: boolean) {
-    async selectWallet(chain: string, privateKey: string) {
+    // async selectWallet(chain: Chain, privateKey: string, force?: boolean) {
+    async selectWallet(chain: Chain, privateKey: string) {
         console.debug('func(WebWallet): selectWallet', chain, privateKey);
         if (!this.loaded) {
             console.warn('Please first load the local database!');
@@ -350,7 +348,7 @@ export class WebWallet extends React.Component<Props, State, WebWalletAdapter> {
             return;
         }
 
-        // let keypair: LocalKeyPairStore | undefined;
+        // let keypair: LocalKeypairStore | undefined;
         // if (this.loaded && this.wallets && privateKey) {
 
         //   keypair = privateKey
@@ -390,7 +388,7 @@ export class WebWallet extends React.Component<Props, State, WebWalletAdapter> {
             return;
         }
 
-        // let keypair: LocalKeyPairStore | undefined;
+        // let keypair: LocalKeypairStore | undefined;
         // if (this.loaded && this.wallets && chain && label && privateKey) {
         //   const walletName = `${capitalizeFirst(chain)}${capitalizeFirst(label)}WebWallet` as WalletName;
 
@@ -398,7 +396,7 @@ export class WebWallet extends React.Component<Props, State, WebWalletAdapter> {
         //     privateKey ? 'loading keypair ...' : 'loading selected ...',
         //   );
         //   keypair = privateKey
-        //     ? await this._loadDbWallet(chain, encodeBs58(privateKey))
+        //     ? await this._loadDbWallet(chain, encodeBase58(privateKey))
         //     : await this._loadSelectedDbWallet(chain, privateKey);
 
         //   this.emitter.emit('select', walletName, chain, privateKey);
@@ -432,7 +430,7 @@ export class WebWallet extends React.Component<Props, State, WebWalletAdapter> {
         // });
     }
 
-    async connect(chain?: string, label?: string, privateKey?: Uint8Array, force?: boolean) {
+    async connect(chain?: Chain, label?: string, privateKey?: Uint8Array, force?: boolean) {
         console.debug('func(WebWallet): connect');
         if (!this.loaded) {
             console.warn('Please first load the local database!');
@@ -448,13 +446,13 @@ export class WebWallet extends React.Component<Props, State, WebWalletAdapter> {
             return;
         }
 
-        let keypair: LocalKeyPairStore | undefined;
+        let keypair: LocalKeypairStore | undefined;
         if (this.loaded && this.wallets && chain && privateKey) {
             keypair = privateKey
                 ? // ? await this._loadDbWallet(chain, privateKey)
                   // : await this._loadSelectedDbWallet(chain, privateKey, force);
-                  await this._loadDbWallet(chain, encodeBs58(privateKey))
-                : await this._loadSelectedDbWallet(chain, encodeBs58(privateKey), force);
+                  await this._loadDbWallet(chain, encodeBase58(privateKey))
+                : await this._loadSelectedDbWallet(chain, encodeBase58(privateKey), force);
         }
 
         if (!keypair) {
@@ -500,7 +498,7 @@ export class WebWallet extends React.Component<Props, State, WebWalletAdapter> {
         // });
     }
 
-    async signTransaction(transaction: Transaction): Promise<Transaction> {
+    async signTransaction(transaction: ChainTransaction): Promise<ChainTransaction> {
         if (!this.connected) {
             throw new Error('Wallet not connected');
         }
@@ -511,24 +509,27 @@ export class WebWallet extends React.Component<Props, State, WebWalletAdapter> {
             throw new Error('No keypairs found!');
         }
 
-        const { keypair } = getNativeKeyPairFromPrivateKey(
-            ChainNetworks.SOL,
-            this._keypair?.privateKey ?? ''
-        ) as SolanaKeys;
+        // const { keypair } = getNativeKeyPairFromPrivateKey(
+        //     ChainNetworks.SOL,
+        //     this._keypair?.privateKey ?? ''
+        // ) as SolanaKeys;
 
         console.debug('transaction', transaction);
-        return new Promise<Transaction>((resolve /*reject*/) => {
+        return new Promise<ChainTransaction>((resolve /*reject*/) => {
+            if (!this.secretKey || !this.publicKey) {
+                throw new Error('Unable to process transaction without keypairs');
+            }
             const transactionBuffer = transaction.serializeMessage();
-            const signature = encodeBs58(nacl.sign.detached(transactionBuffer, keypair?.secretKey));
+            const signature = encodeBase58(nacl.sign.detached(transactionBuffer, this.secretKey));
             console.debug('transactionBuffer', transactionBuffer);
             console.debug('signature', signature);
 
-            transaction.addSignature(keypair?.publicKey, decodeBs58(signature));
+            // transaction.addSignature(this.publicKey, decodeBase58(signature));
             resolve(transaction);
         });
     }
 
-    async signAllTransactions(transactions: Transaction[]): Promise<Transaction[]> {
+    async signAllTransactions(transactions: ChainTransaction[]): Promise<ChainTransaction[]> {
         if (!this.connected) {
             throw new Error('Wallet not connected');
         }

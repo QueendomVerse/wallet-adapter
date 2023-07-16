@@ -32,3 +32,10 @@ export const fetchWithRetry = async (
 };
 
 export const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
+
+export const chunks = <T>(array: T[], size: number): T[][] =>
+    Array.from({ length: Math.ceil(array.length / size) }, (_, index) => array.slice(index * size, (index + 1) * size));
+
+export const getUnixTs = () => {
+    return new Date().getTime() / 1000;
+};

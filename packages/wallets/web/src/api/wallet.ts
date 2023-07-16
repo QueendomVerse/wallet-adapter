@@ -1,6 +1,6 @@
+import type { ApiWallet, Chain, LocalTransactionStore } from '@mindblox-wallet-adapter/base';
+
 import type { ApiClient } from './client';
-import type { LocalTransactionStore } from '../store';
-import type { ApiWallet } from './types';
 import { emptyWallet } from './empty';
 
 export class WalletApiClient {
@@ -10,7 +10,7 @@ export class WalletApiClient {
 
     createWallet = async (
         userId: string,
-        chain: string,
+        chain: Chain,
         label: string,
         pubKey: string,
         encryptedSeedPhrase = '',

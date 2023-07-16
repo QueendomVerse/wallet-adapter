@@ -4,9 +4,11 @@ import EventEmitter from 'events';
 import { URL } from 'url';
 import type { FormData } from 'formdata-node';
 
+import type { ApiProfile } from '@mindblox-wallet-adapter/base';
+
 import { UserApiClient } from './user';
 import { WalletApiClient } from './wallet';
-import type { ApiProfile } from './types';
+
 import { emptyProfile } from './empty';
 import { ItemApiClient } from './item';
 import { ProfileApiClient } from './profile';

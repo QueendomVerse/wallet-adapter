@@ -1,8 +1,7 @@
-import type { LocalItemStore } from '../store';
-import type { SolanaAttribute } from '../networks';
+import type { ApiItem, LocalItemStore, SolanaAttribute } from '@mindblox-wallet-adapter/base';
+
 import type { ApiClient, FetchOptions } from './client';
 import { emptyItem } from './empty';
-import type { ApiItem } from './types';
 
 export class ItemApiClient {
     static emptyItem: ApiItem = emptyItem;

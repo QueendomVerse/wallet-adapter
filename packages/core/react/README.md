@@ -1,4 +1,4 @@
-# `@solana/wallet-adapter-react`
+# `@mindblox/wallet-adapter-react`
 
 <!-- @TODO -->
 
