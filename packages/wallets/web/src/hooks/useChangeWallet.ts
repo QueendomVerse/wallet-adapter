@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useDispatch } from 'react-redux';
 import { encode as encodeBase58, decode as decodeBase58 } from 'bs58';
 
 import type {
@@ -18,26 +17,26 @@ import {
     WalletLoadError,
     capitalizeFirst,
     ChainNetworks,
+    WalletReadyState,
 } from '@mindblox-wallet-adapter/base';
 import { getKeyPairFromPrivateKey, getBalance, getAdapterNetwork } from '@mindblox-wallet-adapter/networks';
 
-import type { ExtendedWallet } from '../adapter';
-import { WebWalletAdapter } from '../adapter';
+import type { ExtendedWallet } from '../wallet';
+import { WebWalletAdapter } from '../wallet';
 
 import {
     useBalanceState,
-    useSelectedWalletNameState,
-    useTickerState,
+    useIndexDb,
     useWallet,
     useWalletAdapterConfig,
     useWalletConnectedState,
     useWalletState,
 } from '../hooks';
-import type { IndexDbWallet } from '../indexDb';
-import { getSavedIndexDbUserById, getSavedIndexDbWallet } from '../indexDb';
+import { type IndexDbWallet } from '../indexDb';
+// import { getSavedIndexDbUserById, getSavedIndexDbWallet } from '../indexDb';
 import type { AppDispatch, SelectedWallet } from '../store';
 import { thunkFetchUser } from '../store';
-import { ApiClient } from '../api';
+import { UserApiClient } from '../api';
 
 export enum Status {
     PENDING = 'pending',
@@ -53,12 +52,13 @@ export interface WalletProps {
     label: string;
 }
 
-interface WalletInteraction {
+export interface WalletInteraction {
     status: Status;
     message: string | null;
     error: string | null;
     wallet: WalletProps | undefined;
     keypair: ChainKeypair | undefined;
+    display: () => void;
     setWallet: (wallet: WalletProps, userAccountId?: string) => Promise<void>;
     disconnectWallets: (currentWallet?: WalletName) => Promise<void>;
 }
@@ -69,15 +69,12 @@ interface WalletConfig {
 }
 
 export const useChangeWallet = ({ apiUrl, accountId }: WalletConfig): WalletInteraction => {
-    const apiClient = new ApiClient({ apiUrl });
-
-    const { setSelectedTicker } = useTickerState();
+    const userApiClient = new UserApiClient({apiUrl});
 
     const { setIsWalletConnected } = useWalletConnectedState();
     const { setBalance } = useBalanceState();
     const { selectedWallet, setSelectedWallet } = useWalletState();
-    const { setSelectedWalletName } = useSelectedWalletNameState();
-    const { adapterConfig } = useWalletAdapterConfig();
+    const { adapterConfig, setAdapterConfig } = useWalletAdapterConfig();
 
     const [status, setStatus] = useState(Status.IDLE);
     const [message, setMessage] = useState<string | null>(null);
@@ -85,8 +82,9 @@ export const useChangeWallet = ({ apiUrl, accountId }: WalletConfig): WalletInte
     const [toWallet, setToWallet] = useState<WalletProps | undefined>();
     const [keypair, setKeypair] = useState<ChainKeypair | undefined>();
 
-    const dispatch: AppDispatch = useDispatch();
     const { adapter, wallets, wallet, select, connect, disconnect, publicKey, connected } = useWallet();
+
+    const { indexDb } = useIndexDb()
 
     const _wallets = wallets as ExtendedWallet[];
     const activeWallet = wallet as ExtendedWallet;
@@ -111,8 +109,11 @@ export const useChangeWallet = ({ apiUrl, accountId }: WalletConfig): WalletInte
     }, [toWallet, activeWallet, _wallets, selectedWallet, connected, publicKey]);
 
     const fetchDbUser = useCallback(async (id: string) => {
-        dispatch(thunkFetchUser(id));
-        return await getSavedIndexDbUserById(id);
+        if (!indexDb) {
+            console.warn('Unable to fetch Db user. Database is not yet initialized');
+            return
+        }
+        return await indexDb.getSavedUserById(id);
     }, []);
 
     const setActiveWallet = useCallback(
@@ -120,7 +121,7 @@ export const useChangeWallet = ({ apiUrl, accountId }: WalletConfig): WalletInte
             console.info(`WalletInteraction: setting wallet active: '${chain}' '${label}`);
 
             const dbUsr = await fetchDbUser(userAccountId);
-            const apiUsr = await apiClient.user.findOneUserById(userAccountId);
+            const {data: apiUsr} = await userApiClient.findOneUserById(userAccountId);
             const usr = dbUsr ?? apiUsr; //@TODO account for db functions below
 
             if (!usr) {
@@ -140,7 +141,7 @@ export const useChangeWallet = ({ apiUrl, accountId }: WalletConfig): WalletInte
                 (wlt) => wlt.label === 'primary' && wlt.chain === ChainNetworks.SOL
             ) as IndexDbWallet;
 
-            const accountWallet = await getSavedIndexDbWallet(usr.walletAddress);
+            const accountWallet = await indexDb?.getSavedWallet(usr.walletAddress);
             console.debug(`currentWallet: ${currentWallet?.chain} - ${currentWallet?.pubKey}`);
             console.debug(`primaryWallet: ${primaryWallet?.chain} - ${primaryWallet?.pubKey}`);
             console.debug(`accountWallet: ${accountWallet?.chain} - ${accountWallet?.pubKey}`);
@@ -205,15 +206,15 @@ export const useChangeWallet = ({ apiUrl, accountId }: WalletConfig): WalletInte
 
                 const _adapterChain = getChainProp(decryptedWallet.chain).ticker;
                 const _adapterNetwork = getAdapterNetwork(_adapterChain, adapterConfig.network);
-                const walletAdapter = new WebWalletAdapter({
+                const walletAdapter = indexDb && new WebWalletAdapter({
                     name: walletName,
                     chain: _adapterChain,
                     network: _adapterNetwork,
-                });
+                }, indexDb);
 
                 _wallets.push({
                     adapter: walletAdapter,
-                    readyState: walletAdapter.readyState,
+                    readyState: walletAdapter?.readyState ?? WalletReadyState.NotDetected,
                 });
             }
 
@@ -258,7 +259,7 @@ export const useChangeWallet = ({ apiUrl, accountId }: WalletConfig): WalletInte
 
         console.info(`WalletInteraction: Selecting wallet: '${name}'`);
         await select(name);
-        setSelectedWalletName(name);
+        setAdapterConfig({...adapterConfig, name});
         const selection = {
             name: name,
             wallet: { ...decryptedWallet } as IndexDbWallet,
@@ -353,7 +354,7 @@ export const useChangeWallet = ({ apiUrl, accountId }: WalletConfig): WalletInte
                 setMessage(response);
                 setToWallet(wallet);
                 setIsWalletConnected(true);
-                setSelectedTicker(getChainProp(wallet.chain).ticker);
+                setAdapterConfig({...adapterConfig, chain: getChainProp(wallet.chain).ticker});
             } catch (error) {
                 setStatus(Status.ERROR);
                 setError(error instanceof Error ? error.message : `Unknown Error: ${error}`);
@@ -369,6 +370,7 @@ export const useChangeWallet = ({ apiUrl, accountId }: WalletConfig): WalletInte
         error,
         wallet: toWallet,
         keypair,
+        display,
         setWallet,
         disconnectWallets,
     };

@@ -20,7 +20,6 @@ import {
 import BN from 'bn.js';
 
 import type {
-    Adapter,
     Chain,
     NearConnection,
     NearPublicKey,
@@ -33,6 +32,7 @@ import type {
     SignerWalletAdapterProps,
     MessageSignerWalletAdapterProps,
     WalletName,
+    WalletAdapter,
 } from '@mindblox-wallet-adapter/base';
 import { ChainNetworks, WalletName as SolanaWalletName, WalletReadyState } from '@mindblox-wallet-adapter/base';
 
@@ -46,7 +46,7 @@ interface MockAccount {
     amount: string;
 }
 
-export type NearAdapter = Adapter<NearPublicKey, NearTransaction, NearConnection, NearTransactionSignature>;
+export type NearAdapter = WalletAdapter<NearPublicKey, NearTransaction, NearConnection, NearTransactionSignature>;
 
 class KeyStore {
     keyPair: KeyPair;
@@ -222,9 +222,9 @@ export interface NearAccount {
     sendMeta: (props: MetadataProps) => Promise<FinalExecutionOutcome | undefined>;
     loadSaleItems: () => Promise<Record<string, unknown>[] | undefined>;
     getMinimumStorage: () => Promise<BN | undefined>;
-    approveNFTForSale: (token_id: string, assetPrice: string) => Promise<void>;
-    sendStorageDeposit: () => Promise<void>;
-    offerPrice: (token_id: string, assetBid: string) => Promise<void>;
+    approveNFTForSale: (token_id: string, assetPrice: string) => Promise<FinalExecutionOutcome | undefined>;
+    sendStorageDeposit: () => Promise<FinalExecutionOutcome | undefined>;
+    offerPrice: (token_id: string, assetBid: string) => Promise<FinalExecutionOutcome  | undefined>;
 }
 
 export const useAccount = (privateKey?: string, network?: string): NearAccount => {
@@ -497,7 +497,7 @@ export const useAccount = (privateKey?: string, network?: string): NearAccount =
         const minimum: BN | undefined = await getMinimumStorage();
         if (!minimum) return;
 
-        await acct.functionCall({
+        return await acct.functionCall({
             contractId: defaultConfig.marketContractName,
             methodName: 'storage_deposit',
             args: {},
@@ -518,7 +518,7 @@ export const useAccount = (privateKey?: string, network?: string): NearAccount =
         const depositAmount = parseNearAmount('0.01');
         if (!depositAmount) throw new Error('Could not parse deposit amount');
 
-        await acct.functionCall({
+        return await acct.functionCall({
             contractId: defaultConfig.contractName,
             methodName: 'nft_approve',
             args: {
@@ -538,7 +538,7 @@ export const useAccount = (privateKey?: string, network?: string): NearAccount =
         const parsedAssetBid = parseNearAmount(assetBid);
         if (!parsedAssetBid) throw new Error('AssetBid cannot be parsed');
 
-        await acct.functionCall({
+        return await acct.functionCall({
             contractId: defaultConfig.marketContractName,
             methodName: 'offer',
             args: {
@@ -578,7 +578,12 @@ export interface ContractWithMint extends Contract {
 
 export interface NearWallet
     extends WalletConnection,
-        Wallet<NearPublicKey, NearTransaction, NearConnection, NearTransactionSignature> {}
+        Wallet<
+            NearPublicKey,
+            NearTransaction,
+            NearConnection,
+            NearTransactionSignature
+        > {}
 
 export interface WalletContextState {
     chain: Chain | null;

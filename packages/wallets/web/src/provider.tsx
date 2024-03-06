@@ -1,7 +1,9 @@
-import type { FC, ReactNode } from 'react';
-import React from 'react';
+'use client';
 
-import type { ChainTicker, WalletError, WalletName } from '@mindblox-wallet-adapter/base';
+import type { ReactNode } from 'react';
+import React, { useEffect, useMemo } from 'react';
+
+import type { ChainConnection, ChainTicker, WalletError, WalletName } from '@mindblox-wallet-adapter/base';
 import type { SolanaAdapter } from '@mindblox-wallet-adapter/solana';
 import {
     ConnectionProvider as SolanaConnectionProvider,
@@ -13,56 +15,91 @@ import {
     WalletProvider as NearWalletProvider,
     BrowserWalletProvider as NearBrowserWalletProvider,
 } from '@mindblox-wallet-adapter/near';
+import { UnsafeBurnerWalletAdapter } from '@mindblox-wallet-adapter/unsafe-burner';
+import { ConnectionContext } from '@mindblox-wallet-adapter/react';
+import { PhantomWalletAdapter } from '@mindblox-wallet-adapter/phantom';
+import { ChainConnectionFactory, type ChainAdapterNetwork, type ChainWallet, type NEAR_ENDPOINT_NAME, type SOLANA_ENDPOINT_NAME, NearBrowserWalletAdapter } from '@mindblox-wallet-adapter/networks';
 
+import { useIndexDb, useWalletAdapterConfig } from './hooks';
 import { initializeAdapters } from './utils';
-import type { WebWalletAdapterConfig } from './adapter';
-import { ExtendedAdapter } from './adapter';
-import type { Wallet } from './hooks';
-import { useWalletAdapterConfig } from './hooks';
-import type { WebWallet } from './core';
-import type { ChainAdapterNetworks } from '@mindblox-wallet-adapter/networks';
-import { ChainAdapterNetwork, useNearAccount } from '@mindblox-wallet-adapter/networks';
+import { WebWalletAdapter, type WebWalletAdapterConfig } from './wallet';
+import type { WebWallet } from './wallet';
+import type { IndexDbAppDatabase } from './indexDb';
 
 interface ConnectionProps {
+    networks?: {
+        solana?: SOLANA_ENDPOINT_NAME,
+        near?: NEAR_ENDPOINT_NAME
+    }
     children?: React.ReactNode;
 }
-export const ConnectionProviders: FC<ConnectionProps> = ({ children }: ConnectionProps) => {
+export const ConnectionProviders: React.FC<ConnectionProps> = ({ networks, children }: ConnectionProps) => {
+    useEffect(() => {
+        console.debug(`ConnectionProviders networks: ${JSON.stringify(networks)}`)
+    }, [networks])
+    
     return (
-        <SolanaConnectionProvider>
-            <NearConnectionProvider>{children}</NearConnectionProvider>
+        <SolanaConnectionProvider network={networks?.solana}>
+            <NearConnectionProvider network={networks?.near}>
+                {children}
+            </NearConnectionProvider>
         </SolanaConnectionProvider>
     );
 };
 
 interface WalletProps {
-    children: ReactNode;
+    children?: ReactNode;
     chain: ChainTicker;
-    network: ChainAdapterNetworks;
-    wallets?: (WebWallet | Wallet)[];
+    network: ChainAdapterNetwork;
+    wallets?: (WebWallet | ChainWallet)[];
     autoConnect?: boolean;
     onError?: (error: WalletError) => void;
     localStorageKey?: string;
+    location: Location;
+    onNavigate: (url: string) => void;
+    indexDb: IndexDbAppDatabase;
 }
 
-export const WalletProviders: FC<WalletProps> = ({ children, chain, network }: WalletProps) => {
-    const config: WebWalletAdapterConfig = {
-        name: 'WebWalet' as WalletName,
-        chain,
-        network,
-    };
+export const WalletProviders: React.FC<WalletProps> = ({
+    children, chain, network, location, onNavigate, indexDb
+}: WalletProps) => {
     const { setAdapterConfig } = useWalletAdapterConfig();
-    setAdapterConfig(config);
 
-    const adapters = initializeAdapters(config);
+    const config: WebWalletAdapterConfig = useMemo(() => {
+        return {
+            name: 'WebWalet' as WalletName,
+            chain,
+            network,
+        }
+    }, [chain, network])
 
-    const solanaAdapters = adapters.filter((adapter) =>
+    useEffect(() => {
+        console.debug(`Wallet Providers config: ${JSON.stringify(config)}`)
+        setAdapterConfig(config);
+    }, [config])
+
+    const { setIndexDb } = useIndexDb();
+
+    useEffect(() => {
+        setIndexDb(indexDb)
+    }, [indexDb])
+
+    const adapters = useMemo(() => initializeAdapters(config, indexDb), [config, indexDb])
+
+    const solanaAdapters = useMemo(() => adapters.filter((adapter) =>
         validSolanaAdapterNames.includes(adapter.name)
-    ) as SolanaAdapter[];
+    ) as SolanaAdapter[], [adapters])
 
     return (
         <SolanaWalletProvider wallets={solanaAdapters}>
-            <NearWalletProvider>
-                <NearBrowserWalletProvider>{children}</NearBrowserWalletProvider>
+            <NearWalletProvider
+                onNavigate={onNavigate}>
+                <NearBrowserWalletProvider
+                    location={location}
+                    onNavigate={onNavigate}
+                >
+                    {children}
+                </NearBrowserWalletProvider>
             </NearWalletProvider>
         </SolanaWalletProvider>
     );

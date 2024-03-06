@@ -1,1 +1,1 @@
-export * from './webWalletActions';
+export * from './webWalletActions.js';

@@ -1,5 +1,6 @@
-import type { MintInfo } from '@solana/spl-token';
-import type { Cluster } from '@solana/web3.js';
+import type { Account, Mint } from '@solana/spl-token';
+import { getMint } from '@solana/spl-token';
+import type { Cluster, Connection } from '@solana/web3.js';
 import { Keypair } from '@solana/web3.js';
 import BN from 'bn.js';
 
@@ -64,24 +65,28 @@ export const getTokenIcon = (map: KnownTokenMap, mintAddress?: string | SolanaPu
 
 export const isKnownMint = (map: KnownTokenMap, mintAddress: string) => !!map.get(mintAddress);
 
-export const toLamports = (account?: TokenAccount | number, mint?: MintInfo): number => {
-    if (!account) {
+export const toLamports = ({amount, mint}: {amount?: number, mint?: Mint}): number => {
+    if (!amount) {
         return 0;
     }
-    const amount = typeof account === 'number' ? account : account.info.amount.toNumber();
+    if (!mint) {
+        throw new Error('Unable to get lamports without an account or connection')
+    }
+
     const precision = Math.pow(10, mint?.decimals || 0);
     return Math.floor(amount * precision);
 };
 
 export const wadToLamports = (amount?: BN): BN => amount?.div(WAD) || ZERO;
 
-export const fromLamports = (account?: TokenAccount | number | BN, mint?: MintInfo, rate = 1.0): number => {
-    if (!account) {
+export const fromLamports = ({amount, mint, rate = 1.0}: {amount?: number, mint?: Mint, rate?: number}): number => {
+    if (!amount) {
         return 0;
     }
-    const amount = Math.floor(
-        typeof account === 'number' ? account : BN.isBN(account) ? account.toNumber() : account.info.amount.toNumber()
-    );
+    if (!mint) {
+        throw new Error('Unable to get lamports without a mint account')
+    }
+
     const precision = Math.pow(10, mint?.decimals || 9);
     return (amount / precision) * rate;
 };
@@ -95,21 +100,23 @@ export const tryParseKey = (key: string): SolanaPublicKey | null => {
 };
 
 export const formatTokenAmount = (
-    account?: TokenAccount | number | BN,
-    mint?: MintInfo,
+    amount?:  number,
+    mint?: Mint,
     rate = 1.0,
     prefix = '',
     suffix = '',
     precision = 2,
     abbr = false
-): string => (account ? `${[prefix]}${formatAmount(fromLamports(account, mint, rate), precision, abbr)}${suffix}` : '');
+): string => (amount ? `${[prefix]}${formatAmount(fromLamports({amount, mint, rate}), precision, abbr)}${suffix}` : '');
 
-export const convert = (account?: TokenAccount | number, mint?: MintInfo, rate = 1.0): number => {
+export const convert = (account?: TokenAccount | number, mint?: Mint, rate = 1.0): number => {
     if (!account) {
         return 0;
     }
-    const amount = typeof account === 'number' ? account : account.info.amount.toNumber();
     const precision = Math.pow(10, mint?.decimals || 0);
+    const amount = Math.floor(
+        typeof account === 'number' ? account : BN.isBN(account) ? account.toNumber() : Number(account.account.lamports.toPrecision(precision))
+    );
     return (amount / precision) * rate;
 };
 
@@ -130,34 +137,4 @@ export const addressToPublicKey = (address: StringPublicKey): SolanaPublicKey =>
 export const getPublicKeyFromPrivateKey = (privateKey: string): SolanaPublicKey => {
     const walletKeyPair = Keypair.fromSecretKey(new Uint8Array(JSON.parse(privateKey)));
     return walletKeyPair.publicKey;
-};
-
-export const getAdapterCluster = (cluster?: string): Cluster => {
-    if (!cluster) return WalletAdapterNetwork.Devnet;
-    switch (cluster) {
-        case 'devnet':
-            return WalletAdapterNetwork.Devnet;
-        case 'testnet':
-            return WalletAdapterNetwork.Testnet;
-        case 'mainnet-beta':
-            return WalletAdapterNetwork.Mainnet;
-        default:
-            return WalletAdapterNetwork.Devnet;
-    }
-};
-
-export const getAdapterNetwork = (network?: string): WalletAdapterNetwork => {
-    if (!network) return WalletAdapterNetwork.Devnet;
-    switch (network) {
-        case 'devnet':
-            return WalletAdapterNetwork.Devnet;
-        case 'testnet':
-            return WalletAdapterNetwork.Testnet;
-        case 'mainnet-beta':
-            return WalletAdapterNetwork.Mainnet;
-        case 'localnet':
-            return WalletAdapterNetwork.Localnet;
-        default:
-            return WalletAdapterNetwork.Devnet;
-    }
 };

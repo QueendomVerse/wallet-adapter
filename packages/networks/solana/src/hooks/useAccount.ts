@@ -2,9 +2,11 @@ import { decode as decodeBase58 } from 'bs58';
 import type { AccountInfo, Cluster } from '@solana/web3.js';
 import { clusterApiUrl, Keypair, SystemProgram, LAMPORTS_PER_SOL, sendAndConfirmTransaction } from '@solana/web3.js';
 
-import { fetchWithRetry, SolanaConnection, SolanaPublicKey, SolanaTransaction } from '@mindblox-wallet-adapter/base';
+import {
+    fetchWithRetry, SolanaConnection, SolanaPublicKey, SolanaTransaction
+} from '@mindblox-wallet-adapter/base';
 
-import { ConnectionError } from '../errors';
+// import { ConnectionError } from '../errors';
 import { WalletAdapterNetwork } from '../providers';
 
 export interface SendSolana {
@@ -26,15 +28,10 @@ export interface SolanaAccount {
 
 export const useAccount = async (
     privateKey: string,
+    network?: WalletAdapterNetwork,
     nodeRpcUrl?: string,
-    nodeWsUrl?: string,
-    network?: WalletAdapterNetwork
+    nodeWsUrl?: string
 ): Promise<SolanaAccount> => {
-    if (!nodeRpcUrl && !network)
-        throw new ConnectionError(
-            'Cannot establish connection with solana without specifying either a node url or network!'
-        );
-
     console.info(`Connecting to solana via RPC: ${nodeRpcUrl ?? network}, WS: ${nodeWsUrl}`);
 
     const connection = (): SolanaConnection => {
@@ -43,7 +40,8 @@ export const useAccount = async (
             return new SolanaConnection(nodeRpcUrl ?? clusterApiUrl(solNetwork), {
                 commitment: 'confirmed',
                 disableRetryOnRateLimit: true,
-                fetch: fetchWithRetry,
+                fetch,
+                // fetch: fetchWithRetry,
                 wsEndpoint: nodeWsUrl,
             });
         } catch (error) {

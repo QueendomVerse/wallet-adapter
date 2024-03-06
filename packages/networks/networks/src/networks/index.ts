@@ -1,2 +1,2 @@
-export * from './near';
-export * from './solana';
+export * from './near.js';
+export * from './solana.js';

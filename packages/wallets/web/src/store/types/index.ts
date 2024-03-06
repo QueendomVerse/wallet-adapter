@@ -1,3 +1,3 @@
-export * from './webWalletActionStates';
-export * from './webWalletActionTypes';
-export * from './webWalletSelection';
+export * from './webWalletActionStates.js';
+export * from './webWalletActionTypes.js';
+export * from './webWalletSelection.js';

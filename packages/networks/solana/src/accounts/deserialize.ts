@@ -1,35 +1,36 @@
 import { SolanaPublicKey } from '@mindblox-wallet-adapter/base';
-import type { MintInfo } from '@solana/spl-token';
-import { AccountLayout, MintLayout, u64 } from '@solana/spl-token';
+import { AccountLayout, MintLayout } from '@solana/spl-token';
+import { Numberu64 } from '@solana/spl-name-service';
+import { emptyKey } from '../constants';
 
 // TODO: expose in spl package
 export const deserializeAccount = (data: Buffer) => {
     const accountInfo = AccountLayout.decode(data);
     accountInfo.mint = new SolanaPublicKey(accountInfo.mint);
     accountInfo.owner = new SolanaPublicKey(accountInfo.owner);
-    accountInfo.amount = u64.fromBuffer(accountInfo.amount);
+    accountInfo.amount = BigInt(Numberu64.fromBuffer(accountInfo.amount).toNumber());
 
     if (accountInfo.delegateOption === 0) {
-        accountInfo.delegate = null;
-        accountInfo.delegatedAmount = new u64(0);
+        accountInfo.delegate = emptyKey;
+        accountInfo.delegatedAmount = BigInt(0);
     } else {
         accountInfo.delegate = new SolanaPublicKey(accountInfo.delegate);
-        accountInfo.delegatedAmount = u64.fromBuffer(accountInfo.delegatedAmount);
+        // accountInfo.delegatedAmount = Numberu64.fromBuffer(accountInfo.delegatedAmount);
     }
 
-    accountInfo.isInitialized = accountInfo.state !== 0;
-    accountInfo.isFrozen = accountInfo.state === 2;
+    // accountInfo.isInitialized = accountInfo.state !== 0;
+    // accountInfo.isFrozen = accountInfo.state === 2;
 
     if (accountInfo.isNativeOption === 1) {
-        accountInfo.rentExemptReserve = u64.fromBuffer(accountInfo.isNative);
-        accountInfo.isNative = true;
+        // accountInfo.rentExemptReserve = Numberu64.fromBuffer(accountInfo.isNative);
+        accountInfo.isNative = BigInt(1);
     } else {
-        accountInfo.rentExemptReserve = null;
-        accountInfo.isNative = false;
+        // accountInfo.rentExemptReserve = null;
+        accountInfo.isNative = BigInt(0);
     }
 
     if (accountInfo.closeAuthorityOption === 0) {
-        accountInfo.closeAuthority = null;
+        accountInfo.closeAuthority = emptyKey;
     } else {
         accountInfo.closeAuthority = new SolanaPublicKey(accountInfo.closeAuthority);
     }
@@ -43,22 +44,21 @@ export const deserializeMint = (data: Buffer) => {
         throw new Error('Not a valid Mint');
     }
 
-    const mintInfo = MintLayout.decode(data);
+    const mintAccount = MintLayout.decode(data);
 
-    if (mintInfo.mintAuthorityOption === 0) {
-        mintInfo.mintAuthority = null;
+    if (mintAccount.mintAuthorityOption === 0) {
+        mintAccount.mintAuthority = emptyKey;
     } else {
-        mintInfo.mintAuthority = new SolanaPublicKey(mintInfo.mintAuthority);
+        mintAccount.mintAuthority = new SolanaPublicKey(mintAccount.mintAuthority);
     }
 
-    mintInfo.supply = u64.fromBuffer(mintInfo.supply);
-    mintInfo.isInitialized = mintInfo.isInitialized !== 0;
+    mintAccount.supply = BigInt(Numberu64.fromBuffer(mintAccount.supply).toNumber());
 
-    if (mintInfo.freezeAuthorityOption === 0) {
-        mintInfo.freezeAuthority = null;
+    if (mintAccount.freezeAuthorityOption === 0) {
+        mintAccount.freezeAuthority = emptyKey;
     } else {
-        mintInfo.freezeAuthority = new SolanaPublicKey(mintInfo.freezeAuthority);
+        mintAccount.freezeAuthority = new SolanaPublicKey(mintAccount.freezeAuthority);
     }
 
-    return mintInfo as MintInfo;
+    return mintAccount;
 };

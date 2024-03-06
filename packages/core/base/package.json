@@ -4,42 +4,58 @@
     "author": "Phillip Strefling <phillip@queendom.io>",
     "repository": "https://github.com/QueendomVerse/wallet-adapter",
     "license": "Apache-2.0",
-    "type": "module",
-    "sideEffects": false,
-    "main": "lib/cjs/index.js",
-    "module": "lib/esm/index.mjs",
-    "types": "lib/types/index.d.ts",
-    "exports": {
-        ".": {
-            "require": "./lib/cjs/index.js",
-            "import": "./lib/esm/index.mjs",
-            "types": "./lib/types/index.d.ts"
-        },
-        "./package.json": "./package.json"
+    "publishConfig": {
+        "access": "public"
     },
     "files": [
         "lib",
         "src",
         "LICENSE"
     ],
-    "publishConfig": {
-        "access": "public"
+    "engines": {
+        "node": ">=16"
+    },
+    "type": "module",
+    "sideEffects": false,
+    "main": "./lib/cjs/index.js",
+    "module": "./lib/esm/index.js",
+    "types": "./lib/types/index.d.ts",
+    "exports": {
+        "require": "./lib/cjs/index.js",
+        "import": "./lib/esm/index.js",
+        "types": "./lib/types/index.d.ts"
     },
     "scripts": {
-        "clean": "shx rm -rf lib/*",
-        "build": "tsc -p tsconfig.json && tsc-esm -p tsconfig.json && tsc -p tsconfig.cjs.json",
-        "postbuild": "echo '{\"type\":\"commonjs\"}' | npx json > lib/cjs/package.json && echo '{\"type\":\"module\"} ' | npx json > lib/esm/package.json"
+        "build": "tsc --build --verbose && pnpm run package",
+        "clean": "shx mkdir -p lib && rimraf lib",
+        "lint": "prettier --check 'src/{*,**/*}.{ts,tsx,js,jsx,json}' && eslint",
+        "package": "shx mkdir -p lib/cjs && shx echo '{ \"type\": \"commonjs\" }' > lib/cjs/package.json"
     },
     "peerDependencies": {
-        "@solana/web3.js": "*"
+        "@solana/web3.js": "^1.78.1"
     },
     "dependencies": {
-        "ethers": "^6.6.2",
+        "@solana/wallet-standard-features": "^1.0.1",
+        "@wallet-standard/base": "^1.0.1",
+        "@wallet-standard/features": "^1.0.3",
+        "bcryptjs": "^2.4.3",
+        "bn.js": "^5.2.1",
+        "borsh": "^0.7.0",
+        "bs58": "^5.0.0",
+        "encoding": "^0.1.13",
         "eventemitter3": "^4.0.7",
-        "jayson": "^4.1.0"
+        "node-fetch": "^2.6.7",
+        "simple-crypto-js": "^3.0.1",
+        "tweetnacl": "^1.0.3"
     },
     "devDependencies": {
-        "@solana/web3.js": "^1.78.0",
+        "@solana/web3.js": "^1.78.1",
+        "@types/bcryptjs": "^2.4.2",
+        "@types/bn.js": "^5.1.1",
+        "@types/crypto-js": "^4.1.1",
+        "ethers": "^6.6.2",
+        "near-api-js": "^2.1.4",
+        "shx": "^0.3.4",
         "tsc-esm": "^1.0.4"
     }
 }

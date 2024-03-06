@@ -1,4 +1,3 @@
-import * as nearAPI from 'near-api-js';
 import { type PublicKey as NearPublicKey } from 'near-api-js/lib/utils';
 
 import type { LocalKeypairStore } from '@mindblox-wallet-adapter/base';
@@ -7,8 +6,6 @@ import { ChainNetworks } from '@mindblox-wallet-adapter/base';
 import { parseSeedPhrase } from './nearSeedPhrase';
 
 export { baseDecode } from 'borsh';
-
-const { keyStores } = nearAPI;
 
 export class AbstractEntity<T> {
     constructor(protected partial: Partial<T>) {
@@ -66,8 +63,6 @@ export class PublicKey extends AbstractEntity<NearPublicKey> {
         return currentKey;
     };
 }
-
-export const keyStore = new keyStores.BrowserLocalStorageKeyStore();
 
 export const generateNearKeys = async (recoverySeedPhrase: string) => {
     const { publicKey, secretKey } = await parseSeedPhrase(recoverySeedPhrase);

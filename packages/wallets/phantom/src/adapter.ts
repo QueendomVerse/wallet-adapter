@@ -12,6 +12,7 @@ import type {
     ChainSigner,
 } from '@mindblox-wallet-adapter/base';
 import {
+    isIosAndRedirectable,
     SolanaPublicKey,
     ChainTickers,
     BaseMessageSignerWalletAdapter,
@@ -31,7 +32,6 @@ import {
     handleError,
 } from '@mindblox-wallet-adapter/base';
 import type { Transaction, TransactionSignature } from '@solana/web3.js';
-import type { Connection } from 'near-api-js';
 
 interface PhantomWalletEvents {
     connect(...args: unknown[]): unknown;
@@ -57,7 +57,7 @@ export interface PhantomWallet extends EventEmitter<PhantomWalletEvents> {
     disconnect(): Promise<void>;
     sendTransaction<Signer extends ChainSigner, SendOptions extends ChainSendOptions>(
         transaction: Transaction,
-        connection: Connection,
+        connection: SolanaConnection,
         options?: SendTransactionOptions<Signer, SendOptions>
     ): Promise<TransactionSignature>;
     _handleDisconnect(...args: unknown[]): unknown;
@@ -104,14 +104,20 @@ export class PhantomWalletAdapter extends BaseMessageSignerWalletAdapter<
         this._publicKey = null;
 
         if (this._readyState !== WalletReadyState.Unsupported) {
-            scopePollingDetectionStrategy(() => {
-                if (window.phantom?.solana?.isPhantom || window.solana?.isPhantom) {
-                    this._readyState = WalletReadyState.Installed;
-                    this.emit('readyStateChange', this._readyState);
-                    return true;
-                }
-                return false;
-            });
+            if (isIosAndRedirectable()) {
+                // when in iOS (not webview), set Phantom as loadable instead of checking for install
+                this._readyState = WalletReadyState.Loadable;
+                this.emit('readyStateChange', this._readyState);
+            } else {
+                scopePollingDetectionStrategy(() => {
+                    if (window.phantom?.solana?.isPhantom || window.solana?.isPhantom) {
+                        this._readyState = WalletReadyState.Installed;
+                        this.emit('readyStateChange', this._readyState);
+                        return true;
+                    }
+                    return false;
+                });
+            }
         }
     }
 
@@ -130,10 +136,25 @@ export class PhantomWalletAdapter extends BaseMessageSignerWalletAdapter<
     get readyState(): WalletReadyState {
         return this._readyState;
     }
+    async autoConnect(): Promise<void> {
+        // Skip autoconnect in the Loadable state
+        // We can't redirect to a universal link without user input
+        if (this.readyState === WalletReadyState.Installed) {
+            await this.connect();
+        }
+    }
 
     async connect(): Promise<void> {
         try {
             if (this.connected || this.connecting) return;
+            if (this.readyState === WalletReadyState.Loadable) {
+                // redirect to the Phantom /browse universal link
+                // this will open the current URL in the Phantom in-wallet browser
+                const url = encodeURIComponent(window.location.href);
+                const ref = encodeURIComponent(window.location.origin);
+                window.location.href = `https://phantom.app/ul/browse/${url}?ref=${ref}`;
+                return;
+            }
             if (this._readyState !== WalletReadyState.Installed) throw new WalletNotReadyError();
 
             this._connecting = true;
@@ -280,5 +301,22 @@ export class PhantomWalletAdapter extends BaseMessageSignerWalletAdapter<
             this.emit('error', new WalletDisconnectedError());
             this.emit('disconnect');
         }
+    };
+
+    private _accountChanged = (newPublicKey: SolanaPublicKey) => {
+        const publicKey = this._publicKey;
+        if (!publicKey) return;
+
+        try {
+            newPublicKey = new SolanaPublicKey(newPublicKey.toBytes());
+        } catch (error: any) {
+            this.emit('error', new WalletPublicKeyError(error?.message, error));
+            return;
+        }
+
+        if (publicKey.equals(newPublicKey)) return;
+
+        this._publicKey = newPublicKey;
+        this.emit('connect', newPublicKey);
     };
 }

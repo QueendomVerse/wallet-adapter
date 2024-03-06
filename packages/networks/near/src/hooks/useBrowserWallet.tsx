@@ -1,27 +1,14 @@
-import type { FC, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import React, { createContext, useContext, useMemo, useState, useEffect } from 'react';
-import { useBetween } from 'use-between';
-import { useLocation, useNavigate } from 'react-router-dom';
 import { Spin } from 'antd';
 import { LoadingOutlined } from '@ant-design/icons';
+
 import type { QueryParams } from '@mindblox-wallet-adapter/base';
-// import { ParsedUrlQuery } from 'querystring';
-
-// import { useLocation } from 'react-router-dom';
-
-// export const useQuerySearch = () => {
-//   return new URLSearchParams(useLocation().search);
-// }
-
-// interface QueryParams extends ParsedUrlQuery {
-//   account_id: string;
-//   public_key: string;
-//   all_keys: string[];
-//   transactionHashes: string[];
-// }
 
 interface Props {
     children: ReactNode;
+    location: Location;
+    onNavigate: (url: string) => void;
 }
 
 interface BrowserWalletContextState {
@@ -50,15 +37,15 @@ const DEFAULT_CONTEXT_STATE: BrowserWalletContextState = {
 
 const BrowserWalletContext = createContext<BrowserWalletContextState>(DEFAULT_CONTEXT_STATE);
 
-export const BrowserWalletProvider: FC<Props> = ({ children }) => {
+export const BrowserWalletProvider: React.FC<Props> = ({ children, location, onNavigate }) => {
     const [loading, setLoading] = useState(false);
 
     // get the search params
     const useQuerySearch = () => {
-        return new URLSearchParams(useLocation().search);
+        return new URLSearchParams(location.search);
     };
 
-    const navigate = useNavigate();
+    // const navigate = useNavigate();
     const searchParams = useQuerySearch();
 
     const routerQuery = Array.from(searchParams.entries()).reduce(
@@ -117,7 +104,7 @@ export const BrowserWalletProvider: FC<Props> = ({ children }) => {
             // navigate(-2)
             // navigate('/signup');
             console.warn('redirecting back ... 2');
-            navigate(toPageString);
+            onNavigate(toPageString);
         }
     }, [accountId, publicKey, allKeys]);
 
@@ -140,7 +127,7 @@ export const BrowserWalletProvider: FC<Props> = ({ children }) => {
             // navigate('/signup');
             console.info('Got Near transaction hashes', transactionHashes);
             console.warn('redirecting back ... 2');
-            navigate(toPageString);
+            onNavigate(toPageString);
         }
     }, [transactionHashes]);
 

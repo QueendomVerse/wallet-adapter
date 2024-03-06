@@ -1,5 +1,10 @@
-export type ChainTicker = 'SOL' | 'NEAR';
-export type Chain = 'solana' | 'near';
+export type ChainTicker =
+    | 'SOL'
+    | 'NEAR';
+
+export type Chain =
+    | 'solana'
+    | 'near';
 
 export const ChainNetworks: Record<ChainTicker, Chain> = {
     SOL: 'solana',

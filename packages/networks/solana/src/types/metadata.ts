@@ -3,10 +3,9 @@ import { deserializeUnchecked, serialize } from 'borsh';
 import type BN from 'bn.js';
 
 import type { StringPublicKey } from '@mindblox-wallet-adapter/base';
-import { findProgramAddress, toPublicKey } from '@mindblox-wallet-adapter/base/lib/types/networks/solana';
 
 import { emptyKey } from '../constants';
-import { programIds } from '../utils';
+import { findProgramAddress, programIds, toPublicKey } from '../utils';
 
 export const METADATA_PREFIX = 'metadata';
 export const EDITION = 'edition';
@@ -466,7 +465,7 @@ export const updateMetadata = async (
 ) => {
     const metadataProgramId = programIds().metadata;
 
-    const metadataAccountsResult = await findProgramAddress(
+    const metadataAccountsResult = findProgramAddress(
         [Buffer.from('metadata'), toPublicKey(metadataProgramId).toBuffer(), toPublicKey(mintKey).toBuffer()],
         toPublicKey(metadataProgramId)
     );
@@ -524,7 +523,7 @@ export const createMetadata = async ({
     const metadataProgramId = programIds().metadata;
     console.info('metadataProgramId', metadataProgramId);
 
-    const metadataAccountResult = await findProgramAddress(
+    const metadataAccountResult = findProgramAddress(
         [Buffer.from('metadata'), toPublicKey(metadataProgramId).toBuffer(), toPublicKey(mintKey).toBuffer()],
         toPublicKey(metadataProgramId)
     );
@@ -593,13 +592,13 @@ export const createMasterEdition = async (
 ) => {
     const metadataProgramId = programIds().metadata;
 
-    const metadataAccountResult = await findProgramAddress(
+    const metadataAccountResult = findProgramAddress(
         [Buffer.from(METADATA_PREFIX), toPublicKey(metadataProgramId).toBuffer(), toPublicKey(mintKey).toBuffer()],
         toPublicKey(metadataProgramId)
     );
     const metadataAccount = metadataAccountResult && metadataAccountResult.length > 0 && metadataAccountResult[0];
 
-    const editionAccountResult = await findProgramAddress(
+    const editionAccountResult = findProgramAddress(
         [
             Buffer.from(METADATA_PREFIX),
             toPublicKey(metadataProgramId).toBuffer(),
@@ -1119,7 +1118,7 @@ export const getEdition = async (tokenMint: StringPublicKey): Promise<StringPubl
 
     const PROGRAM_IDS = programIds();
 
-    const result = await findProgramAddress(
+    const result = findProgramAddress(
         [
             Buffer.from(METADATA_PREFIX),
             toPublicKey(PROGRAM_IDS.metadata).toBuffer(),
@@ -1136,7 +1135,7 @@ export const getMetadata = async (tokenMint: StringPublicKey): Promise<StringPub
     if (!tokenMint) return;
     const PROGRAM_IDS = programIds();
 
-    const result = await findProgramAddress(
+    const result = findProgramAddress(
         [
             Buffer.from(METADATA_PREFIX),
             toPublicKey(PROGRAM_IDS.metadata).toBuffer(),
@@ -1154,7 +1153,7 @@ export const deprecatedGetReservationList = async (
 ): Promise<StringPublicKey | undefined> => {
     const PROGRAM_IDS = programIds();
 
-    const result = await findProgramAddress(
+    const result = findProgramAddress(
         [
             Buffer.from(METADATA_PREFIX),
             toPublicKey(PROGRAM_IDS.metadata).toBuffer(),
@@ -1171,7 +1170,7 @@ export const deprecatedGetReservationList = async (
 export const getEditionMarkPda = async (mint: StringPublicKey, edition: BN): Promise<StringPublicKey | undefined> => {
     const PROGRAM_IDS = programIds();
     const editionNumber = Math.floor(edition.toNumber() / 248);
-    const result = await findProgramAddress(
+    const result = findProgramAddress(
         [
             Buffer.from(METADATA_PREFIX),
             toPublicKey(PROGRAM_IDS.metadata).toBuffer(),

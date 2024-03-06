@@ -29,8 +29,20 @@ import type { QueryResponseKind } from 'near-api-js/lib/providers/provider';
 import { Provider } from 'near-api-js/lib/providers/provider';
 import { JsonRpcProvider } from 'near-api-js/lib/providers';
 
-import type { TokenAccountsFilter } from '@solana/web3.js';
-import { PublicKey as NativeSolanaPublicKey } from '@solana/web3.js';
+import type {
+    CompiledInnerInstruction as NativeSolanaCompiledInnerInstruction,
+    LoadedAddresses as NativeSolanaLoadedAddresses,
+    Message as NativeSolanaMessage,
+    TokenAccountsFilter as NativeSolanaTokenAccountsFilter,
+    TokenBalance as NativeSolanaTokenBalance,
+    TransactionError as NativeSolanaTransactionError
+ } from '@solana/web3.js';
+import {
+    clusterApiUrl
+ } from '@solana/web3.js';
+import {
+    PublicKey as NativeSolanaPublicKey
+} from '@solana/web3.js';
 import { encode as encodeBase58, decode as decodeBase58 } from 'bs58';
 import BN from 'bn.js';
 import nacl from 'tweetnacl';
@@ -38,8 +50,8 @@ import { baseEncode, baseDecode } from 'borsh';
 
 import type { Chain } from '../../chains';
 import { ChainNetworks } from '../../chains';
-import type { SolanaCommitment } from '../solana';
-import { SolanaConnection, SolanaPublicKey, SolanaTransaction } from '../solana';
+import type { SolanaCommitment , SolanaPublicKey} from '../solana';
+import { SolanaConnection, SolanaTransaction } from '../solana';
 import { WalletError } from '../../errors';
 import { applyMixins, removeEd25519 } from '../../utils';
 import type { ChainPublicKey, IKeypair } from '../../types';
@@ -60,6 +72,50 @@ export interface Gas {
 
 export interface NearTransactionInstruction {}
 
+export type Version = {
+    'solana-core': string;
+    'feature-set'?: number;
+  };
+
+type ConfirmedTransactionMeta = {
+    /** The fee charged for processing the transaction */
+    fee: number;
+    /** An array of cross program invoked instructions */
+    innerInstructions?: NativeSolanaCompiledInnerInstruction[] | null;
+    /** The balances of the transaction accounts before processing */
+    preBalances: Array<number>;
+    /** The balances of the transaction accounts after processing */
+    postBalances: Array<number>;
+    /** An array of program log messages emitted during a transaction */
+    logMessages?: Array<string> | null;
+    /** The token balances of the transaction accounts before processing */
+    preTokenBalances?: Array<NativeSolanaTokenBalance> | null;
+    /** The token balances of the transaction accounts after processing */
+    postTokenBalances?: Array<NativeSolanaTokenBalance> | null;
+    /** The error result of transaction processing */
+    err: NativeSolanaTransactionError | null;
+    /** The collection of addresses loaded using address lookup tables */
+    loadedAddresses?: NativeSolanaLoadedAddresses;
+    /** The compute units consumed after processing the transaction */
+    computeUnitsConsumed?: number;
+};
+
+type TransactionResponse = {
+    /** The slot during which the transaction was processed */
+    slot: number;
+    /** The transaction */
+    transaction: {
+        /** The transaction message */
+        message: NativeSolanaMessage;
+        /** The transaction signatures */
+        signatures: string[];
+    };
+    /** Metadata produced from the transaction */
+    meta: ConfirmedTransactionMeta | null;
+    /** The unix timestamp of when the transaction was processed */
+    blockTime?: number | null;
+};
+
 export type AccountInfo<T> = {
     /** `true` if this account's data contains a loaded program */
     executable: boolean;
@@ -77,7 +133,14 @@ export type Context = {
     slot: number;
 };
 
+type GetTransactionConfig = {
+    /** The level of finality desired */
+    commitment?: Finality;
+};
+
 export type AccountChangeCallback = (accountInfo: AccountInfo<Buffer>, context: Context) => void;
+
+type Finality = 'confirmed' | 'finalized';
 
 export type Commitment =
     | 'processed'
@@ -109,6 +172,24 @@ export type GetTokenAccountsByOwnerConfig = {
     minContextSlot?: number;
 };
 
+export type RpcResponseAndContext<T> = {
+    /** response context */
+    context: Context;
+    /** response value */
+    value: T;
+};
+
+export type TokenAmount = {
+    /** Raw amount of tokens as string ignoring decimals */
+    amount: string;
+    /** Number of decimals configured for token's mint */
+    decimals: number;
+    /** Token amount as float, accounts for decimals */
+    uiAmount: number | null;
+    /** Token amount as string, accounts for decimals */
+    uiAmountString?: string;
+  };
+
 export interface NearConnectionConfig {
     nodeUrl: string;
     networkId: string;
@@ -118,7 +199,8 @@ export interface NearConnectionConfig {
 export class NearConnection extends Connection {
     private config: NearConnectionConfig;
     private _provider: JsonRpcProvider | null = null;
-    private _solanaConnection: SolanaConnection = new SolanaConnection('devnet');
+    // @TODO map solana network selection to Near's connection network type
+    private _solanaConnection: SolanaConnection = new SolanaConnection(clusterApiUrl('devnet'));
     constructor(config: NearConnectionConfig) {
         const signer = new InMemorySigner(new keyStores.InMemoryKeyStore());
         const provider = new JsonRpcProvider({ url: config.nodeUrl });
@@ -167,73 +249,87 @@ export class NearConnection extends Connection {
         rawTransaction: Buffer | number[] | Uint8Array,
         options?: NearSendOptions | undefined
     ): Promise<TxSig> => {
-        // return await super.sendRawTransaction(rawTransaction, options) as TxSig;
-        return '' as TxSig;
+        throw new Error('sendRawTransaction not yet implimented on Near connections')
     };
 
     getAccountInfo = async (publicKey: NearPublicKey) => {
-        throw new Error('Get account info not yet implimented on Near connections');
+        throw new Error('getAccountInfo not yet implimented on Near connections');
     };
+
+    getVersion = async (): Promise<Version> => {
+        return {
+            'solana-core': 'getVersion not implimneted on near'
+        }
+    }
 
     onAccountChange(
         publicKey: NearPublicKey,
         callback: AccountChangeCallback,
         commitment?: Commitment
     ): ClientSubscriptionId {
-        throw new Error('On account Change info not yet implimented on Near connections');
+        throw new Error('onAccountChange not yet implimented on Near connections');
     }
 
     removeAccountChangeListener = (clientSubscriptionId: ClientSubscriptionId) => {
-        throw new Error('Remove account change listener not yet implimented on Near connections');
+        throw new Error('removeAccountChangeListener not yet implimented on Near connections');
     };
 
     onSlotChange(callback: SlotChangeCallback): ClientSubscriptionId {
-        throw new Error('On slot change not yet implimented on Near connections');
+        throw new Error('onSlotChange not yet implimented on Near connections');
     }
 
     removeSlotChangeListener = (clientSubscriptionId: ClientSubscriptionId) => {
-        throw new Error('Remove slot change not yet implimented on Near connections');
+        throw new Error('removeSlotChangeListener not yet implimented on Near connections');
     };
 
     getTokenAccountsByOwner = async (
         ownerAddress: NearPublicKey,
-        filter: TokenAccountsFilter,
+        filter: NativeSolanaTokenAccountsFilter,
         commitmentOrConfig?: Commitment | GetTokenAccountsByOwnerConfig
     ) => {
         return this._solanaConnection.getTokenAccountsByOwner(ownerAddress, filter, commitmentOrConfig);
     };
+
+    getMinimumBalanceForRentExemption = async (
+        dataLength: number, commitment?: Commitment
+    ): Promise<number> => {
+        throw new Error('getMinimumBalanceForRentExemption not yet implimented on Near connections')
+    }
+
+    getTransaction = async (
+        signature: string, rawConfig?: GetTransactionConfig
+    ): Promise<TransactionResponse | null> => {
+        throw new Error('getTransaction not yet implimented on Near connections'
+        )
+    }
+
+    getTokenAccountBalance = async (
+        tokenAddress: PublicKey,
+        commitment?: Commitment,
+      ): Promise<RpcResponseAndContext<TokenAmount>> => {
+        throw new Error('getTokenAccountBalance not yet implimented on Near connections')
+
+      }
+
 }
 
 // export interface NearConnection extends SolanaConnection {}
 // applyMixins(NearConnection, [SolanaConnection]);
 
+const getBase58PublicKey = (publicKey: string): string => {
+    const _nearPublicKey = PublicKey.fromString(publicKey);
+    console.debug('Near Public Key ', _nearPublicKey.toString());
+    const pubKeyBase58 = removeEd25519(_nearPublicKey.toString())
+    console.debug(`Near: pubKeyBase58: ${pubKeyBase58}`);
+    return pubKeyBase58;
+
+};
+
 // export class NearPublicKey extends PublicKey {
 export class NearPublicKey extends NativeSolanaPublicKey {
     constructor(publicKey: string) {
-        super(publicKey);
+        super(getBase58PublicKey(publicKey));
     }
-
-    public toBase58 = () => this._toSolanaPublicKey();
-
-    private _toSolanaPublicKey = (): string => {
-        const key = super.toString();
-        console.info(`setting public key: ${key}`);
-        const _nearPublicKey = PublicKey.fromString(key);
-        console.info('Near Public Key ', _nearPublicKey);
-        // const pubKeyBase58 = pubKey.toString().substring(8, pubKey.toString().length);
-        // console.debug(`Near: pubKeyBase58: ${pubKeyBase58}`);
-        const solPubkey = this._getPublicKey(removeEd25519(key));
-        console.info('Solana Public Key ', solPubkey.toBase58());
-        new SolanaPublicKey(solPubkey.toString());
-        return solPubkey.toBase58();
-    };
-
-    private _getPublicKey = (key: string) => {
-        const solPubkey = new SolanaPublicKey(key);
-        // this.emitter.emit('connect', solPubkey);
-        // this.emitter.emit('publicKey', solPubkey);
-        return solPubkey;
-    };
 }
 
 export class NearKeypair implements IKeypair {
@@ -241,10 +337,12 @@ export class NearKeypair implements IKeypair {
     readonly secretKey: Uint8Array;
 
     constructor(secretKey?: Uint8Array) {
-        const generatedKey = this.generate().secretKey;
+        const generatedKey = KeyPairEd25519.fromRandom().secretKey;
         const decodedKey = decodeBase58(generatedKey);
         this.secretKey = secretKey ?? decodedKey;
-        this.publicKey = new NearPublicKey(KeyPair.fromString(generatedKey).getPublicKey().toString());
+        const publicKey = new NearPublicKey(KeyPair.fromString(generatedKey).getPublicKey().toString());
+        console.debug(`publicKey: ${publicKey}`)
+        this.publicKey = publicKey
     }
     sign = (message: Uint8Array): Signature => {
         const signature = nacl.sign.detached(message, baseDecode(encodeBase58(this.secretKey)));
@@ -258,7 +356,10 @@ export class NearKeypair implements IKeypair {
 
     getPublicKey = (): NearPublicKey => this.publicKey;
 
-    generate = (): KeyPairEd25519 => KeyPairEd25519.fromRandom();
+    static generate = (): NearKeypair =>{
+        const keypair = KeyPairEd25519.fromRandom()
+        return new NearKeypair(decodeBase58(keypair.secretKey));
+    };
 }
 
 export interface NearSendOptions {

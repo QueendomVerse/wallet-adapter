@@ -1,0 +1,29 @@
+{
+    "extends": "./tsconfig.root.json",
+    "references": [
+        {
+            "path": "./packages/core/base/tsconfig.json"
+        },
+        {
+            "path": "./packages/core/react/tsconfig.json"
+        },
+        {
+            "path": "./packages/networks/networks/tsconfig.json"
+        },
+        {
+            "path": "./packages/networks/near/tsconfig.json"
+        },
+        {
+            "path": "./packages/networks/solana/tsconfig.json"
+        },
+        {
+            "path": "./packages/wallets/wallets/tsconfig.json"
+        },
+        {
+            "path": "./packages/wallets/phantom/tsconfig.json"
+        },
+        {
+            "path": "./packages/wallets/web/tsconfig.json"
+        },
+    ]
+}

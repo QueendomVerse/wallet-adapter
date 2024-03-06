@@ -9,9 +9,9 @@ export const getBalance = async (ticker: string, keypair: LocalKeypairStore) => 
 
     switch (ticker) {
         case ChainTickers.SOL:
-            return await getSolanaBalance(keypair.privateKey);
+            return await getSolanaBalance({privateKey: keypair.privateKey});
         case ChainTickers.NEAR:
-            return await getNearBalance(keypair.privateKey);
+            return await getNearBalance({privateKey: keypair.privateKey});
         default:
             throw new Error(`Invalid chain ticker '${ticker}'!`);
     }
@@ -29,9 +29,9 @@ export const sendFundsTransaction = async (
 
     switch (ticker) {
         case ChainTickers.SOL:
-            return await sendSolanaFundsTransaction(keypair.privateKey, toAddress, amount);
+            return await sendSolanaFundsTransaction({privateKey: keypair.privateKey}, toAddress, amount);
         case ChainTickers.NEAR:
-            return await sendNearFundsTransaction(keypair.privateKey, toAddress, amount);
+            return await sendNearFundsTransaction({privateKey: keypair.privateKey}, toAddress, amount);
         default:
             throw new Error(`Invalid chain ticker '${ticker}'!`);
     }

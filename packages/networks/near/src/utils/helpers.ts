@@ -3,7 +3,6 @@ import { decode as decodeBase58 } from 'bs58';
 import { isHex, isBase58 } from '@mindblox-wallet-adapter/base';
 
 import { fetchPublicKeys } from './helper-api';
-import type { Cluster } from '../providers/connection/core/utils';
 import { WalletAdapterNetwork } from '../providers/connection/core/utils';
 
 export const isValidAccount = async (account: string) => {
@@ -56,33 +55,3 @@ export const getImplicitIdsFromName = async (name: string) => {
 };
 
 export const isImplicitAddress = (address: string): boolean => isHex(address) && address.length == 64;
-
-export const getAdapterCluster = (cluster?: string): Cluster => {
-    if (!cluster) return WalletAdapterNetwork.Testnet;
-    switch (cluster) {
-        case 'testnet':
-            return WalletAdapterNetwork.Testnet;
-        case 'betanet':
-            return WalletAdapterNetwork.Betanet;
-        case 'mainnet':
-            return WalletAdapterNetwork.Mainnet;
-        default:
-            return WalletAdapterNetwork.Testnet;
-    }
-};
-
-export const getAdapterNetwork = (network?: string): WalletAdapterNetwork => {
-    if (!network) return WalletAdapterNetwork.Testnet;
-    switch (network) {
-        case 'testnet':
-            return WalletAdapterNetwork.Testnet;
-        case 'betanet':
-            return WalletAdapterNetwork.Betanet;
-        case 'mainnet':
-            return WalletAdapterNetwork.Mainnet;
-        case 'localnet':
-            return WalletAdapterNetwork.Localnet;
-        default:
-            return WalletAdapterNetwork.Testnet;
-    }
-};

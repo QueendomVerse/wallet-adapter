@@ -10,6 +10,7 @@ import type {
     ChainPublicKey,
     ChainTransaction,
     ChainTransactionSignature,
+    WalletAdapter,
     WalletName,
 } from '@mindblox-wallet-adapter/base';
 import {
@@ -59,7 +60,7 @@ describe('WalletProvider', () => {
     let fooWalletAdapter: MockWalletAdapter;
     let barWalletAdapter: MockWalletAdapter;
     let bazWalletAdapter: MockWalletAdapter;
-    let adapters: Adapter<ChainPublicKey, ChainTransaction, ChainConnection, ChainTransactionSignature>[];
+    let adapters: WalletAdapter<ChainPublicKey, ChainTransaction, ChainConnection, ChainTransactionSignature>[];
 
     function renderTest(
         props: Omit<

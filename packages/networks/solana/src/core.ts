@@ -3,26 +3,31 @@ import { mnemonicToSeedSync } from 'bip39';
 
 import { useAccount, ConnectionError, WalletAdapterNetwork, getAdapterCluster, getAdapterNetwork } from '.';
 
-import * as dotenv from 'dotenv';
-
 import type { SolanaKeys } from './types/keypair';
 import type { LocalKeypairStore } from '@mindblox-wallet-adapter/base';
 import { ChainNetworks, SolanaKeypair, SolanaPublicKey } from '@mindblox-wallet-adapter/base';
 
-dotenv.config();
+export interface AccountParams {
+    privateKey: string,
+    network?: string,
+    nodeRpcUrl?: string,
+    nodeWsUri?: string
+}
 
 export const getNetwork = (net?: string): WalletAdapterNetwork => {
     const _network = net != WalletAdapterNetwork.Localnet ? getAdapterCluster(net) : net;
     return _network as WalletAdapterNetwork;
 };
 
-// async due to how other networks handle connections.
-const nodeRpcUrl: string = process.env.NEXT_PUBLIC_SOLANA_RPC_HOST ?? '';
-const nodeWsUri: string | undefined = process.env.NEXT_PUBLIC_SOLANA_WS_HOST ?? '';
-const nodeNetwork: WalletAdapterNetwork = getAdapterNetwork(process.env.NEXT_PUBLIC_SOLANA_NETWORK);
-export const getAccount = async (privateKey: string) => {
+export const getAccount = async ({
+    privateKey,
+    network,
+    nodeRpcUrl,
+    nodeWsUri
+}: AccountParams) => {
     try {
-        return useAccount(privateKey, nodeRpcUrl, nodeWsUri, nodeNetwork);
+        const nodeNetwork: WalletAdapterNetwork = getAdapterNetwork(network);
+        return useAccount(privateKey, nodeNetwork, nodeRpcUrl, nodeWsUri);
     } catch (err) {
         throw new ConnectionError(`Failed getting wallet: ${err}`);
     }
@@ -73,12 +78,17 @@ export const getPublicKey = (publicKey: string) => {
 };
 
 //@TODO: configure network;
-export const getBalance = async (privateKey: string) => {
+export const getBalance = async ({
+        privateKey,
+        network,
+        nodeRpcUrl,
+        nodeWsUri
+}: AccountParams) => {
     // console.warn('func: getBalance');
     if (!privateKey) {
         throw new Error('Get get balance without providing a private key!');
     }
-    const { balance, publicKey } = await getAccount(privateKey);
+    const { balance, publicKey } = await getAccount({privateKey, network, nodeRpcUrl, nodeWsUri});
     try {
         const amount = await balance();
         console.info(`Solana (${publicKey()}) balance: ${amount}`);
@@ -88,7 +98,12 @@ export const getBalance = async (privateKey: string) => {
     }
 };
 
-export const sendFundsTransaction = async (privateKey: string, toAddress: string, amount: string) => {
-    const { send } = await getAccount(privateKey);
+export const sendFundsTransaction = async ({
+    privateKey,
+    network,
+    nodeRpcUrl,
+    nodeWsUri
+}: AccountParams, toAddress: string, amount: string) => {
+    const { send } = await getAccount({privateKey, network, nodeRpcUrl, nodeWsUri});
     return send(toAddress, amount);
 };

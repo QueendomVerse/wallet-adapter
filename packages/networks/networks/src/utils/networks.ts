@@ -1,39 +1,50 @@
 import type { ChainTicker } from '@mindblox-wallet-adapter/base';
 import { ChainTickers } from '@mindblox-wallet-adapter/base';
-import { getSolanaNetwork, SolanaWalletAdapterNetwork, getNearNetwork, NearWalletAdapterNetwork } from '..';
+import {
+    getNetwork as getSolanaNetwork,
+    WalletAdapterNetwork as SolanaWalletAdapterNetwork
+} from '@mindblox-wallet-adapter/solana';
+import {
+    getNetwork as getNearNetwork,
+    WalletAdapterNetwork as NearWalletAdapterNetwork
+} from '@mindblox-wallet-adapter/near';
 
-export enum ChainAdapterNetwork {
+export enum ChainAdapterNetworks {
     Mainnet = 'mainnet',
     Testnet = 'testnet',
     Devnet = 'devnet',
     Localnet = 'localnet',
 }
 
-const SolanaAdapterNetworkMap: Record<ChainAdapterNetwork, SolanaWalletAdapterNetwork> = {
-    mainnet: SolanaWalletAdapterNetwork.Mainnet,
-    testnet: SolanaWalletAdapterNetwork.Testnet,
-    devnet: SolanaWalletAdapterNetwork.Devnet,
-    localnet: SolanaWalletAdapterNetwork.Localnet,
-};
+export type CommonAdapterNetwork = ChainAdapterNetworks;
 
-const NearAdapterNetworkMap: Record<ChainAdapterNetwork, NearWalletAdapterNetwork> = {
-    mainnet: NearWalletAdapterNetwork.Mainnet,
-    testnet: NearWalletAdapterNetwork.Betanet,
-    devnet: NearWalletAdapterNetwork.Testnet,
-    localnet: NearWalletAdapterNetwork.Localnet,
-};
+const SolanaAdapterNetworkMap: Record<CommonAdapterNetwork, SolanaWalletAdapterNetwork> = {
+    [ChainAdapterNetworks.Mainnet]: SolanaWalletAdapterNetwork.Mainnet,
+    [ChainAdapterNetworks.Testnet]: SolanaWalletAdapterNetwork.Testnet,
+    [ChainAdapterNetworks.Devnet]: SolanaWalletAdapterNetwork.Devnet,
+    [ChainAdapterNetworks.Localnet]: SolanaWalletAdapterNetwork.Localnet,
+}
 
-export type ChainAdapterNetworks = SolanaWalletAdapterNetwork | NearWalletAdapterNetwork;
+const NearAdapterNetworkMap: Record<CommonAdapterNetwork, NearWalletAdapterNetwork> = {
+    [ChainAdapterNetworks.Mainnet]: NearWalletAdapterNetwork.Mainnet,
+    [ChainAdapterNetworks.Testnet]: NearWalletAdapterNetwork.Betanet,
+    [ChainAdapterNetworks.Devnet]: NearWalletAdapterNetwork.Testnet,
+    [ChainAdapterNetworks.Localnet]: NearWalletAdapterNetwork.Localnet,
+}
 
-const isValidChainAdapterNetwork = (value: string): value is ChainAdapterNetwork =>
-    Object.values(ChainAdapterNetwork).includes(value as ChainAdapterNetwork);
+export type ChainAdapterNetwork = SolanaWalletAdapterNetwork | NearWalletAdapterNetwork;
 
-export const getAdapterNetwork = <CT extends ChainTicker>(chain: CT, network: string): ChainAdapterNetworks => {
+const isValidChainAdapterNetwork = (value: string): value is ChainAdapterNetworks =>
+    Object.values(ChainAdapterNetworks).includes(value as ChainAdapterNetworks);
+
+export const getAdapterNetwork = <CT extends ChainTicker>(
+    chain: CT, network: string
+): ChainAdapterNetwork => {
     if (!isValidChainAdapterNetwork(network)) {
         throw new Error(`Invalid chain adapter network: ${network}`);
     }
 
-    const _network = (network as ChainAdapterNetwork) ?? ChainAdapterNetwork.Devnet;
+    const _network = (network as ChainAdapterNetworks) ?? ChainAdapterNetworks.Devnet;
     switch (chain) {
         case ChainTickers.SOL:
             return getSolanaNetwork(SolanaAdapterNetworkMap[_network]) as SolanaWalletAdapterNetwork;

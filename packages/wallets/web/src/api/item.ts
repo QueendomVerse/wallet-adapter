@@ -1,14 +1,19 @@
 import type { ApiItem, LocalItemStore, SolanaAttribute } from '@mindblox-wallet-adapter/base';
 
-import type { ApiClient, FetchOptions } from './client';
+import type { ApiClientProps, FetchOptions , ApiResponse } from './client';
+import { ApiClient } from './client';
 import { emptyItem } from './empty';
 
 export class ItemApiClient {
     static emptyItem: ApiItem = emptyItem;
 
-    constructor(private apiClient: ApiClient = apiClient) {}
+    private apiClient: ApiClient;
+    
+    constructor(apiClientProps: ApiClientProps) {
+        this.apiClient = new ApiClient(apiClientProps)
+    }
 
-    createItem = async (item: LocalItemStore): Promise<ApiItem | null> => {
+    createItem = async (item: LocalItemStore): Promise<ApiResponse<ApiItem | null>> => {
         const endpoint = '/items';
         console.debug(`Creating ApiItem: ${JSON.stringify(item)} ...`);
 
@@ -24,7 +29,7 @@ export class ItemApiClient {
         return this.apiClient.handleResponse<ApiItem>(response, ItemApiClient.emptyItem);
     };
 
-    removeItem = async (id: string): Promise<boolean> => {
+    removeItem = async (id: string): Promise<ApiResponse<boolean | null>> => {
         const endpoint = `/items/remove/${id}`;
         console.debug(`Removing item by id: '${id}'...`);
 
@@ -37,10 +42,11 @@ export class ItemApiClient {
             body: JSON.stringify({ id: id }),
         };
         const response = await this.apiClient.fetch(endpoint, fetchOptions);
-        return response.status === 200;
+        const isSuccess = this.apiClient.handleResponse<boolean>(response, false);
+        return isSuccess;
     };
 
-    findItems = async (): Promise<ApiItem[] | null> => {
+    findItems = async (): Promise<ApiResponse<ApiItem[] | null>> => {
         const endpoint = '/items';
         console.debug(`Finding all items...`);
 
@@ -55,7 +61,7 @@ export class ItemApiClient {
         return await this.apiClient.handleResponse<ApiItem[]>(response, [ItemApiClient.emptyItem]);
     };
 
-    findOneItem = async (id: string): Promise<ApiItem | null> => {
+    findOneItem = async (id: string): Promise<ApiResponse<ApiItem | null>> => {
         const endpoint = `/items/${id}`;
         console.debug(`Finding item by id: '${id}'...`);
 
@@ -70,7 +76,7 @@ export class ItemApiClient {
         return await this.apiClient.handleResponse<ApiItem>(response, ItemApiClient.emptyItem);
     };
 
-    findOneItemByIdentifier = async (tokenIdentifier: string): Promise<ApiItem | null> => {
+    findOneItemByIdentifier = async (tokenIdentifier: string): Promise<ApiResponse<ApiItem | null>> => {
         const endpoint = `/items/byTokenIdentifier/${tokenIdentifier}`;
         console.debug(`Finding item by token identifier: '${tokenIdentifier}'...`);
 
@@ -85,7 +91,7 @@ export class ItemApiClient {
         return await this.apiClient.handleResponse<ApiItem>(response, ItemApiClient.emptyItem);
     };
 
-    findOneItemByMint = async (mint: string): Promise<ApiItem | null> => {
+    findOneItemByMint = async (mint: string): Promise<ApiResponse<ApiItem | null>> => {
         const endpoint = `/items/byMint/${mint}`;
         console.debug(`Finding item by mint: '${mint}'...`);
 
@@ -100,7 +106,7 @@ export class ItemApiClient {
         return await this.apiClient.handleResponse<ApiItem>(response, ItemApiClient.emptyItem);
     };
 
-    findOneItemByPublicKey = async (publicKey: string): Promise<ApiItem | null> => {
+    findOneItemByPublicKey = async (publicKey: string): Promise<ApiResponse<ApiItem | null>> => {
         const endpoint = `/items/byPublicKey/${publicKey}`;
         console.debug(`Finding item by public key: '${publicKey}'...`);
 
@@ -115,7 +121,7 @@ export class ItemApiClient {
         return await this.apiClient.handleResponse<ApiItem>(response, ItemApiClient.emptyItem);
     };
 
-    findOneItemByTokenMint = async (tokenMint: string): Promise<ApiItem | null> => {
+    findOneItemByTokenMint = async (tokenMint: string): Promise<ApiResponse<ApiItem | null>> => {
         const endpoint = `/items/byTokenMint/${tokenMint}`;
         console.debug(`Finding item by token mint: '${tokenMint}'...`);
 
@@ -130,7 +136,7 @@ export class ItemApiClient {
         return await this.apiClient.handleResponse<ApiItem>(response, ItemApiClient.emptyItem);
     };
 
-    updateItemTokenMint = async (mint: string, tokenMint: string): Promise<boolean> => {
+    updateItemTokenMint = async (mint: string, tokenMint: string): Promise<ApiResponse<ApiItem | null>> => {
         const endpoint = `/items/updateTokenMint`;
         console.debug(`Updating item with mint('${mint}') token mint to '${tokenMint}'`);
 
@@ -143,10 +149,10 @@ export class ItemApiClient {
             body: JSON.stringify({ tokenMint, mint }),
         };
         const response = await this.apiClient.fetch(endpoint, fetchOptions);
-        return response.status === 200;
+        return await this.apiClient.handleResponse<ApiItem>(response, ItemApiClient.emptyItem);
     };
 
-    updateItemPrice = async (mint: string, solPrice: string): Promise<boolean> => {
+    updateItemPrice = async (mint: string, solPrice: string): Promise<ApiResponse<ApiItem | null>> => {
         const endpoint = `/items/updatePrice`;
         console.debug(`Updating item with mint('${mint}') price to '${solPrice}'`);
 
@@ -159,7 +165,7 @@ export class ItemApiClient {
             body: JSON.stringify({ solPrice, mint }),
         };
         const response = await this.apiClient.fetch(endpoint, fetchOptions);
-        return response.status === 200;
+        return await this.apiClient.handleResponse<ApiItem>(response, ItemApiClient.emptyItem);
     };
 
     updateItemProperties = async (
@@ -168,7 +174,7 @@ export class ItemApiClient {
         description: string,
         story: string,
         attributes: SolanaAttribute[]
-    ): Promise<boolean> => {
+    ): Promise<ApiResponse<ApiItem | null>> => {
         const endpoint = `/items/saveProperties`;
         console.debug(`Updating item('${id}') properties`);
 
@@ -189,6 +195,6 @@ export class ItemApiClient {
             body: JSON.stringify(updatedItem),
         };
         const response = await this.apiClient.fetch(endpoint, fetchOptions);
-        return response.status === 200;
+        return await this.apiClient.handleResponse<ApiItem>(response, ItemApiClient.emptyItem);
     };
 }

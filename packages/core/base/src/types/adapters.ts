@@ -1,4 +1,5 @@
 import type { WalletAdapter, WalletReadyState } from '../adapter';
+import { ChainTicker } from '../chains';
 import type { SignerWalletAdapter, MessageSignerWalletAdapter } from '../signer';
 import type { ChainPublicKey, ChainTransaction, ChainConnection, ChainTransactionSignature } from './chains';
 
@@ -8,7 +9,8 @@ export interface Wallet<
     Connection extends ChainConnection,
     TransactionSignature extends ChainTransactionSignature
 > {
-    adapter?: Adapter<PublicKey, Transaction, Connection, TransactionSignature>;
+    chain?: ChainTicker | null;
+    adapter?: WalletAdapter<PublicKey, Transaction, Connection, TransactionSignature>;
     readyState: WalletReadyState;
 }
 

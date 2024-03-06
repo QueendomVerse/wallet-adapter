@@ -9,7 +9,9 @@ import type { LocalWalletStore, Chain } from '@mindblox-wallet-adapter/base';
 import { encryptText, decryptText, isChain } from '@mindblox-wallet-adapter/base';
 import { getKeyPairFromSeedPhrase, getKeyPairFromPrivateKey } from '@mindblox-wallet-adapter/networks';
 
+import type { IndexDbAppDatabase} from '../indexDb';
 import { IndexDbWallet } from '../indexDb';
+import type { NotificationParams} from '../store';
 import { thunkUpdateWallet } from '../store';
 
 export const validateKeypairs = async (chain: Chain, seedPhrase: string, privateKey: string) => {
@@ -128,7 +130,12 @@ export const decryptWallet = async (wallet: LocalWalletStore, password: string) 
     } as LocalWalletStore;
 };
 
-export const decryptDbWallet = async (wallet: IndexDbWallet, password: string): Promise<IndexDbWallet | undefined> => {
+export const decryptDbWallet = async ({wallet, password, indexDb, notification} : {
+    wallet: IndexDbWallet,
+    password: string,
+    indexDb: IndexDbAppDatabase,
+    notification?: (params: NotificationParams) => void
+}): Promise<IndexDbWallet | undefined> => {
     if (!wallet || !password) return;
     console.info(`decrypting(${wallet.chain}/${wallet.label}): ${wallet.pubKey}`);
 
@@ -165,12 +172,16 @@ export const decryptDbWallet = async (wallet: IndexDbWallet, password: string): 
         seed,
         seedPhrase
     );
-    thunkUpdateWallet(decryptedWallet);
+    thunkUpdateWallet({wallet: decryptedWallet, indexDb, notification});
 
     return decryptedWallet;
 };
 
-export const closeDbWallet = async (wallet: IndexDbWallet): Promise<IndexDbWallet | undefined> => {
+export const closeDbWallet = async ({wallet, indexDb, notification} : {
+    wallet: IndexDbWallet,
+    indexDb: IndexDbAppDatabase,
+    notification?: (params: NotificationParams) => void
+}): Promise<IndexDbWallet | undefined> => {
     if (!wallet) return;
     console.info(`closing(${wallet.chain}/${wallet.label}): ${wallet.pubKey}`);
 
@@ -186,7 +197,7 @@ export const closeDbWallet = async (wallet: IndexDbWallet): Promise<IndexDbWalle
         undefined,
         undefined
     );
-    thunkUpdateWallet(closeWallet);
+    thunkUpdateWallet({wallet: closeWallet, indexDb, notification});
 
     return closeWallet;
 };

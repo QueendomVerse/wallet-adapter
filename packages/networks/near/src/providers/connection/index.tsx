@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useRef, useState } from 'react';
+import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
 
 // import {
 //     Contract,
@@ -7,28 +7,24 @@ import React, { useContext, useEffect, useRef, useState } from 'react';
 //     utils,
 //     transactions,
 // } from 'near-api-js';
-import { JsonRpcProvider, Provider } from 'near-api-js/lib/providers';
-import { InMemorySigner, type Signer } from 'near-api-js/lib/signer';
-import * as dotenv from 'dotenv';
+// import { JsonRpcProvider, Provider } from 'near-api-js/lib/providers';
+// import { InMemorySigner, type Signer } from 'near-api-js/lib/signer';
 
-import { Connection } from './middleware';
-import type { TokenInfo } from '../../types';
-import { WalletAdapterNetwork, clusterApiUrl, clusterHelperUrl } from './core/utils/cluster';
-import { keyStores, providers } from 'near-api-js';
-import type { Chain } from '@mindblox-wallet-adapter/base';
+// import { Connection } from './middleware';
+// import { keyStores, providers } from 'near-api-js';
+import type { Chain, NearConnectionConfig } from '@mindblox-wallet-adapter/base';
 import {
-    asyncEnsureRpcConnection,
     ChainNetworks,
     NearConnection,
     NearKeypair,
-    useQuerySearch,
 } from '@mindblox-wallet-adapter/base';
-import { useLocalStorageState } from '@mindblox-wallet-adapter/react';
-import { getAdapterCluster, getAdapterNetwork } from '../../utils';
+import { useLocalStorage } from '@mindblox-wallet-adapter/react';
+
+import type { TokenInfo } from '../../types';
+import type { Cluster } from '../../providers/connection/core/utils';
+import { WalletAdapterNetwork, clusterApiUrl, clusterHelperUrl } from './core/utils/cluster';
 
 export * from './core';
-
-dotenv.config();
 
 enum ChainId {
     Mainnet = 101,
@@ -55,6 +51,18 @@ export type EndpointMap = {
 //     public chain: Chain = ChainNetworks.NEAR;
 // }
 
+export interface ConnectionContextState {
+    chain: Chain | null;
+    setEndpointMap: (val: string) => void;
+    setEndpoint: (val: string) => void;
+    connection?: NearConnection;
+    endpointMap: EndpointMap;
+    endpoint: string;
+    env: ENDPOINT_NAME;
+    tokens: Map<string, TokenInfo>;
+    tokenMap: Map<string, TokenInfo>;
+}
+
 const getChainId = (network: string) => {
     switch (network) {
         case 'mainnet':
@@ -68,9 +76,38 @@ const getChainId = (network: string) => {
     }
 };
 
+export const getAdapterCluster = (cluster?: string): Cluster => {
+    if (!cluster) return WalletAdapterNetwork.Testnet;
+    switch (cluster) {
+        case 'testnet':
+            return WalletAdapterNetwork.Testnet;
+        case 'betanet':
+            return WalletAdapterNetwork.Betanet;
+        case 'mainnet':
+            return WalletAdapterNetwork.Mainnet;
+        default:
+            return WalletAdapterNetwork.Testnet;
+    }
+};
+
+export const getAdapterNetwork = (network?: string): WalletAdapterNetwork => {
+    if (!network) return WalletAdapterNetwork.Testnet;
+    switch (network) {
+        case 'testnet':
+        case 'betanet':
+        case 'mainnet':
+            return getAdapterCluster(network) as WalletAdapterNetwork;
+        case 'localnet':
+            return WalletAdapterNetwork.Localnet;
+        default:
+            return WalletAdapterNetwork.Testnet;
+    }
+};
+
+
 export const getEndpointMap = (name: ENDPOINT_NAME): EndpointMap => ({
     name,
-    endpoint: getAdapterCluster(name),
+    endpoint: clusterApiUrl(getAdapterCluster(name)),
     ChainId: getChainId(name),
     networkId: getAdapterNetwork(name),
     nodeUrl: clusterApiUrl(getAdapterCluster(name)),
@@ -83,21 +120,15 @@ export const getEndpointMap = (name: ENDPOINT_NAME): EndpointMap => ({
 export const ENDPOINTS: Array<EndpointMap> = Object.values(WalletAdapterNetwork).map(getEndpointMap);
 
 const DEFAULT_ENDPOINT = ENDPOINTS[0];
+// console.debug('Default Near Endpoint', DEFAULT_ENDPOINT);
 
-export interface ConnectionContextState {
-    chain: Chain | null;
-    setEndpointMap: (val: string) => void;
-    setEndpoint: (val: string) => void;
-    connection: NearConnection;
-    endpointMap: EndpointMap;
-    endpoint: string;
-    env: ENDPOINT_NAME;
-    tokens: Map<string, TokenInfo>;
-    tokenMap: Map<string, TokenInfo>;
-}
+const getConnection = (config: NearConnectionConfig) => {
+    // console.debug(`Establishing Near connection with config: '${JSON.stringify(config)}'`);
+    return new NearConnection(config)
+};
 
-const nodeWsUri: string | undefined = process.env.PUBLIC_NEAR_WS_HOST;
-console.info(`Web Socket endpoint: '${nodeWsUri}'`);
+// const nodeWsUri: string | undefined = process.env.PUBLIC_NEAR_WS_HOST;
+// console.debug(`Near Web Socket endpoint: '${nodeWsUri}'`);
 
 export const ConnectionContext = React.createContext<ConnectionContextState>({
     chain: ChainNetworks.NEAR,
@@ -107,11 +138,11 @@ export const ConnectionContext = React.createContext<ConnectionContextState>({
     setEndpoint: () => {
         console.warn('setEndpoint function not implemented.');
     },
-    connection: new NearConnection({
-        nodeUrl: DEFAULT_ENDPOINT.endpoint,
-        networkId: DEFAULT_ENDPOINT.networkId,
-        jsvmAccountId: DEFAULT_ENDPOINT.jsvmAccountId,
-    }),
+    // connection: getConnection({
+    //     nodeUrl: DEFAULT_ENDPOINT.endpoint,
+    //     networkId: DEFAULT_ENDPOINT.networkId,
+    //     jsvmAccountId: DEFAULT_ENDPOINT.jsvmAccountId,
+    // }),
     // connection: new NearConnection(
     //     DEFAULT_ENDPOINT.endpoint,
     //     DEFAULT_ENDPOINT.networkId,
@@ -127,25 +158,28 @@ export const ConnectionContext = React.createContext<ConnectionContextState>({
 });
 
 interface ConnectionProviderProps {
+    network?: ENDPOINT_NAME
     children: React.ReactNode;
 }
 
-export const ConnectionProvider: React.FC<ConnectionProviderProps> = ({ children }) => {
+export const ConnectionProvider: React.FC<ConnectionProviderProps> = ({ network, children }) => {
+    useEffect(() => {
+        console.debug(`Near Connection Provider network: ${network}`);
+    }, [network])
+    
     const chain = ChainNetworks.NEAR;
-    const searchParams = useQuerySearch();
     const [networkStorage, setNetworkStorage] =
         // @ts-ignore
-        useLocalStorageState<WalletAdapterNetwork>('network', DEFAULT_ENDPOINT.name);
-    const networkParam = searchParams.get('network');
+        useLocalStorage<WalletAdapterNetwork>('network', DEFAULT_ENDPOINT.name);
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [savedEndpoint, setEndpointMap] = useLocalStorageState('connectionEndpoint', ENDPOINTS[0].endpoint);
+    const [savedEndpoint, setEndpointMap] = useLocalStorage('connectionEndpoint', ENDPOINTS[0].endpoint);
 
     const setEndpoint = setEndpointMap;
 
     let maybeEndpoint;
-    if (networkParam) {
-        const endpointParam = ENDPOINTS.find(({ name }) => name === networkParam);
+    if (network) {
+        const endpointParam = ENDPOINTS.find(({ name }) => name === network);
         if (endpointParam) {
             maybeEndpoint = endpointParam;
         }
@@ -161,7 +195,12 @@ export const ConnectionProvider: React.FC<ConnectionProviderProps> = ({ children
     const endpointMap = maybeEndpoint || DEFAULT_ENDPOINT;
     const endpoint = maybeEndpoint?.endpoint || DEFAULT_ENDPOINT.endpoint;
 
-    console.error('Starting connection ...');
+    const connectionConfig: NearConnectionConfig = {
+        nodeUrl: endpointMap.endpoint,
+        networkId: endpointMap.networkId,
+        jsvmAccountId: endpointMap.jsvmAccountId,
+    }
+
     const { current: connection } = useRef(
         // new NearConnection(
         //     endpointMap.endpoint,
@@ -170,11 +209,7 @@ export const ConnectionProvider: React.FC<ConnectionProviderProps> = ({ children
         //     new InMemorySigner(new keyStores.InMemoryKeyStore()) as Signer,
         //     endpointMap.jsvmAccountId
         // )
-        new NearConnection({
-            nodeUrl: endpointMap.endpoint,
-            networkId: endpointMap.networkId,
-            jsvmAccountId: endpointMap.jsvmAccountId,
-        })
+        getConnection(connectionConfig)
     );
 
     const [tokens, setTokens] = useState<Map<string, TokenInfo>>(new Map());
@@ -225,25 +260,23 @@ export const ConnectionProvider: React.FC<ConnectionProviderProps> = ({ children
             const id = connection.onAccountChange(_keypair.getPublicKey(), () => {
                 /* This callback is intentionally left blank */
             });
-            const conn = await asyncEnsureRpcConnection(connection);
-            if (conn) {
-                conn.removeAccountChangeListener(id);
+            if (connection && id) {
+                connection.removeAccountChangeListener(id);
             }
         };
-        init();
+        // init();
     }, []);
 
     useEffect(() => {
         const init = async () => {
             const id = connection.onSlotChange(() => null);
             return async () => {
-                const conn = await asyncEnsureRpcConnection(connection);
-                if (conn) {
-                    conn.removeSlotChangeListener(id);
+                if (connection && id) {
+                    connection.removeSlotChangeListener(id);
                 }
             };
         };
-        init();
+        // init();
     }, []);
 
     const contextValue = React.useMemo(() => {

@@ -1,4 +1,4 @@
-import { useLocation } from 'react-router-dom';
+import { useMemo } from 'react';
 import type { ParsedUrlQuery } from 'querystring';
 
 export interface QueryParams extends ParsedUrlQuery {
@@ -8,6 +8,8 @@ export interface QueryParams extends ParsedUrlQuery {
     transactionHashes: string[];
 }
 
-export const useQuerySearch = () => {
-    return new URLSearchParams(useLocation().search);
+export const useQuerySearch = (location?: Location) => {
+    const searchParams = useMemo(() => new URLSearchParams(location?.search), [location]);
+
+    return searchParams;
 };

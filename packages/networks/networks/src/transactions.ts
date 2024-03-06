@@ -4,8 +4,8 @@ import type {
     SolanaCommitment,
     // SolanaKeypair,
     // SolanaTransactionInstruction,
-    SendTransactionsWithManualRetryParams as SendSolanaTransactionsWithManualRetryParamsSolana,
-    SendTransactionsInChunksParams as SendSolanaTransactionsInChunksParamsSolana,
+    SendTransactionsWithManualRetryParams as SendSolanaTransactionsWithManualRetryParams,
+    SendTransactionsInChunksParams as SendSolanaTransactionsInChunksParams,
     SimulationResult as SolanaSimulationResult,
     SendTransactionsWithRecentBlockParams as SendSolanaTransactionsWithRecentBlockParams,
     SendTransactionsParams as SendSolanaTransactionsParams,
@@ -34,26 +34,89 @@ import type {
     SimulationResult as NearSimulationResult,
     TransactionResult as NearTransactionResult,
 } from '@mindblox-wallet-adapter/near';
+import { ChainConnection } from '@mindblox-wallet-adapter/base';
+import { ChainWalletContextState } from './types';
 
 export type Transaction = SolanaTransaction | NearTransaction;
 export type TransactionResult = SolanaTransactionResult | NearTransactionResult;
 export type Commitment = SolanaCommitment | NearCommitment;
 export type SimulationResult = SolanaSimulationResult | NearSimulationResult;
-export type SendTransactionsWithManualRetryParams = SendSolanaTransactionsWithManualRetryParamsSolana;
-export type SendTransactionsInChunksParams = SendSolanaTransactionsInChunksParamsSolana;
-export type SendTransactionsParams = SendSolanaTransactionsParams;
-export type SendTransactionsWithRecentBlockParams = SendSolanaTransactionsWithRecentBlockParams;
-export type SendTransactionWithRetryParams = SendSolanaTransactionWithRetryParams;
-export type SendTransactionParams = SendSolanaTransactionParams;
-export type SimulateTransactionParams = SimulateSolanaTransactionParams;
-export type SendSignedTransactionParams = SendSolanaSignedTransactionParams;
-export type AwaitTransactionSignatureConfirmationParams = AwaitSolanaTransactionSignatureConfirmationParams;
-export type SignatureStatusResult = SolanaTransactionSignatureResult;
 
-export const sendTransactionsWithManualRetry = async <T extends SendTransactionsWithManualRetryParams>(params: T) => {
+export interface SendTransactionsWithManualRetryParams<C extends ChainConnection, W extends ChainWalletContextState> extends Omit<
+SendSolanaTransactionsWithManualRetryParams, 'connection' | 'wallet'
+    >{
+    connection: C;
+    wallet: W;
+}
+
+export interface SendTransactionsInChunksParams<C extends ChainConnection, W extends ChainWalletContextState> extends Omit<
+SendSolanaTransactionsInChunksParams, 'connection' | 'wallet'
+    >{
+    connection: C;
+    wallet: W;
+}
+
+
+export interface SendTransactionsParams<C extends ChainConnection, W extends ChainWalletContextState> extends Omit<
+    SendSolanaTransactionsParams, 'connection' | 'wallet'
+>{
+    connection: C;
+    wallet: W;
+}
+
+export type SendTransactionsWithRecentBlockParams = SendSolanaTransactionsWithRecentBlockParams;
+
+// export type SendTransactionWithRetryParams = SendSolanaTransactionWithRetryParams;
+export interface SendTransactionWithRetryParams<C extends ChainConnection, W extends ChainWalletContextState> extends Omit<
+SendSolanaTransactionWithRetryParams, 'connection' | 'wallet'
+    >{
+    connection: C;
+    wallet: W;
+}
+
+export interface SendTransactionParams<C extends ChainConnection, W extends ChainWalletContextState> extends Omit<
+    SendSolanaTransactionParams, 'connection' | 'wallet'
+    >{
+    connection: C;
+    wallet: W;
+}
+
+export interface SimulateTransactionParams<C extends ChainConnection, W extends ChainWalletContextState> extends Omit<
+SimulateSolanaTransactionParams, 'connection' | 'wallet'
+    >{
+    connection: C;
+    wallet: W;
+}
+
+export interface SendSignedTransactionParams<C extends ChainConnection, W extends ChainWalletContextState> extends Omit<
+SendSolanaSignedTransactionParams, 'connection' | 'wallet'
+    >{
+    connection: C;
+    wallet: W;
+}
+
+export interface AwaitTransactionSignatureConfirmationParams<C extends ChainConnection, W extends ChainWalletContextState> extends Omit<
+AwaitSolanaTransactionSignatureConfirmationParams, 'connection' | 'wallet'
+    >{
+    connection: C;
+    wallet: W;
+}
+
+export interface SignatureStatusResult<C extends ChainConnection, W extends ChainWalletContextState> extends Omit<
+SolanaTransactionSignatureResult, 'connection' | 'wallet'
+    >{
+    connection: C;
+    wallet: W;
+}
+
+export const sendTransactionsWithManualRetry = async <
+    C extends ChainConnection,
+    W extends ChainWalletContextState,
+    T extends SendTransactionsWithManualRetryParams<C, W>
+>(params: T) => {
     switch (params.wallet.chain) {
         case 'solana':
-            return await sendSolanaTransactionsWithManualRetry(params);
+            return await sendSolanaTransactionsWithManualRetry(params as SendSolanaTransactionsWithManualRetryParams);
         case 'near':
             throw new Error(`sendTransactionsWithManualRetry not implemented for ${params.wallet.chain} chain`);
         default:
@@ -61,12 +124,14 @@ export const sendTransactionsWithManualRetry = async <T extends SendTransactions
     }
 };
 
-export const sendTransactionsInChunks = async <T extends SendTransactionsInChunksParams>(
-    params: T
-): Promise<number> => {
+export const sendTransactionsInChunks = async <
+    C extends ChainConnection,
+    W extends ChainWalletContextState,
+    T extends SendTransactionsInChunksParams<C, W>
+>(params: T): Promise<number> => {
     switch (params.wallet.chain) {
         case 'solana':
-            return await sendSolanaTransactionsInChunks(params);
+            return await sendSolanaTransactionsInChunks(params as SendSolanaTransactionsInChunksParams);
         case 'near':
             throw new Error(`sendTransactionsInChunks not implemented for ${params.wallet.chain} chain`);
         default:
@@ -74,10 +139,14 @@ export const sendTransactionsInChunks = async <T extends SendTransactionsInChunk
     }
 };
 
-export const sendTransactions = async <T extends SendTransactionsParams>(params: T): Promise<number> => {
+export const sendTransactions = async <
+    C extends ChainConnection,
+    W extends ChainWalletContextState,
+    T extends SendTransactionsParams<C, W>
+>(params: T): Promise<number> => {
     switch (params.wallet.chain) {
         case 'solana':
-            return await sendSolanaTransactions(params);
+            return await sendSolanaTransactions(params as SendSolanaTransactionsParams);
         case 'near':
             throw new Error(`sendTransactions not implemented for ${params.wallet.chain} chain`);
         default:
@@ -98,10 +167,14 @@ export const sendTransactionsWithRecentBlock = async <T extends SendTransactions
     }
 };
 
-export const sendTransaction = async <T extends SendTransactionParams>(params: T): Promise<TransactionResult> => {
+export const sendTransaction = async <
+    C extends ChainConnection,
+    W extends ChainWalletContextState,
+    T extends SendTransactionParams<C, W>
+>(params: T): Promise<TransactionResult> => {
     switch (params.wallet.chain) {
         case 'solana':
-            return await sendSolanaTransaction(params);
+            return await sendSolanaTransaction(params as SendSolanaTransactionParams);
         case 'near':
             throw new Error(`sendTransaction not implemented for ${params.wallet.chain} chain`);
         default:
@@ -109,10 +182,14 @@ export const sendTransaction = async <T extends SendTransactionParams>(params: T
     }
 };
 
-export const sendTransactionWithRetry = async <T extends SendTransactionWithRetryParams>(params: T) => {
+export const sendTransactionWithRetry = async <
+    C extends ChainConnection,
+    W extends ChainWalletContextState,
+    T extends SendTransactionWithRetryParams<C, W>
+>(params: T) => {
     switch (params.wallet.chain) {
         case 'solana':
-            return await sendSolanaTransactionWithRetry(params);
+            return await sendSolanaTransactionWithRetry(params as SendSolanaTransactionWithRetryParams);
         case 'near':
             throw new Error(`sendTransactionWithRetry not implemented for ${params.wallet.chain} chain`);
         default:
@@ -133,12 +210,14 @@ export const sendSignedTransaction = async <T extends SendSolanaSignedTransactio
     }
 };
 
-export const simulateTransaction = async <T extends SimulateTransactionParams>(
-    params: T
-): Promise<SimulationResult> => {
+export const simulateTransaction = async <
+    C extends ChainConnection,
+    W extends ChainWalletContextState,
+    T extends SimulateTransactionParams<C, W>
+>(params: T): Promise<SimulationResult> => {
     switch (params.connection.chain) {
         case 'solana':
-            return await simulateSolanaTransaction(params);
+            return await simulateSolanaTransaction(params as SimulateSolanaTransactionParams);
         case 'near':
             throw new Error(`simulateTransaction not implemented for ${params.connection.chain} chain`);
         default:
@@ -146,16 +225,16 @@ export const simulateTransaction = async <T extends SimulateTransactionParams>(
     }
 };
 
-export const awaitTransactionSignatureConfirmation = async <T extends AwaitTransactionSignatureConfirmationParams>(
-    params: T
-): Promise<void | SolanaSignatureConfirmationResult | null> => {
+export const awaitTransactionSignatureConfirmation = async <
+    C extends ChainConnection,
+    W extends ChainWalletContextState,
+    T extends AwaitTransactionSignatureConfirmationParams<C, W>
+>(params: T): Promise<void | SolanaSignatureConfirmationResult | null> => {
     switch (params.connection.chain) {
         case 'solana':
-            return awaitSolanaTransactionSignatureConfirmation(params);
+            return awaitSolanaTransactionSignatureConfirmation(params as AwaitSolanaTransactionSignatureConfirmationParams);
         case 'near':
-            throw new Error(
-                `awaitTransactionSignatureConfirmation not implemented for ${params.connection.chain} chain`
-            );
+            throw new Error(`awaitTransactionSignatureConfirmation not implemented for ${params.connection.chain} chain`);
         default:
             throw new Error(`awaitTransactionSignatureConfirmation invalid chain ${params.connection.chain}`);
     }

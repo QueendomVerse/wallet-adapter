@@ -8,3 +8,6 @@ export {
     connect as nearConnect,
 } from 'near-api-js';
 export { Transaction as NearTransaction } from 'near-api-js/lib/transaction';
+export type {
+    FinalExecutionOutcome as NearFinalExecutionOutcome
+} from 'near-api-js/lib/providers'

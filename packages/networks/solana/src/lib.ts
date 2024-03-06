@@ -2,8 +2,12 @@ export type {
     AccountInfo as SolanaAccountInfo,
     AccountMeta as SolanaAccountMeta,
     Commitment as SolanaCommitment,
+    GetTransactionConfig as GetSolanaTransactionConfig ,
+    GetVersionedTransactionConfig as GetVersionedSolanaTransactionConfig,
     TransactionSignature as SolanaTransactionSignature,
     TokenAccountsFilter as SolanaTokenAccountsFilter,
+    Ed25519Keypair as SolanaEd25519Keypair,
+    ProgramAccountChangeCallback as SolanaProgramAccountChangeCallback
 } from '@solana/web3.js';
 export {
     LAMPORTS_PER_SOL,
@@ -15,20 +19,38 @@ export {
     SystemProgram as SolanaSystemProgram,
     TransactionInstruction as SolanaTransactionInstruction,
     Transaction as SolanaTransaction,
-    Ed25519Keypair as SolanaEd25519Keypair,
     sendAndConfirmTransaction as sendAndConfirmSolanaTransaction,
     clusterApiUrl as solanaClusterApiUrl,
-    ProgramAccountChangeCallback as SolanaProgramAccountChangeCallback,
 } from '@solana/web3.js';
-export type { MintInfo as SolanaTokenMintInfo } from '@solana/spl-token';
+export type {
+    Account as MintAccount,
+    RawAccount as RawSolanaTokenAccount,
+    Mint as SolanaMint
+} from '@solana/spl-token';
 export {
     AccountLayout as SolanaAccountLayout,
     MintLayout as SolanaMintLayout,
-    Token as SolanaToken,
+    createMint as createSolanaMint,
+    createTransferInstruction as createSolanaTransferInstruction,
+    mintTo as solanaMintTo,
+    getOrCreateAssociatedTokenAccount as getOrCreateAssociatedSolanaTokenAccount,
+    getAccount as getMintInfo,
+    getMint as getSolanaMint,
+    unpackAccount as unpackSolanaTokenAccount,
+    createWrappedNativeAccount as createWrappedNativeSolanaAccount,
+    createCloseAccountInstruction as createCloseSolanaAccountInstruction,
+    createBurnInstruction as createSolanaBurnInstruction,
+    createMintToInstruction as createSolanaMintToInstruction,
+    AccountState as SolanaTokenAccountState,
 } from '@solana/spl-token';
-export type { TokenInfo as SolanaTokenInfo } from '@solana/spl-token-registry';
 export type {
     TokenListContainer as SolanaTokenListContainer,
+    TokenInfo as SolanaTokenInfo
+} from '@solana/spl-token-registry';
+export {
     TokenListProvider as SolanaTokenListProvider,
 } from '@solana/spl-token-registry';
-export { u64 } from '@saberhq/token-utils';
+export {
+    Numberu64,
+    getHandleAndRegistryKey as getSolanaHandleAndRegistryKey
+} from '@solana/spl-name-service';

@@ -1,6 +1,7 @@
-import type { StringPublicKey } from '@mindblox-wallet-adapter/base';
-import { SolanaPublicKey } from '@mindblox-wallet-adapter/base';
+import { PublicKey as SolanaPublicKey} from "@solana/web3.js";
 import type { AccountInfo } from '@solana/web3.js';
+
+import type { StringPublicKey } from '@mindblox-wallet-adapter/base';
 
 export interface PublicKeyStringAndAccount<T> {
     pubkey: string;

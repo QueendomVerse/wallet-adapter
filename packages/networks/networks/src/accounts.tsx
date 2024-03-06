@@ -1,35 +1,39 @@
 import type { ChainTicker, SolanaPublicKey } from '@mindblox-wallet-adapter/base';
 import { ChainTickers } from '@mindblox-wallet-adapter/base';
 import type {
-    AccountConnection as SolanaAccountConnection,
-    AccountsProviderProps as SolanaAccountsProviderProps,
+    ParsedAccountBase as ParsedSolanaAccountBase,
+    // AccountsProviderProps as SolanaAccountsProviderProps,
     IAccountsContext as ISolanaAccountsContext,
     NativeAccount as SolanaNativeAccount,
-    MintConnection as SolanaMintConnection,
     MintAccount as SolanaMintAccount,
+    // MintAccount as SolanaMintAccount,
     UserAcounts as SolanaUserAccounts,
+    TokenAccount as SolanaTokenAccount,
+    SolanaMint
 } from '@mindblox-wallet-adapter/solana';
 import {
     useAccounts as useSolanaAccounts,
-    useAccountByMint as useSolanaAccountByMint,
+    useTokenAccountByMint as useSolanaTokenAccountByMint,
     useNativeAccount as useSolanaNativeAccount,
     useUserAccounts as useSolanaUserAccounts,
     useMint as useSolanaMint,
+    useMintAccount as useSolanaMintAccount,
     usePublicAccount as useSolanaPublicAccount,
     // AccountsProvider as SolanaAccountsProvider,
 } from '@mindblox-wallet-adapter/solana';
 
-type IAccountsContext = ISolanaAccountsContext;
-type AccountConnection = SolanaAccountConnection;
-type AccountsProviderProps = SolanaAccountsProviderProps;
-type MintConnection = SolanaMintConnection;
-type MintAccount = SolanaMintAccount;
-type PublicKey = SolanaPublicKey;
-type NativeAccount = SolanaNativeAccount;
+export type IAccountsContext = ISolanaAccountsContext;
+export type ParsedAccountBase = ParsedSolanaAccountBase;
+// type AccountsProviderProps = SolanaAccountsProviderProps;
+export type MintAccount = SolanaMintAccount;
+export type Mint = SolanaMint
+export type TokenAccount = SolanaTokenAccount;
+export type PublicKey = SolanaPublicKey;
+export type NativeAccount = SolanaNativeAccount;
 
-type UserAccounts = SolanaUserAccounts;
+export type UserAccounts = SolanaUserAccounts;
 
-export const useAccounts = (chain: ChainTicker): IAccountsContext | null => {
+export const useAccounts = (chain?: ChainTicker): IAccountsContext | null => {
     switch (chain) {
         case ChainTickers.SOL:
             return useSolanaAccounts();
@@ -40,7 +44,18 @@ export const useAccounts = (chain: ChainTicker): IAccountsContext | null => {
     }
 };
 
-export const useMint = (chain: ChainTicker, pubKey?: string | PublicKey): MintConnection | null => {
+export const useMintAccount = (chain?: ChainTicker, pubKey?: string | PublicKey): MintAccount | null | undefined=> {
+    switch (chain) {
+        case ChainTickers.SOL:
+            return useSolanaMintAccount(pubKey);
+        case ChainTickers.NEAR:
+            return null;
+        default:
+            return null;
+    }
+};
+
+export const useMint = (chain?: ChainTicker, pubKey?: string | PublicKey): Mint | null | undefined=> {
     switch (chain) {
         case ChainTickers.SOL:
             return useSolanaMint(pubKey);
@@ -51,7 +66,7 @@ export const useMint = (chain: ChainTicker, pubKey?: string | PublicKey): MintCo
     }
 };
 
-export const usePublicAccount = (chain: ChainTicker, pubKey?: PublicKey): AccountConnection | null => {
+export const usePublicAccount = (chain?: ChainTicker, pubKey?: PublicKey): ParsedAccountBase | null | undefined => {
     switch (chain) {
         case ChainTickers.SOL:
             return useSolanaPublicAccount(pubKey);
@@ -73,7 +88,7 @@ export const usePublicAccount = (chain: ChainTicker, pubKey?: PublicKey): Accoun
 //     }
 // };
 
-export const useNativeAccount = (chain: ChainTicker): NativeAccount | null => {
+export const useNativeAccount = (chain?: ChainTicker): NativeAccount | null => {
     switch (chain) {
         case ChainTickers.SOL:
             return useSolanaNativeAccount();
@@ -84,7 +99,7 @@ export const useNativeAccount = (chain: ChainTicker): NativeAccount | null => {
     }
 };
 
-export const useUserAccounts = (chain: ChainTicker): UserAccounts | null => {
+export const useUserAccounts = (chain?: ChainTicker): UserAccounts | null => {
     switch (chain) {
         case ChainTickers.SOL:
             return useSolanaUserAccounts();
@@ -95,10 +110,10 @@ export const useUserAccounts = (chain: ChainTicker): UserAccounts | null => {
     }
 };
 
-export const useAccountByMint = (chain: ChainTicker, mint?: PublicKey): MintAccount | null => {
+export const useTokenAccountByMint = (chain?: ChainTicker, mint?: PublicKey): TokenAccount | null | undefined => {
     switch (chain) {
         case ChainTickers.SOL:
-            return useSolanaAccountByMint(mint);
+            return useSolanaTokenAccountByMint(mint);
         case ChainTickers.NEAR:
             return null;
         default:

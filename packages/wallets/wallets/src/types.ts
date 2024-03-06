@@ -4,16 +4,20 @@ import type {
     ChainPublicKey,
     ChainTransaction,
     ChainTransactionSignature,
+    WalletAdapter,
 } from '@mindblox-wallet-adapter/base';
-// import type { PhantomWalletAdapter } from '@mindblox-wallet-adapter/phantom';
-// import {
-//     NearBrowserWalletAdapter, WebWalletAdapter
-// } from '@mindblox-wallet-adapter/web';
+import { PhantomWalletAdapter } from '@mindblox-wallet-adapter/phantom';
+import { WebWalletAdapter } from '@mindblox-wallet-adapter/web';
+import {
+    BrowserWalletAdapter as NearBrowserWalletAdapter,
+    NearAdapter
+} from '@mindblox-wallet-adapter/near';
+import { SolanaAdapter } from '@mindblox-wallet-adapter/solana';
 
 export type ExtendedAdapter =
-    // | WebWalletAdapter
-    // | NearBrowserWalletAdapter
-    // | PhantomWalletAdapter
-    // | SolanaAdapter
-    // | NearAdapter
-    Adapter<ChainPublicKey, ChainTransaction, ChainConnection, ChainTransactionSignature>;
+    | WebWalletAdapter
+    | NearBrowserWalletAdapter
+    | PhantomWalletAdapter
+    | SolanaAdapter
+    | NearAdapter
+    | WalletAdapter<ChainPublicKey, ChainTransaction, ChainConnection, ChainTransactionSignature>;

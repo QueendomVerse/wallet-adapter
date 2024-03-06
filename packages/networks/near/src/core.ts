@@ -8,8 +8,8 @@ import type { NearKeypair } from './types';
 import { type NftMetaData } from './types';
 
 import { useAccount } from './hooks';
-import { generateNearKeys, getAdapterCluster } from './utils';
-import { WalletAdapterNetwork } from './providers';
+import { generateNearKeys } from './utils';
+import { WalletAdapterNetwork, getAdapterCluster } from './providers';
 
 // import { ChainNetworks } from '../../chains';
 // import {
@@ -30,6 +30,13 @@ import { WalletAdapterNetwork } from './providers';
 //   parseNearAmount,
 // } from 'near-api-js/lib/utils/format';
 // import { Balance } from 'contexts/wallet/near/components';
+
+export interface AccountParams {
+    privateKey: string,
+    network?: string,
+    nodeRpcUrl?: string,
+    nodeWsUri?: string
+}
 
 export const getAccount = async (privateKey: string) => {
     // const wallet = useAccount(privateKey, 'testnet');
@@ -87,8 +94,14 @@ export const getPublicKey = (publicKey: string) => {
     } as LocalKeypairStore;
 };
 
-export const getBalance = async (privateKey: string) => {
-    const { balance } = useAccount(privateKey, 'testnet');
+//@TODO: impliment nodeRpcUrl and nodeWsUri?
+export const getBalance = async ({
+    privateKey,
+    network,
+    // nodeRpcUrl,
+    // nodeWsUri
+}: AccountParams) => {
+    const { balance } = useAccount(privateKey, network);
     try {
         const bal = await balance();
         return Number(parseFloat(bal.balance));
@@ -97,8 +110,14 @@ export const getBalance = async (privateKey: string) => {
     }
 };
 
-export const sendFundsTransaction = async (privateKey: string, toAddress: string, amount: string) => {
-    const { send } = useAccount(privateKey, 'testnet');
+//@TODO: impliment nodeRpcUrl and nodeWsUri?
+export const sendFundsTransaction = async ({
+    privateKey,
+    network,
+    // nodeRpcUrl,
+    // nodeWsUri
+}: AccountParams, toAddress: string, amount: string) => {
+    const { send } = useAccount(privateKey, network);
     return send(toAddress, amount);
 };
 

@@ -3,12 +3,12 @@ import type { SolanaAccount, NearAccount, SendSolana, SendNear } from '..';
 export const USE_SOLANA_ACCOUNT = 'USE_SOLANA_ACCOUNT';
 export const USE_NEAR_ACCOUNT = 'USE_NEAR_ACCOUNT';
 
-export interface useSolanaAccount {
+interface useSolanaAccount {
     type: typeof USE_SOLANA_ACCOUNT;
     payload: SolanaAccount;
 }
 
-export interface useNearAccount {
+interface useNearAccount {
     type: typeof USE_NEAR_ACCOUNT;
     payload: NearAccount;
 }

@@ -20,6 +20,7 @@ import type {
     SendTransactionOptions,
     SolanaPublicKey,
     Wallet,
+    WalletAdapter,
     WalletName,
 } from '@mindblox-wallet-adapter/base';
 import {
@@ -45,17 +46,23 @@ import type {
     SolanaTransactionSignature,
 } from '@mindblox-wallet-adapter/base';
 
+import type { SolanaWallet} from '../hooks/useWallet';
 import { useWallet, WalletContext } from '../hooks/useWallet';
 
-export type SolanaAdapter = Adapter<SolanaPublicKey, SolanaTransaction, SolanaConnection, SolanaTransactionSignature>;
+export type SolanaAdapter = WalletAdapter<
+    SolanaPublicKey,
+    SolanaTransaction,
+    SolanaConnection,
+    SolanaTransactionSignature
+>;
 
 export const validSolanaAdapterNames = ['SolanaWebWallet', 'Phantom'];
 
 const { Panel } = Collapse;
 
-const ModalComponent: FC<ModalProps> = ({ modalContent, modalFooter, visible, onCancel, closable, centered }) => {
+const ModalComponent: React.FC<ModalProps> = ({ modalContent, modalFooter, open, onCancel, closable, centered }) => {
     return (
-        <Modal centered={centered} visible={visible} onCancel={onCancel} closable={closable}>
+        <Modal centered={centered} open={open} onCancel={onCancel} closable={closable}>
             {modalContent}
             {modalFooter}
         </Modal>
@@ -65,7 +72,7 @@ const ModalComponent: FC<ModalProps> = ({ modalContent, modalFooter, visible, on
 export interface ModalProps {
     modalContent?: ReactNode;
     modalFooter?: ReactNode;
-    visible: boolean;
+    open: boolean;
     onCancel: () => void;
     closable?: boolean;
     centered?: boolean;
@@ -93,7 +100,7 @@ export const useWalletModal = (): WalletModalContextState => {
 
 const initialState: {
     chain: Chain | null;
-    wallet: Wallet<SolanaPublicKey, SolanaTransaction, SolanaConnection, SolanaTransactionSignature> | null;
+    wallet: SolanaWallet | null;
     adapter: SolanaAdapter | PhantomWalletAdapter | null;
     publicKey: SolanaPublicKey | null;
     connected: boolean;
@@ -105,7 +112,7 @@ const initialState: {
     connected: false,
 };
 
-export const WalletModal: FC = () => {
+export const WalletModal: React.FC = () => {
     const {
         wallets,
         // wallet: selected,
@@ -122,7 +129,7 @@ export const WalletModal: FC = () => {
     const phatomWalletAdapter = useMemo(() => new PhantomWalletAdapter(), []);
 
     const handleSelection = async (
-        wallet: Wallet<SolanaPublicKey, SolanaTransaction, SolanaConnection, SolanaTransactionSignature>
+        wallet: SolanaWallet
     ) => {
         const name = wallet?.adapter?.name;
         console.info(`Selected wallet: '${name}'`);
@@ -133,7 +140,7 @@ export const WalletModal: FC = () => {
     return (
         <ModalComponent
             centered={true}
-            visible={visible}
+            open={visible}
             onCancel={close}
             closable={false}
             modalContent={
@@ -213,7 +220,7 @@ export const WalletModal: FC = () => {
     );
 };
 
-export const WalletModalProvider: FC<{ children: ReactNode }> = ({ children }) => {
+export const WalletModalProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     // const { wallet, connected, disconnect, publicKey } = useWallet();
     const { wallet, publicKey, disconnect } = useWallet();
 
@@ -291,7 +298,7 @@ export const WalletModalProvider: FC<{ children: ReactNode }> = ({ children }) =
     );
 };
 
-export const WalletProvider: FC<WalletProviderProps> = ({
+export const WalletProvider: React.FC<WalletProviderProps> = ({
     children,
     wallets: adapters,
     autoConnect = false,
@@ -344,7 +351,7 @@ export const WalletProvider: FC<WalletProviderProps> = ({
         };
 
         for (const adapter of adapters) {
-            console.info('handleReadyStateChange');
+            console.debug('handleReadyStateChange');
             adapter.on('readyStateChange', handleReadyStateChange(adapter), adapter);
         }
 

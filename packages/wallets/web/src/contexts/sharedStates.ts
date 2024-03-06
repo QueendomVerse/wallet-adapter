@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import type { ChainTicker, WalletName } from '@mindblox-wallet-adapter/base';
+import type { WalletName } from '@mindblox-wallet-adapter/base';
 import { DEFAULT_TICKER } from '@mindblox-wallet-adapter/base';
 import type { SelectedWallet } from '../store';
-import { ChainAdapterNetwork } from '@mindblox-wallet-adapter/networks';
-import type { WebWalletAdapterConfig } from '../adapter';
+import type { WebWalletAdapterConfig } from '../wallet';
+import { DEFAULT_NETWORK } from '../constants';
+import { getAdapterNetwork } from '@mindblox-wallet-adapter/networks';
+import type { IndexDbAppDatabase } from '../indexDb';
 
 export const useShareableWalletConnectedState = () => {
     const [isWalletConnected, setIsWalletConnected] = useState<boolean>(false);
@@ -11,15 +13,6 @@ export const useShareableWalletConnectedState = () => {
     return {
         isWalletConnected,
         setIsWalletConnected,
-    };
-};
-
-export const useShareableSelectedTickerState = () => {
-    const [selectedTicker, setSelectedTicker] = useState<ChainTicker>(DEFAULT_TICKER);
-    console.debug(`>>> Setting selected ticker state: ${selectedTicker}`);
-    return {
-        selectedTicker,
-        setSelectedTicker,
     };
 };
 
@@ -51,25 +44,26 @@ export const useShareableBalanceState = () => {
     };
 };
 
-export const useShareableSelectedWalletNameState = () => {
-    const [selectedWalletName, setSelectedWalletName] = useState<WalletName>();
-    console.debug(`>>> Setting selected wallet name state: ${selectedWalletName}`);
-    return {
-        selectedWalletName,
-        setSelectedWalletName,
-    };
-};
-
 export const useShareableWalletAdapterConfig = () => {
+    
     const [adapterConfig, setAdapterConfig] = useState<WebWalletAdapterConfig>({
-        name: null,
-        chain: null,
-        network: null,
+        name: 'WebWallet' as WalletName,
+        chain: DEFAULT_TICKER,
+        network: getAdapterNetwork(DEFAULT_TICKER,DEFAULT_NETWORK),
     });
 
-    console.debug(`>>> Setting wallet adapter configstate: ${adapterConfig}`);
+    console.debug(`>>> Setting wallet adapter configstate: ${JSON.stringify(adapterConfig)}`);
     return {
         adapterConfig,
         setAdapterConfig,
     };
 };
+
+export const useShareableIndexDb = () => {
+    const [indexDb, setIndexDb] = useState<IndexDbAppDatabase>();
+    console.debug(`>>> Setting Index Db ...`);
+    return {
+        indexDb,
+        setIndexDb
+    }
+}

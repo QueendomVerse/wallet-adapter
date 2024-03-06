@@ -1,8 +1,11 @@
-import type { ReactNode } from 'react';
+import type { ReactNode} from 'react';
+import { useMemo } from 'react';
 import React, { useCallback, useContext, useEffect, useState } from 'react';
 import type { AccountInfo } from '@solana/web3.js';
-import type { MintInfo } from '@solana/spl-token';
-import { AccountLayout, u64 } from '@solana/spl-token';
+import type { Account as MintAccount, Mint } from '@solana/spl-token';
+import { getMint } from '@solana/spl-token';
+import { AccountLayout } from '@solana/spl-token';
+import { Numberu64 } from '@solana/spl-name-service';
 
 import type { Chain, SolanaConnection, StringPublicKey } from '@mindblox-wallet-adapter/base';
 import { SolanaPublicKey } from '@mindblox-wallet-adapter/base';
@@ -34,12 +37,6 @@ interface NativeAccountConnection {
 export interface NativeAccount {
     account: AccountInfo<Buffer>;
 }
-
-export type MintConnection = MintInfo | undefined;
-
-export type MintAccount = TokenAccount | undefined;
-
-export type AccountConnection = ParsedAccountBase | undefined;
 
 export interface UserAcounts {
     userAccounts: TokenAccount[];
@@ -78,9 +75,9 @@ const wrapNativeAccount = (pubkey: StringPublicKey, account?: AccountInfo<Buffer
                   address: key,
                   mint: WRAPPED_SOL_MINT,
                   owner: key,
-                  amount: new u64(account.lamports),
+                  amount: new Numberu64(account.lamports),
                   delegate: null,
-                  delegatedAmount: new u64(0),
+                  delegatedAmount: new Numberu64(0),
                   isInitialized: true,
                   isFrozen: false,
                   isNative: true,
@@ -104,7 +101,7 @@ const useNativeAccountConnection = (): NativeAccountConnection => {
 
             if (wrappedAccount) {
                 cache.registerParser(id, TokenAccountParser);
-                genericCache.set(id, wrappedAccount as TokenAccount);
+                genericCache.set(id, wrappedAccount);
                 cache.emitter.raiseCacheUpdated(id, false, TokenAccountParser, true);
             }
         },
@@ -148,7 +145,7 @@ export const useAccounts = () => {
     return context;
 };
 
-export const useMint = (key?: string | SolanaPublicKey, chain?: Chain): MintConnection => {
+export const useMintAccount = (key?: string | SolanaPublicKey, chain?: Chain): MintAccount | undefined => {
     const { connection } = useConnection();
     if (!connection) {
         console.error(`Unable to establish ${chain} connection.`);
@@ -157,15 +154,16 @@ export const useMint = (key?: string | SolanaPublicKey, chain?: Chain): MintConn
 
     const { publicKey } = useWallet();
 
-    const [mint, setMint] = useState<MintInfo>();
-    const id = typeof key === 'string' ? key : key?.toBase58() ?? publicKey?.toBase58();
+    const [mintAccount, setMintAccount] = useState<MintAccount | undefined>();
+
+    const id = useMemo(() => typeof key === 'string' ? key : key?.toBase58() ?? publicKey?.toBase58(), [key, publicKey])
 
     useEffect(() => {
         const fetchInfo = async () => {
             if (id) {
                 try {
                     const acc = await cache.query(connection, id, MintParser);
-                    setMint(acc.info.data);
+                    setMintAccount(acc.info.data);
                 } catch (err) {
                     console.error(err);
                 }
@@ -185,16 +183,41 @@ export const useMint = (key?: string | SolanaPublicKey, chain?: Chain): MintConn
         };
     }, [connection, id]);
 
+    return mintAccount;
+};
+
+
+export const useMint = (key?: string | SolanaPublicKey, chain?: Chain): Mint | undefined => {
+    const { connection } = useConnection();
+    if (!connection) {
+        console.error(`Unable to establish ${chain} connection.`);
+        return;
+    }
+
+    const mintAccount = useMintAccount(key, chain)
+
+    const [mint, setMint] = useState<Mint | undefined>()
+
+    useEffect(() => {
+        if (!(connection) || !mintAccount?.address) return;
+
+        (async() => {
+          const _mint = await getMint(connection, mintAccount?.address)
+          setMint(_mint)
+        })
+    }, [connection, mintAccount?.address])
+
     return mint;
 };
 
-export const usePublicAccount = (pubKey?: SolanaPublicKey): AccountConnection => {
+export const usePublicAccount = (pubKey?: SolanaPublicKey): ParsedAccountBase | undefined => {
     const { connection } = useConnection();
     const [account, setAccount] = useState<ParsedAccountBase>();
 
     const key = pubKey?.toBase58();
 
     useEffect(() => {
+        if (!connection) return;
         const query = async () => {
             if (!key) return;
 
@@ -294,6 +317,8 @@ export const AccountsProvider = ({ children = null }: AccountsProviderProps) => 
         }
     }, [connection, publicKey, selectUserAccounts]);
 
+    
+
     return <AccountsContext.Provider value={{ userAccounts, nativeAccount }}>{children}</AccountsContext.Provider>;
 };
 
@@ -320,7 +345,7 @@ export const useUserAccounts = (): UserAcounts => {
     };
 };
 
-export const useAccountByMint = (mint?: string | SolanaPublicKey): MintAccount => {
+export const useTokenAccountByMint = (mint?: string | SolanaPublicKey): TokenAccount | undefined => {
     const { userAccounts } = useUserAccounts();
     const mintAddress = typeof mint === 'string' ? mint : mint?.toBase58();
 

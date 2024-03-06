@@ -26,7 +26,7 @@ export enum WalletAdapterNetwork {
     Mainnet = 'mainnet-beta',
     Testnet = 'testnet',
     Devnet = 'devnet',
-    Localnet = 'localhost',
+    Localnet = 'localnet',
 }
 
 export type ENDPOINT_NAME =
@@ -49,7 +49,7 @@ export type EndpointMap = {
 export interface ConnectionContextState {
     setEndpointMap: (val: string) => void;
     setEndpoint: (val: string) => void;
-    connection: SolanaConnection;
+    connection?: SolanaConnection;
     endpointMap: EndpointMap;
     endpoint: string;
     env: ENDPOINT_NAME;

@@ -1,9 +1,13 @@
+import type { ReactNode } from 'react';
+
 import type {
     LocalUserStore,
     LocalProfileStore,
     LocalWalletStore,
     LocalItemStore,
 } from '@mindblox-wallet-adapter/base';
+import type { NotificationType } from '@mindblox-wallet-adapter/react';
+
 import type {
     FETCH_USERS_SUCCESS,
     CREATE_USER_SUCCESS,
@@ -167,3 +171,9 @@ export type WalletActionTypes =
     | createMintNftAction
     | fetchTransactionAction
     | createMintAction;
+
+export interface NotificationParams {
+    message: ReactNode;
+    description: ReactNode;
+    type: NotificationType;
+}

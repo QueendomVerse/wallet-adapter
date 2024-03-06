@@ -2,8 +2,26 @@
 
 import type { Chain } from '../chains';
 import type { Creator, MetadataCategory, Attribute, FileOrString } from '../networks/solana/metadata';
-import type { Artist, ArtType } from './api';
 import type { ChainKeypair } from './chains';
+
+export enum ArtType {
+    Master,
+    Print,
+    NFT,
+}
+
+export interface Artist {
+    address?: string;
+    name: string;
+    link: string;
+    image: string;
+    itemsAvailable?: number;
+    itemsSold?: number;
+    about?: string;
+    verified?: boolean;
+    background?: string;
+    share?: number;
+}
 
 // @NOTES ensure corresponding changes are propagated to local and backend User schema
 export interface LocalUserStore {
@@ -50,12 +68,12 @@ export interface LocalWallets {
 export interface LocalProfileStore {
     id: string;
     name: string;
-    url: string;
-    bio: string;
-    twitter: string;
-    site: string;
+    url?: string;
+    bio?: string;
+    twitter?: string;
+    site?: string;
     email: string;
-    avatarUrl: string;
+    avatarUrl?: string;
     walletAddress: string;
 }
 

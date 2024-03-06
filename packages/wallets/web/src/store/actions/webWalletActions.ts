@@ -7,9 +7,8 @@ import {
     // SystemProgram,
     PublicKey,
     clusterApiUrl,
-    LAMPORTS_PER_SOL,
+    LAMPORTS_PER_SOL
 } from '@solana/web3.js';
-import { Token, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import type { ThunkAction } from 'redux-thunk';
 import type { FinalExecutionOutcome } from 'near-api-js/lib/providers';
 
@@ -23,37 +22,42 @@ import type {
     LocalTransactionStore,
     LocalUserStore,
     LocalWalletStore,
+    ChainKeypair,
 } from '@mindblox-wallet-adapter/base';
-import { getChainProp, ChainNetworks } from '@mindblox-wallet-adapter/base';
-import { notify } from '@mindblox-wallet-adapter/react';
+import { getChainProp, ChainNetworks, WalletDatabaseError } from '@mindblox-wallet-adapter/base';
 import type { Send, MintNearNft } from '@mindblox-wallet-adapter/networks';
 import { mintNearNft } from '@mindblox-wallet-adapter/networks';
 import { getBalance, sendFundsTransaction } from '@mindblox-wallet-adapter/networks';
-import { connectionManager, ConnectionError } from '@mindblox-wallet-adapter/solana';
+import {
+    connectionManager, ConnectionError, TOKEN_PROGRAM_ID, createSolanaTransferInstruction, createSolanaMint, solanaMintTo, getOrCreateAssociatedSolanaTokenAccount, getMintInfo
+} from '@mindblox-wallet-adapter/solana';
 
-import type { IndexDbItem } from '../../indexDb';
+import type { IndexDbAppDatabase, IndexDbItem } from '../../indexDb';
 import {
     type IndexDbWallet,
     type IndexDbUser,
-    getSavedIndexDbUsers,
-    getSavedIndexDbUser,
-    saveIndexDbUser,
-    updateIndexDbUser,
-    updateIndexDbWallet,
+    // getSavedIndexDbUsers,
+    // getSavedIndexDbUser,
+    // saveIndexDbUser,
+    // updateIndexDbUser,
+    // updateIndexDbWallet,
     // getIndexDbUserProfiles,
     // getIndexDbUserWallets,
-    saveIndexDbProfile,
-    updateIndexDbProfile,
-    getSavedIndexDbWalletMatches,
-    getSavedIndexDbWallets,
-    saveIndexDbWallet,
-    removeIndexDbWallet,
-    getSavedIndexDbMints,
-    saveIndexDbMint,
-    getSavedIndexDbUserMatches,
-    removeIndexDbUser,
+    // saveIndexDbProfile,
+    // updateIndexDbProfile,
+    // getSavedIndexDbWalletMatches,
+    // getSavedIndexDbWallets,
+    // saveIndexDbWallet,
+    // removeIndexDbWallet,
+    // getSavedIndexDbMints,
+    // saveIndexDbMint,
+    // getSavedIndexDbUserMatches,
+    // removeIndexDbUser,
     // getSavedIndexDbUserById,
 } from '../../indexDb';
+import type {
+    NotificationParams,
+} from '../types';
 import {
     CREATE_WALLET_SUCCESS as _CREATE_WALLET_SUCCESS,
     RESTORE_WALLET_SUCCESS as _RESTORE_WALLET_SUCCESS,
@@ -78,10 +82,9 @@ import {
 } from '../types';
 import { asyncEnsureRpcConnection } from '../../utils';
 import type { RootState } from '../store';
-import { getSavedUsers, getSavedUserById, updateUser, saveUser, getSavedItems, saveItem } from '../../indexDb/api';
+// import { getSavedUsers, getSavedUserById, updateUser, saveUser, getSavedItems, saveItem } from '../../indexDb/api';
 import { getValidWallets } from '../../indexDb/helpers';
 import { generateWallet, decryptDbWallet } from '../../utils/encryption';
-
 // User actions
 const fetchUsers = (users: LocalUserStore[]) => {
     return {
@@ -91,52 +94,84 @@ const fetchUsers = (users: LocalUserStore[]) => {
 };
 
 export const thunkCheckWalletSelections =
-    (wallets: IndexDbWallet[]): ThunkAction<void, RootState, unknown, Action<string>> =>
+    ({wallets, indexDb, notification}: {wallets: IndexDbWallet[], indexDb: IndexDbAppDatabase, notification?: (params: NotificationParams) => void}): ThunkAction<void, RootState, unknown, Action<string>> =>
     async (dispatch) => {
         console.debug(`Checking ${wallets?.length} wallet selections ...`);
         try {
-            await checkWalletSelections(wallets);
+            await checkWalletSelections({wallets, indexDb, notification});
             dispatch(fetchWallets(wallets));
         } catch (error) {
             console.error(`thunkFetchUsers: Failed: ${error}`);
+            notification && notification && notification({
+                message: 'Wallet Selections',
+                description: `Failed: ${error}`,
+                type: 'error',
+            });
         }
     };
 
 export const thunkCheckUserSelections =
-    (users: IndexDbUser[]): ThunkAction<void, RootState, unknown, Action<string>> =>
+    ({users, indexDb, notification} : {users: IndexDbUser[], indexDb: IndexDbAppDatabase, notification?: (params: NotificationParams) => void}): ThunkAction<void, RootState, unknown, Action<string>> =>
     async (dispatch) => {
         console.debug(`Checking ${users?.length} user selections ...`);
         try {
-            await checkUserSelections(users);
+            await checkUserSelections({users, indexDb, notification});
             dispatch(fetchUsers(users));
         } catch (error) {
             console.error(`thunkFetchUsers: Failed: ${error}`);
+            notification && notification && notification({
+                message: 'User Selections',
+                description: `Failed: ${error}`,
+                type: 'error',
+            });
         }
     };
 
 export const thunkResetWalletSelections =
-    (): ThunkAction<void, RootState, unknown, Action<string>> => async (dispatch) => {
-        const wallets = await getSavedIndexDbWallets();
-        const selectedWallets = wallets.filter((wallet) => wallet.isSelected);
-        console.debug(`Resetting ${wallets?.length} wallet selections ...`);
+    ({indexDb, notification} : {indexDb: IndexDbAppDatabase, notification?: (params: NotificationParams) => void}): ThunkAction<void, RootState, unknown, Action<string>> => async (dispatch) => {
+        console.debug('Resetting wallet selections ...');
         try {
-            await resetWalletSelections(selectedWallets);
+            if (!indexDb) {
+                throw new WalletDatabaseError('Unable to reset wallet selections: IndexDB is not initialized.')
+            }
+
+            const wallets = await indexDb.getSavedWallets();
+            const selectedWallets = wallets.filter((wallet) => wallet.isSelected);
+            console.debug(`Resetting ${wallets?.length} wallet selections ...`);
+
+            await resetWalletSelections({wallets: selectedWallets, indexDb, notification});
             dispatch(fetchWallets(selectedWallets));
         } catch (error) {
             console.error(`thunkFetchUsers: Failed: ${error}`);
+            notification && notification && notification({
+                message: 'Wallet Selections',
+                description: `Failed: ${error}`,
+                type: 'error',
+            });
         }
     };
 
 export const thunkResetUserSelections =
-    (): ThunkAction<void, RootState, unknown, Action<string>> => async (dispatch) => {
-        const users = await getSavedUsers();
-        const selectedUsers = users.filter((user) => user.isSelected);
-        console.debug(`Resetting ${users?.length} user selections ...`);
+    ({indexDb, notification} : {indexDb: IndexDbAppDatabase, notification?: (params: NotificationParams) => void}): ThunkAction<void, RootState, unknown, Action<string>> => async (dispatch) => {
+        console.debug('Resetting user selections ...');
         try {
-            await resetUserSelections(selectedUsers);
+            if (!indexDb) {
+                throw new WalletDatabaseError('Unable to reset user selections: IndexDB is not initialized.')
+            }
+
+            const users = await indexDb.getSavedUsers();
+            const selectedUsers = users.filter((user) => user.isSelected);
+            console.debug(`Resetting ${users?.length} user selections ...`);
+
+            await resetUserSelections({users: selectedUsers, indexDb, notification});
             dispatch(fetchUsers(selectedUsers));
         } catch (error) {
             console.error(`thunkFetchUsers: Failed: ${error}`);
+            notification && notification && notification({
+                message: 'User Selections',
+                description: `Failed: ${error}`,
+                type: 'error',
+            });
         }
     };
 
@@ -148,12 +183,19 @@ const fetchUser = (user: LocalUserStore) => {
 };
 
 export const thunkFetchUser =
-    (id: string): ThunkAction<void, RootState, unknown, Action<string>> =>
+    ({id, indexDb, notification} : {id: string, indexDb: IndexDbAppDatabase, notification?: (params: NotificationParams) => void}): ThunkAction<void, RootState, unknown, Action<string>> =>
     async (dispatch) => {
-        console.debug(`Fetching user ... ${id}`);
-
         try {
-            const currentUser = await getSavedUserById(id);
+            if (!id) {
+                throw new WalletDatabaseError('Unable to fetch user without specifying an id');
+            }
+            console.debug(`Fetching user ... ${id}`);
+
+            if (!indexDb) {
+                throw new WalletDatabaseError(`Unable to fetch user ${id}: IndexDB is not initialized.`)
+            }
+
+            const currentUser = await indexDb.getSavedUserById(id);
             if (!currentUser) return;
 
             console.debug(`Fetched user ${id}`);
@@ -161,7 +203,7 @@ export const thunkFetchUser =
             dispatch(fetchUser(currentUser));
         } catch (error) {
             console.error(`thunkFetchUsers: Failed: ${error}`);
-            notify({
+            notification && notification && notification({
                 message: 'Remote Database',
                 description: `Failed: ${error}`,
                 type: 'error',
@@ -170,23 +212,27 @@ export const thunkFetchUser =
     };
 
 export const thunkFetchUsers =
-    (checkDups?: boolean): ThunkAction<void, RootState, unknown, Action<string>> =>
+    ({checkDups = false, indexDb, notification} : {checkDups?: boolean, indexDb: IndexDbAppDatabase, notification?: (params: NotificationParams) => void}): ThunkAction<void, RootState, unknown, Action<string>> =>
     async (dispatch) => {
         console.debug(`Fetching users ...`);
         try {
-            const users = await getSavedUsers();
+            if (!indexDb) {
+                throw new WalletDatabaseError(`Unable to fetch users: IndexDB is not initialized.`)
+            }
+
+            const users = await indexDb.getSavedUsers();
             console.debug(`Fetched ${users?.length} users.`);
             // console.table(users);
 
             // Clear user selections on multiple selections
-            if (checkDups) await checkUserSelections(users);
+            if (checkDups) await checkUserSelections({users, indexDb, notification});
             // Clear unselected user unencrypted wallets
-            await checkUserUnselectedUnencryptedWallets(users);
+            await checkUserUnselectedUnencryptedWallets({users, indexDb, notification});
 
             dispatch(fetchUsers(users));
         } catch (error) {
             console.error(`thunkFetchUsers: Failed: ${error}`);
-            notify({
+            notification && notification({
                 message: 'Remote Database',
                 description: `Failed: ${error}`,
                 type: 'error',
@@ -194,7 +240,7 @@ export const thunkFetchUsers =
         }
     };
 
-export const checkWalletSelections = async (wallets: IndexDbWallet[]) => {
+export const checkWalletSelections = async ({wallets, indexDb, notification} : {wallets: IndexDbWallet[], indexDb: IndexDbAppDatabase, notification?: (params: NotificationParams) => void}) => {
     const selectedWallets = wallets.filter((wallet) => wallet.isSelected);
     if (!selectedWallets) return;
 
@@ -212,101 +258,127 @@ export const checkWalletSelections = async (wallets: IndexDbWallet[]) => {
                 : isOdd ??
                       `Only multiples of 3 wallets can be selected, there are currently ${selectedWallets.length} selected wallets!`
         );
-        await resetWalletSelections(selectedWallets);
+        await resetWalletSelections({wallets: selectedWallets, indexDb, notification});
     }
 };
 
-export const checkUnselectedUnencryptedWallets = async (wallets: IndexDbWallet[]) => {
+export const checkUnselectedUnencryptedWallets = async ({wallets, indexDb, notification} : {wallets: IndexDbWallet[], indexDb: IndexDbAppDatabase, notification?: (params: NotificationParams) => void}) => {
     const unselectedWallets = wallets.filter((wallet) => !wallet.isSelected);
     if (!unselectedWallets) return;
 
     console.debug(`Number of unselected wallets: ${unselectedWallets.length}`);
-    await resetUnSelectedWalletsEncryption(unselectedWallets);
+    await resetUnSelectedWalletsEncryption({wallets: unselectedWallets, indexDb, notification});
 };
 
-export const resetWalletSelections = async (wallets: IndexDbWallet[]) => {
-    if (!wallets || wallets.length < 1) return;
+export const resetWalletSelections = async ({wallets, indexDb, notification} : {wallets: IndexDbWallet[], indexDb: IndexDbAppDatabase, notification?: (params: NotificationParams) => void}) => {
+    if (wallets?.length < 1) return;
+    console.debug(`Resetting ${wallets.length} wallets ...`);
     // console.debug(`Before wallet selection resets: ${wallets}`);
     // console.table(wallets);
+    try {
+        if (!indexDb) {
+            throw new WalletDatabaseError(`Unable to reset ${wallets.length} wallet selections: IndexDB is not initialized.`)
+        }
 
-    const updatedWalletsPromises = wallets.map((_wallet) => {
-        const reset = async () => {
-            if (_wallet.isSelected) {
-                const _updatedWallet = {
-                    ..._wallet,
-                    isSelected: false,
-                } as IndexDbWallet;
+        const updatedWalletsPromises = wallets.map((_wallet) => {
+            const reset = async () => {
+                if (_wallet.isSelected) {
+                    const _updatedWallet = {
+                        ..._wallet,
+                        isSelected: false,
+                    } as IndexDbWallet;
 
-                const result = await updateIndexDbWallet(_updatedWallet)
-                    .then((wallet) => wallet)
-                    .catch((err) => {
-                        console.error(err);
-                    });
+                    const result = await indexDb.updateWallet(_updatedWallet)
+                        .then((wallet) => wallet)
+                        .catch((err) => {
+                            console.error(err);
+                        });
 
-                console.debug(
-                    `deselected ${_wallet.chain} ${_wallet.label} wallet '${_wallet.pubKey}' (${
-                        _wallet.isSelected
-                    } -> ${_updatedWallet.isSelected}) result: ${result ? 'succeded' : 'failed'}`
-                );
-                return result ? _updatedWallet : _wallet;
-            }
-            console.debug(`skipping unselected wallet '${_wallet.pubKey}'`);
-            return _wallet;
-        };
-        return reset();
-    });
-    const updatedWallets = await Promise.all(updatedWalletsPromises);
-    console.info(`Wallet selection resets: ${updatedWallets.length}`);
+                    console.debug(
+                        `deselected ${_wallet.chain} ${_wallet.label} wallet '${_wallet.pubKey}' (${
+                            _wallet.isSelected
+                        } -> ${_updatedWallet.isSelected}) result: ${result ? 'succeded' : 'failed'}`
+                    );
+                    return result ? _updatedWallet : _wallet;
+                }
+                console.debug(`skipping unselected wallet '${_wallet.pubKey}'`);
+                return _wallet;
+            };
+            return reset();
+        });
+        const updatedWallets = await Promise.all(updatedWalletsPromises);
+        console.info(`Wallet selection resets: ${updatedWallets.length}`);
+    } catch (error) {
+        console.error(`resetWalletSelections: Failed: ${error}`);
+        notification && notification({
+            message: 'Wallet Selection',
+            description: `Failed: ${error}`,
+            type: 'error',
+        });
+    }
 };
 
-export const resetUnSelectedWalletsEncryption = async (wallets: IndexDbWallet[]) => {
-    if (!wallets || wallets.length < 1) return;
+export const resetUnSelectedWalletsEncryption = async ({wallets, indexDb, notification} : {wallets: IndexDbWallet[], indexDb: IndexDbAppDatabase, notification?: (params: NotificationParams) => void}) => {
+    if (wallets?.length < 1) return;
+    console.debug(`Unselecting encryption on ${wallets.length} wallets...`);
     // console.debug(`Before wallet encryption resets: ${wallets.map(w=>w.pubKey)}`);
     // console.table(wallets);
+    try {
+        if (!indexDb) {
+            throw new WalletDatabaseError(`Unable to unselect encryption on ${wallets.length} wallets: IndexDB is not initialized.`)
+        }
 
-    let numUpdatedWallets = 0;
-    const updatedWalletsPromises = wallets.map((_wallet) => {
-        const reset = async () => {
-            if (!_wallet) return _wallet;
-            if (_wallet.isSelected) {
-                console.debug(`skipping selected wallet '${_wallet.pubKey}'`);
+        let numUpdatedWallets = 0;
+        const updatedWalletsPromises = wallets.map((_wallet) => {
+            const reset = async () => {
+                if (!_wallet) return _wallet;
+                if (_wallet.isSelected) {
+                    console.debug(`skipping selected wallet '${_wallet.pubKey}'`);
+                    return _wallet;
+                }
+
+                if (_wallet.privKey || _wallet.seed || _wallet.seedPhrase) {
+                    const _updatedWallet = {
+                        ..._wallet,
+                        privKey: undefined,
+                        seed: undefined,
+                        seedPhrase: undefined,
+                    } as IndexDbWallet;
+
+                    const result = await indexDb.updateWallet(_updatedWallet)
+                        .then((wallet) => wallet)
+                        .catch((err) => {
+                            console.error(err);
+                        });
+
+                    console.debug(
+                        `resetting ${_wallet.chain} ${_wallet.label} wallet '${_wallet.pubKey}' encryption: '
+            (${_wallet.privKey?.valueOf()} -> ${_updatedWallet.privKey?.valueOf()})
+            (${_wallet.seed?.valueOf()} -> ${_updatedWallet.seed?.valueOf()})
+            (${_wallet.seedPhrase} -> ${_updatedWallet.seedPhrase})
+            result: ${result ? 'succeded' : 'failed'}`
+                    );
+                    if (result) numUpdatedWallets += 1;
+                    return result ? _updatedWallet : _wallet;
+                }
+                // console.debug(`skipping encrypted wallet '${_wallet.pubKey}'`);
                 return _wallet;
-            }
-
-            if (_wallet.privKey || _wallet.seed || _wallet.seedPhrase) {
-                const _updatedWallet = {
-                    ..._wallet,
-                    privKey: undefined,
-                    seed: undefined,
-                    seedPhrase: undefined,
-                } as IndexDbWallet;
-
-                const result = await updateIndexDbWallet(_updatedWallet)
-                    .then((wallet) => wallet)
-                    .catch((err) => {
-                        console.error(err);
-                    });
-
-                console.debug(
-                    `resetting ${_wallet.chain} ${_wallet.label} wallet '${_wallet.pubKey}' encryption: '
-          (${_wallet.privKey?.valueOf()} -> ${_updatedWallet.privKey?.valueOf()})
-          (${_wallet.seed?.valueOf()} -> ${_updatedWallet.seed?.valueOf()})
-          (${_wallet.seedPhrase} -> ${_updatedWallet.seedPhrase})
-          result: ${result ? 'succeded' : 'failed'}`
-                );
-                if (result) numUpdatedWallets += 1;
-                return result ? _updatedWallet : _wallet;
-            }
-            // console.debug(`skipping encrypted wallet '${_wallet.pubKey}'`);
-            return _wallet;
-        };
-        return reset();
-    });
-    const updatedWallets = await Promise.all(updatedWalletsPromises);
-    console.info(`Wallet encryption resets: ${numUpdatedWallets}/${updatedWallets.length}`);
+            };
+            return reset();
+        });
+        const updatedWallets = await Promise.all(updatedWalletsPromises);
+        console.info(`Wallet encryption resets: ${numUpdatedWallets}/${updatedWallets.length}`);
+    } catch (error) {
+        console.error(`resetUnSelectedWalletsEncryption: Failed: ${error}`);
+        notification && notification({
+            message: 'Wallet Encryption',
+            description: `Failed: ${error}`,
+            type: 'error',
+        });
+    }
 };
 
-export const checkUserSelections = async (users: IndexDbUser[]) => {
+export const checkUserSelections = async ({users, indexDb, notification} : {users: IndexDbUser[], indexDb: IndexDbAppDatabase, notification?: (params: NotificationParams) => void}) => {
     const selectedUsers = users.filter((user) => user.isSelected);
     if (!selectedUsers) return;
 
@@ -314,117 +386,143 @@ export const checkUserSelections = async (users: IndexDbUser[]) => {
 
     if (selectedUsers.length > 1) {
         console.warn(`Only 1 user can be selected, there are currently ${selectedUsers.length} selected users!`);
-        await resetUserSelections(selectedUsers);
+        await resetUserSelections({users: selectedUsers, indexDb, notification});
     }
 };
 
-export const checkUserUnselectedUnencryptedWallets = async (users: IndexDbUser[]) => {
+export const checkUserUnselectedUnencryptedWallets = async ({users, indexDb, notification} : {users: IndexDbUser[], indexDb: IndexDbAppDatabase, notification?: (params: NotificationParams) => void}) => {
     const unselectedUsers = users.filter((user) => !user.isSelected);
     if (!unselectedUsers) return;
 
     console.debug(`number of unselected users: ${unselectedUsers.length}`);
-    await resetUserUnSelectedWalletsEncryption(unselectedUsers);
+    await resetUserUnSelectedWalletsEncryption({users: unselectedUsers, indexDb, notification});
 };
 
-export const resetUserSelections = async (users: IndexDbUser[]) => {
-    if (!users || users.length < 1) return;
+export const resetUserSelections = async ({users, indexDb, notification} : {users: IndexDbUser[], indexDb: IndexDbAppDatabase, notification?: (params: NotificationParams) => void}) => {
+    if (users?.length < 1) return;
+    console.debug(`Resetting ${users.length} wallets ...`);
     // console.debug(`Before user selection reset: ${users.length}`);
     // console.table(users);
+    try {
+        if (!indexDb) {
+            throw new WalletDatabaseError(`Unable to reset ${users.length} user selections: IndexDB is not initialized.`)
+        }
 
-    const updatedUsersPromises = users.map((_user) => {
-        const reset = async () => {
-            if (_user.isSelected) {
-                const _updatedUser = {
-                    ..._user,
-                    isSelected: false,
-                } as IndexDbUser;
+        const updatedUsersPromises = users.map((_user) => {
+            const reset = async () => {
+                if (_user.isSelected) {
+                    const _updatedUser = {
+                        ..._user,
+                        isSelected: false,
+                    } as IndexDbUser;
 
-                const result = await updateUser(_updatedUser)
-                    .then((user) => user)
-                    .catch((err) => {
-                        console.error(err);
-                    });
+                    const result = await indexDb.updateUser(_updatedUser)
+                        .then((user) => user)
+                        .catch((err) => {
+                            console.error(err);
+                        });
 
-                console.debug(
-                    `deselected user ${_user.email} (${_user.isSelected} -> ${_updatedUser.isSelected}) result: ${
-                        result ? 'succeded' : 'failed or entry not found or unchanged'
-                    }`
-                );
-                return result ? _updatedUser : _user;
-            }
-            console.debug(`skipping unselected user '${_user.email}'`);
-            return _user;
-        };
-        return reset();
-    });
-    const updatedUsers = await Promise.all(updatedUsersPromises);
-    console.info(`User selections reset: ${updatedUsers.map((u) => u.email)}`);
-    // console.table(updatedUsers);
+                    console.debug(
+                        `deselected user ${_user.email} (${_user.isSelected} -> ${_updatedUser.isSelected}) result: ${
+                            result ? 'succeded' : 'failed or entry not found or unchanged'
+                        }`
+                    );
+                    return result ? _updatedUser : _user;
+                }
+                console.debug(`skipping unselected user '${_user.email}'`);
+                return _user;
+            };
+            return reset();
+        });
+        const updatedUsers = await Promise.all(updatedUsersPromises);
+        console.info(`User selections reset: ${updatedUsers.map((u) => u.email)}`);
+        // console.table(updatedUsers);
+    } catch (error) {
+        console.error(`resetUserSelections: Failed: ${error}`);
+        notification && notification({
+            message: 'User Selections',
+            description: `Failed: ${error}`,
+            type: 'error',
+        });
+    }
 };
 
-export const resetUserUnSelectedWalletsEncryption = async (users: IndexDbUser[]) => {
-    if (!users || users.length < 1) return;
+export const resetUserUnSelectedWalletsEncryption = async ({users, indexDb, notification} : {users: IndexDbUser[], indexDb: IndexDbAppDatabase, notification?: (params: NotificationParams) => void}) => {
+    if (users?.length < 1) return;
+    console.debug(`Resetting Unselecting wallet encryption for ${users.length} users...`);
     // console.debug(`Before unselected user unencrypted wallets resets: ${users.length}`);
     // console.table(users);
+    try {
+        if (!indexDb) {
+            throw new WalletDatabaseError(`Unable to unselect wallet encryption for ${users.length} users: IndexDB is not initialized.`)
+        }
 
-    const updatedUsersPromises = users.map((_user) => {
-        const reset = async () => {
-            if (
-                !_user.wallets ||
-                _user.wallets.length < 1 ||
-                _user.wallets.filter((w) => w?.privKey || w?.seed || w?.seedPhrase).length < 1
-            )
-                return _user;
-            // console.debug(`Before unselected user ${_user.email} wallet encryption resets: ${_user.wallets}`);
-            // console.table(_user.wallets);
+        const updatedUsersPromises = users.map((_user) => {
+            const reset = async () => {
+                if (
+                    !_user.wallets ||
+                    _user.wallets.length < 1 ||
+                    _user.wallets.filter((w) => w?.privKey || w?.seed || w?.seedPhrase).length < 1
+                )
+                    return _user;
+                // console.debug(`Before unselected user ${_user.email} wallet encryption resets: ${_user.wallets}`);
+                // console.table(_user.wallets);
 
-            if (!_user.isSelected) {
-                let numUpdatedWallets = 0;
-                const updatedWallets = _user.wallets.map((w) => {
-                    if (!w) return w;
-                    if (w.privKey || w.seed || w.seedPhrase) {
-                        console.debug(
-                            `resetting(${_user.email}) ${w.chain} ${w.label} wallet '${w.pubKey}' encryption: '
-              (${w.privKey?.valueOf()} -> ${w.privKey?.valueOf()})
-              (${w.seed?.valueOf()} -> ${w.seed?.valueOf()})
-              (${w.seedPhrase} -> ${w.seedPhrase})`
-                        );
-                        numUpdatedWallets += 1;
-                        return {
-                            ...w,
-                            privKey: undefined,
-                            seed: undefined,
-                            seedPhrase: undefined,
-                        };
-                    }
-                });
-                const _updatedUser = {
-                    ..._user,
-                    wallets: updatedWallets,
-                } as IndexDbUser;
-
-                const result = await updateUser(_updatedUser)
-                    .then((user) => user)
-                    .catch((err) => {
-                        console.error(err);
+                if (!_user.isSelected) {
+                    let numUpdatedWallets = 0;
+                    const updatedWallets = _user.wallets.map((w) => {
+                        if (!w) return w;
+                        if (w.privKey || w.seed || w.seedPhrase) {
+                            console.debug(
+                                `resetting(${_user.email}) ${w.chain} ${w.label} wallet '${w.pubKey}' encryption: '
+                (${w.privKey?.valueOf()} -> ${w.privKey?.valueOf()})
+                (${w.seed?.valueOf()} -> ${w.seed?.valueOf()})
+                (${w.seedPhrase} -> ${w.seedPhrase})`
+                            );
+                            numUpdatedWallets += 1;
+                            return {
+                                ...w,
+                                privKey: undefined,
+                                seed: undefined,
+                                seedPhrase: undefined,
+                            };
+                        }
                     });
+                    const _updatedUser = {
+                        ..._user,
+                        wallets: updatedWallets,
+                    } as IndexDbUser;
 
-                console.debug(
-                    `resetting user ${_user.email} wallets (${_user.wallets.length} -> ${numUpdatedWallets}) 
-          result: ${result ? 'succeded' : 'failed or entry not found or unchanged'}`
-                );
-                return result ? _updatedUser : _user;
-            }
-            console.debug(`skipping selected user '${_user.email}'`);
-            return _user;
-        };
-        return reset();
-    });
-    await Promise.all(updatedUsersPromises);
-    //@NOTES for debugging:
-    // const updatedUsers = await Promise.all(updatedUsersPromises);
-    // console.info(`Unselected Users unencrypted wallets resets: ${updatedUsers.map(u => u.email)}`);
-    // console.table(updatedUsers);
+                    const result = await indexDb.updateUser(_updatedUser)
+                        .then((user) => user)
+                        .catch((err) => {
+                            console.error(err);
+                        });
+
+                    console.debug(
+                        `resetting user ${_user.email} wallets (${_user.wallets.length} -> ${numUpdatedWallets}) 
+            result: ${result ? 'succeded' : 'failed or entry not found or unchanged'}`
+                    );
+                    return result ? _updatedUser : _user;
+                }
+                console.debug(`skipping selected user '${_user.email}'`);
+                return _user;
+            };
+            return reset();
+        });
+        await Promise.all(updatedUsersPromises);
+        //@NOTES for debugging:
+        // const updatedUsers = await Promise.all(updatedUsersPromises);
+        // console.info(`Unselected Users unencrypted wallets resets: ${updatedUsers.map(u => u.email)}`);
+        // console.table(updatedUsers);
+    } catch (error) {
+        console.error(`resetUserUnSelectedWalletsEncryption: Failed: ${error}`);
+        notification && notification({
+            message: 'Wallet Encryption',
+            description: `Failed: ${error}`,
+            type: 'error',
+        });
+    }
 };
 
 const createUserAction = (payload: LocalUserStore[]) => {
@@ -436,19 +534,25 @@ const createUserAction = (payload: LocalUserStore[]) => {
 };
 
 export const thunkCreateUser =
-    (user: ApiUser, wallets: LocalWalletStore[]): ThunkAction<void, RootState, unknown, Action<string>> =>
+    ({user, wallets, indexDb, notification} : {user: ApiUser, wallets: LocalWalletStore[], indexDb: IndexDbAppDatabase, notification?: (params: NotificationParams) => void}): ThunkAction<void, RootState, unknown, Action<string>> =>
     async (dispatch, getState) => {
-        if (!user) return;
-        console.info(`Creating database user: ${user.name} ...`);
-
-        const { users } = getState() as { users: LocalUserStore[] };
-        if (users.map((u) => u.id).includes(user.id)) {
-            console.warn(`User ${user.name} already exists in the local database.`);
-            return;
-        }
-
         try {
-            const IndexdbUser = await saveUser(
+            if (!user?.id) {
+                throw new WalletDatabaseError('Unable to create a user having an empty id');
+            }
+            console.info(`Creating database user[${user.id}]: ${user?.name} ...`);
+
+            if (!indexDb) {
+                throw new WalletDatabaseError(`Unable to create user[${user.id}]: ${user?.name} : IndexDB is not initialized.`);
+            }
+
+            const { users } = getState() as { users: LocalUserStore[] };
+            if (users.map((u) => u.id).includes(user.id)) {
+                console.warn(`User id ${user.id}(${user?.name}) already exists in the local database.`);
+                return;
+            }
+
+            const IndexdbUser = await indexDb.saveUser(
                 { ...user, isSelected: true },
                 wallets.map((w) => {
                     return { ...w, isSelected: true };
@@ -461,8 +565,13 @@ export const thunkCreateUser =
             // console.table(users);
 
             dispatch(createUserAction(users));
-        } catch (err) {
-            console.error(`thunkCreateUser: Failed: ${err}`);
+        } catch (error) {
+            console.error(`thunkCreateUser: Failed: ${error}`);
+            notification && notification({
+                message: 'User Creation',
+                description: `Failed: ${error}`,
+                type: 'error',
+            });
         }
     };
 
@@ -475,17 +584,25 @@ const removeUserAction = (payload: LocalUserStore[]) => {
 };
 
 export const thunkRemoveUser =
-    (user: IndexDbUser): ThunkAction<void, RootState, unknown, Action<string>> =>
+    ({user, indexDb, notification} : {user: IndexDbUser, indexDb: IndexDbAppDatabase, notification?: (params: NotificationParams) => void}): ThunkAction<void, RootState, unknown, Action<string>> =>
     async (dispatch, getState) => {
-        console.warn(`Removing user: ${user.email} ...`);
         try {
-            const IndexdbUsers = await getSavedIndexDbUserMatches(user.email);
+            if (!user?.email) {
+                throw new WalletDatabaseError('Unable to remove user having no email')
+            }
+            console.warn(`Removing user: ${user.email} ...`);
+
+            if (!indexDb) {
+                throw new WalletDatabaseError(`Unable to remove user ${user.email}: IndexDB is not initialized.`)
+            }
+
+            const IndexdbUsers = await indexDb.getSavedUserMatches(user.email);
             if (!IndexdbUsers || IndexdbUsers.length < 1) {
                 console.warn(`Found no users matching email ${user.email}`);
                 return;
             }
 
-            IndexdbUsers.forEach(async (u) => await removeIndexDbUser(u));
+            IndexdbUsers.forEach(async (u) => await indexDb.removeUser(u));
 
             const { users } = getState() as { users: LocalUserStore[] };
             console.debug(`users: ${users.length}`);
@@ -495,7 +612,7 @@ export const thunkRemoveUser =
             dispatch(removeUserAction(updatedUsers));
         } catch (err) {
             console.error(`thunkRemoveUser: Failed: ${err}`);
-            notify({
+            notification && notification({
                 message: 'Transaction',
                 description: `Failed: ${err}`,
                 type: 'error',
@@ -565,16 +682,20 @@ export const selectUserAction = (gid: string) => {
 };
 
 export const thunkUserSelection =
-    (user: IndexDbUser, selection: boolean): ThunkAction<void, RootState, unknown, Action<string>> =>
+    ({user, selection, indexDb, notification} : {user: IndexDbUser, selection: boolean, indexDb: IndexDbAppDatabase, notification?: (params: NotificationParams) => void}): ThunkAction<void, RootState, unknown, Action<string>> =>
     // async (dispatch, getState) => {
     async (dispatch) => {
-        if (!user) return;
-
-        console.debug(`thunUpdateWallet: updating user: ${user.email} ...`);
-        if (!user.gid) return;
-
         try {
-            console.debug('deselecting updatedUser ');
+            if (!user?.gid || selection === undefined) {
+                throw new WalletDatabaseError('Unable to remove user having no gid or if selection is undefined')
+            }
+            console.warn(`Setting selection as ${selection} for user[${user.gid}]: ${user?.email} ...`);
+
+            if (!indexDb) {
+                throw new WalletDatabaseError(`Unable to selection for user[${user.id}] ${user?.email}: IndexDB is not initialized.`)
+            }
+
+            console.debug(`thunkUserSelection: updating user: ${user?.email} ...`);
             const updatedUser = {
                 ...user,
                 gid: user.gid,
@@ -582,7 +703,7 @@ export const thunkUserSelection =
             } as IndexDbUser;
             if (!updatedUser.gid) return;
 
-            const result = await updateUser(updatedUser);
+            const result = await indexDb.updateUser(updatedUser);
             console.debug(
                 `User(${user.email}) selection result: ${
                     result ? 'succeded' : 'failed or entry not found or unchanged'
@@ -593,7 +714,7 @@ export const thunkUserSelection =
             return result;
         } catch (err) {
             console.error(`thunkUserSelection: Failed: ${err}`);
-            notify({
+            notification && notification({
                 message: 'Transaction',
                 description: `Failed: ${err}`,
                 type: 'error',
@@ -602,15 +723,21 @@ export const thunkUserSelection =
     };
 
 export const thunkUpdateUser =
-    (user: IndexDbUser): ThunkAction<void, RootState, unknown, Action<string>> =>
+    ({user, indexDb, notification} : {user: IndexDbUser, indexDb: IndexDbAppDatabase, notification?: (params: NotificationParams) => void}): ThunkAction<void, RootState, unknown, Action<string>> =>
     async (dispatch) => {
-        if (!user) return;
-
-        console.debug(`thunUpdateWallet: updating user: ${user.email} ...`);
-        if (!user.gid) return;
-
         try {
-            const result = await updateUser(user);
+            if (!user?.gid) {
+                throw new WalletDatabaseError('Unable to remove user having no gid')
+            }
+            console.warn(`Updating user[${user.gid}]: ${user?.email} ...`);
+
+            if (!indexDb) {
+                throw new WalletDatabaseError(`Unable to update user[${user.id}] ${user?.email}: IndexDB is not initialized.`)
+            }
+
+            console.debug(`thunUpdateWallet: updating user: ${user?.email} ...`);
+
+            const result = await indexDb.updateUser(user);
             console.debug(
                 `User(${user.email}) update result: ${result ? 'succeded' : 'failed or entry not found or unchanged'}`
             );
@@ -619,7 +746,7 @@ export const thunkUpdateUser =
             return result;
         } catch (err) {
             console.error(`thunkUpdateUser: Failed: ${err}`);
-            notify({
+            notification && notification({
                 message: 'Transaction',
                 description: `Failed: ${err}`,
                 type: 'error',
@@ -644,20 +771,26 @@ const createWalletAction = (payload: LocalWalletStore) => {
 };
 
 export const thunkCreateWallet =
-    (password: string, label: string, chain: Chain): ThunkAction<void, RootState, unknown, Action<string>> =>
+    ({password, label, chain, indexDb, notification} : {password: string, label: string, chain: Chain, indexDb: IndexDbAppDatabase, notification?: (params: NotificationParams) => void}): ThunkAction<void, RootState, unknown, Action<string>> =>
     // async (dispatch, getState) => {
     async (dispatch) => {
-        if (!password || !label || !chain) return;
-        console.info(`Creating ${chain} wallet: ${label} ...`);
-
-        // const { wallets } = getState() as { wallets: LocalWalletStore[] };
         try {
+            if (!chain || !label || !password) {
+                throw new WalletDatabaseError(`Unable to create wallet without specifying all of chain(${chain}) label(${chain}) and password(len: ${password?.length})`);
+            }
+            console.info(`Creating ${chain} ${label} wallet with a ${password?.length} password...`);
+            // const { wallets } = getState() as { wallets: LocalWalletStore[] };
+
+            if (!indexDb) {
+                throw new WalletDatabaseError(`Unable to create ${chain} ${label}  wallet: IndexDB is not initialized.`)
+            }
+
             // Generated a new wallet
             const newWallet = await generateWallet(label, chain, password);
             if (!newWallet) return;
 
             // Save the wallet
-            const IndexdbWallet = await saveIndexDbWallet({ ...newWallet, isSelected: true });
+            const IndexdbWallet = await indexDb.saveWallet({ ...newWallet, isSelected: true });
             console.debug(
                 `thunkCreateWallet: saved wallet '${IndexdbWallet.chain}' '${IndexdbWallet.label}' '${IndexdbWallet.pubKey}' to the local database`
             );
@@ -669,7 +802,7 @@ export const thunkCreateWallet =
             dispatch(createWalletAction(IndexdbWallet));
         } catch (err) {
             console.error(`thunkCreateWallet: Failed: ${err}`);
-            notify({
+            notification && notification({
                 message: 'Transaction',
                 description: `Failed: ${err}`,
                 type: 'error',
@@ -686,21 +819,27 @@ const restoreWalletAction = (payload: LocalWalletStore) => {
 };
 
 export const thunkRestoreWallet =
-    (wallet: IndexDbWallet, password: string): ThunkAction<void, RootState, unknown, Action<string>> =>
+    ({wallet, password, indexDb, notification} : {wallet: IndexDbWallet, password: string, indexDb: IndexDbAppDatabase, notification?: (params: NotificationParams) => void}): ThunkAction<void, RootState, unknown, Action<string>> =>
     // async (dispatch, getState) => {
     async (dispatch) => {
-        if (!password || !wallet) return;
-        console.info(`Restoring ${wallet.chain} wallet: ${wallet.label} ${wallet.pubKey} ...`);
-        console.info(`Restoring with password '${password}'`);
-
         try {
+            if (!password || !wallet?.chain || !wallet?.label || !wallet?.pubKey) {
+                throw new WalletDatabaseError(`Unable to restore wallet without specifying all of chain(${wallet?.chain}) label(${wallet?.chain}) public key(${wallet?.pubKey}) and password(len: ${password?.length})`);
+            }
+            console.debug(`Restoring ${wallet.chain} wallet: ${wallet.label} ${wallet.pubKey} ...`);
+            // console.debug(`Restoring with password '${password}'`);
+
+            if (!indexDb) {
+                throw new WalletDatabaseError(`Unable to restore ${wallet.chain} ${wallet.label} wallet with public key ${wallet.pubKey}: IndexDB is not initialized.`)
+            }
+            
             // Save the wallet
-            const decryptedWallet = await decryptDbWallet(wallet, password);
+            const decryptedWallet = await decryptDbWallet({wallet, password, indexDb, notification});
             if (!decryptedWallet) {
                 throw new Error(`Failed to decrypt wallet ${wallet.chain} wallet: ${wallet.label} ${wallet.pubKey}`);
             }
 
-            const IndexdbWallet = await saveIndexDbWallet(decryptedWallet);
+            const IndexdbWallet = await indexDb.saveWallet(decryptedWallet);
             console.debug(
                 `thunkRestoreWallet: saved wallet '${IndexdbWallet.chain}' '${IndexdbWallet.label}' '${IndexdbWallet.pubKey}' to the local database`
             );
@@ -712,7 +851,7 @@ export const thunkRestoreWallet =
             dispatch(restoreWalletAction(IndexdbWallet));
         } catch (err) {
             console.error(`thunkRestoreWallet: Failed: ${err}`);
-            notify({
+            notification && notification({
                 message: 'Transaction',
                 description: `Failed: ${err}`,
                 type: 'error',
@@ -791,7 +930,7 @@ export const thunkRestoreWallet =
 //       dispatch(createWalletAction(wallets)); // commenting this out inhibits the display of the user's navbar profile icon
 //     } catch (err) {
 //       console.error(`Failed to import wallet: ${err}`);
-//       notify({
+//       notification && notification({
 //         message: 'Transaction',
 //         description: `Failed: ${err}`,
 //         type: 'error',
@@ -800,13 +939,20 @@ export const thunkRestoreWallet =
 //   };
 
 export const thunkImportWallet =
-    (wallet: IndexDbWallet): ThunkAction<void, RootState, unknown, Action<string>> =>
+    ({wallet, indexDb, notification} : {wallet: IndexDbWallet, indexDb: IndexDbAppDatabase, notification?: (params: NotificationParams) => void}): ThunkAction<void, RootState, unknown, Action<string>> =>
     async (dispatch, getState) => {
-        if (!wallet) return;
-        console.info(`Importing wallet (${wallet.label}): ${wallet.pubKey} ...`);
-
-        const { wallets } = getState() as { wallets: LocalWalletStore[] };
         try {
+            if (!wallet?.chain || !wallet?.label || !wallet?.pubKey) {
+                throw new WalletDatabaseError(`Unable to import wallet without specifying all of chain(${wallet?.chain}) label(${wallet?.chain}))`);
+            }
+            console.info(`Importing wallet (${wallet.label}): ${wallet.pubKey} ...`);
+
+            if (!indexDb) {
+                throw new WalletDatabaseError(`Unable to import ${wallet.chain} ${wallet.label} wallet with public key ${wallet.pubKey}: IndexDB is not initialized.`)
+            }
+
+            const { wallets } = getState() as { wallets: LocalWalletStore[] };
+
             // const keypairFromSecretKey = getKeyPairFromPrivateKey(
             //   chain,
             //   encodedPrivateKey,
@@ -848,7 +994,7 @@ export const thunkImportWallet =
                 console.warn(`Wallet ${wallet.pubKey} already exists in the local database.`);
                 return;
             }
-            const IndexdbWallet = await saveIndexDbWallet(wallet);
+            const IndexdbWallet = await indexDb.saveWallet(wallet);
             if (!IndexdbWallet.gid) {
                 console.warn(`Imported wallet ${IndexdbWallet.label} has no gid!`);
                 return;
@@ -860,7 +1006,7 @@ export const thunkImportWallet =
             dispatch(createWalletAction(IndexdbWallet));
         } catch (err) {
             console.error(`Failed to import wallet: ${err}`);
-            notify({
+            notification && notification({
                 message: 'Transaction',
                 description: `Failed: ${err}`,
                 type: 'error',
@@ -869,18 +1015,23 @@ export const thunkImportWallet =
     };
 
 export const thunkWalletSelection =
-    (wallet: IndexDbWallet, selection: boolean): ThunkAction<void, RootState, unknown, Action<string>> =>
+    ({wallet, selection, indexDb, notification} : {wallet: IndexDbWallet, selection: boolean, indexDb: IndexDbAppDatabase, notification?: (params: NotificationParams) => void}): ThunkAction<void, RootState, unknown, Action<string>> =>
     // async (dispatch, getState) => {
     async (dispatch) => {
-        if (!wallet) return;
-
-        console.debug(`thunUpdateWallet: updating wallet: ${wallet.pubKey} ...`);
-        if (!wallet.gid) {
-            console.warn(`${wallet.chain} ${wallet.label} ${wallet.pubKey} gid not found!`);
-            return;
-        }
-
         try {
+            if (!wallet?.gid) {
+                throw new WalletDatabaseError(`${wallet.chain} ${wallet.label} ${wallet.pubKey} gid not found!`);
+            }
+
+            if (!wallet?.chain || !wallet?.label || !wallet?.pubKey) {
+                throw new WalletDatabaseError(`Unable to select wallet without specifying all of chain(${wallet?.chain}) label(${wallet?.chain}))`);
+            }
+            console.debug(`selecting ${wallet.chain} ${wallet.label} wallet: ${wallet.pubKey} ...`);
+
+            if (!indexDb) {
+                throw new WalletDatabaseError(`Unable to select ${wallet.chain} ${wallet.label} wallet with public key ${wallet.pubKey}: IndexDB is not initialized.`)
+            }
+
             const _updatedWallet = {
                 ...wallet,
                 gid: wallet.gid,
@@ -891,7 +1042,7 @@ export const thunkWalletSelection =
             } as IndexDbWallet;
             if (!_updatedWallet.gid) return;
 
-            const result = await updateIndexDbWallet(_updatedWallet);
+            const result = await indexDb.updateWallet(_updatedWallet);
             console.debug(
                 `Wallet(${wallet.pubKey}) selection result: ${
                     result ? 'succeded' : 'failed or entry not found or unchanged'
@@ -902,7 +1053,7 @@ export const thunkWalletSelection =
             return result;
         } catch (err) {
             console.error(`thunkWalletSelection: Failed: ${err}`);
-            notify({
+            notification && notification({
                 message: 'Transaction',
                 description: `Failed: ${err}`,
                 type: 'error',
@@ -919,17 +1070,23 @@ const updateWalletAction = (payload: LocalWalletStore) => {
 };
 
 export const thunkUpdateWallet =
-    (wallet: IndexDbWallet): ThunkAction<void, RootState, unknown, Action<string>> =>
+    ({wallet, indexDb, notification} : {wallet: IndexDbWallet, indexDb: IndexDbAppDatabase, notification?: (params: NotificationParams) => void}): ThunkAction<void, RootState, unknown, Action<string>> =>
     async (dispatch) => {
-        if (!wallet) return;
-
-        console.debug(`thunUpdateWallet: updating wallet: ${wallet.pubKey} ...`);
-        if (!wallet.gid) {
-            console.warn(`${wallet.chain} ${wallet.label} ${wallet.pubKey} gid not found!`);
-            return;
-        }
-
         try {
+            console.debug(`thunUpdateWallet: updating wallet: ${wallet.pubKey} ...`);
+            if (!wallet.gid) {
+                throw new WalletDatabaseError(`${wallet.chain} ${wallet.label} ${wallet.pubKey} gid not found!`);
+            }
+
+            if (!wallet?.chain || !wallet?.label || !wallet?.pubKey) {
+                throw new WalletDatabaseError(`Unable to update wallet without specifying all of chain(${wallet?.chain}) label(${wallet?.chain}))`);
+            }
+            console.info(`updating ${wallet.chain} ${wallet.label} wallet: ${wallet.pubKey} ...`);
+
+            if (!indexDb) {
+                throw new WalletDatabaseError(`Unable to update ${wallet.chain} ${wallet.label} wallet with public key ${wallet.pubKey}: IndexDB is not initialized.`)
+            }
+
             const _updatedWallet = {
                 ...wallet,
                 gid: wallet.gid,
@@ -937,7 +1094,7 @@ export const thunkUpdateWallet =
             if (!_updatedWallet.gid) return;
             // console.debug('thunkUpdateWallet: _updatedWallet', _updatedWallet.gid);
 
-            const result = await updateIndexDbWallet(_updatedWallet);
+            const result = await indexDb.updateWallet(_updatedWallet);
             console.debug(
                 `Wallet(${wallet.pubKey}) update result: ${
                     result ? 'succeded' : 'failed or entry not found or unchanged'
@@ -948,7 +1105,7 @@ export const thunkUpdateWallet =
             return result;
         } catch (err) {
             console.error(`thunkWalletSelection: Failed: ${err}`);
-            notify({
+            notification && notification({
                 message: 'Transaction',
                 description: `Failed: ${err}`,
                 type: 'error',
@@ -965,17 +1122,25 @@ const removeWalletAction = (payload: LocalWalletStore[]) => {
 };
 
 export const thunkRemoveWallet =
-    (wallet: IndexDbWallet): ThunkAction<void, RootState, unknown, Action<string>> =>
+    ({wallet, indexDb, notification} : {wallet: IndexDbWallet, indexDb: IndexDbAppDatabase, notification?: (params: NotificationParams) => void}): ThunkAction<void, RootState, unknown, Action<string>> =>
     async (dispatch, getState) => {
-        console.warn(`Removing wallet: ${wallet.chain} ${wallet.label} ${wallet.pubKey}...`);
         try {
-            const IndexdbWallets = await getSavedIndexDbWalletMatches(wallet.pubKey);
+            if (!indexDb) {
+                throw new WalletDatabaseError(`Unable to remove ${wallet.chain} ${wallet.label} wallet with public key ${wallet.pubKey}: IndexDB is not initialized.`)
+            }
+
+            if (!wallet?.chain || !wallet?.label || !wallet?.pubKey) {
+                throw new WalletDatabaseError(`Unable to remove wallet without specifying all of chain(${wallet?.chain}) label(${wallet?.chain}))`);
+            }
+            console.warn(`Removing wallet: ${wallet.chain} ${wallet.label} ${wallet.pubKey}...`);
+
+            const IndexdbWallets = await indexDb.getSavedWalletMatches(wallet.pubKey);
             if (!IndexdbWallets || IndexdbWallets.length < 1) {
                 console.warn(`Found no wallets matching public key ${wallet.pubKey}`);
                 return;
             }
 
-            IndexdbWallets.forEach(async (w) => await removeIndexDbWallet(w));
+            IndexdbWallets.forEach(async (w) => await indexDb.removeWallet(w));
 
             const { wallets } = getState() as { wallets: LocalWalletStore[] };
             console.debug(`wallets: ${wallets.length}`);
@@ -987,7 +1152,7 @@ export const thunkRemoveWallet =
             dispatch(removeWalletAction(updatedWallets));
         } catch (err) {
             console.error(`thunkRemoveWallet: Failed: ${err}`);
-            notify({
+            notification && notification({
                 message: 'Transaction',
                 description: `Failed: ${err}`,
                 type: 'error',
@@ -1003,23 +1168,27 @@ export const fetchWallets = (wallets: LocalWalletStore[]) => {
 };
 
 export const thunkFetchWallets =
-    (checkDups?: boolean): ThunkAction<void, RootState, unknown, Action<string>> =>
+    ({checkDups = false, indexDb, notification}: {checkDups?: boolean, indexDb: IndexDbAppDatabase, notification?: (params: NotificationParams) => void}): ThunkAction<void, RootState, unknown, Action<string>> =>
     async (dispatch) => {
         console.debug(`Fetching wallets ...`);
         try {
-            const wallets = await getSavedIndexDbWallets();
+            if (!indexDb) {
+                console.error(`Unable to fetch wallets: IndexDB is not initialized.`)
+                return;
+            }
+            const wallets = await indexDb.getSavedWallets();
             console.debug(`Fetched ${wallets?.length} wallets.`);
             // console.table(wallets)
 
             // Reset wallets selections on multiple selections.
-            if (checkDups) await checkWalletSelections(wallets);
+            if (checkDups) await checkWalletSelections({wallets, indexDb, notification});
             // Remove encryption from any unselected wallets
-            await checkUnselectedUnencryptedWallets(wallets);
+            await checkUnselectedUnencryptedWallets({wallets, indexDb, notification});
 
             dispatch(fetchWallets(getValidWallets(wallets)));
         } catch (error) {
             console.error(`Failed to fetch wallets: ${error}`);
-            notify({
+            notification && notification({
                 message: 'Local Database',
                 description: `Failed: ${error}`,
                 type: 'error',
@@ -1035,7 +1204,7 @@ export const selectWalletAction = (gid: string) => {
 };
 
 export const thunkAirdropToAccount =
-    (gid: string): ThunkAction<void, RootState, unknown, Action<string>> =>
+    ({gid, notification} : {gid: string, notification?: (params: NotificationParams) => void}): ThunkAction<void, RootState, unknown, Action<string>> =>
     async (dispatch, getState) => {
         console.debug(`thunkAirdropToAccount: airdroping tokens ...`);
         try {
@@ -1079,7 +1248,7 @@ export const thunkAirdropToAccount =
             dispatch(airdropToAccount(_updatedWalletState));
         } catch (error) {
             console.error(`thunkAirdropToAccount: Failed: ${error}`);
-            notify({
+            notification && notification({
                 message: 'Transaction',
                 description: `Failed: ${error}`,
                 type: 'error',
@@ -1094,21 +1263,21 @@ const airdropToAccount = (updatedWalletState: LocalWalletStore[]) => {
     };
 };
 
-export const thunkCreateTransaction =
-    (
-        chain: Chain,
-        label: string,
-        keypair: LocalKeypairStore,
-        toAddress: string,
-        amount: string
-    ): ThunkAction<void, RootState, unknown, Action<string>> =>
+export const thunkCreateTransaction = ({chain, label, keypair, toAddress, amount, notification} : {
+    chain: Chain,
+    label: string,
+    keypair: LocalKeypairStore,
+    toAddress: string,
+    amount: string,
+    notification?: (params: NotificationParams) => void
+}): ThunkAction<void, RootState, unknown, Action<string>> =>
     async (dispatch, getState) => {
         console.debug(`thunkCreateTransaction: creating transaction ...`);
         //@TODO network should derive from Env var like the rest.
         const balance = (await getBalance(getChainProp(chain).ticker, keypair)) || 0;
 
         if (parseFloat(amount) > balance) {
-            notify({
+            notification && notification({
                 message: 'Transaction',
                 description: `Insufficient balance, account requires: ◎ ${parseFloat(amount) - balance}`,
                 type: 'error',
@@ -1117,7 +1286,7 @@ export const thunkCreateTransaction =
         }
 
         // @TODO: impliment chain specific ascii text const chainIcon = (◎)
-        notify({
+        notification && notification({
             message: `Sending: ${amount} ${chain}`,
             description: `To: ${toAddress}`,
             type: 'info',
@@ -1129,7 +1298,7 @@ export const thunkCreateTransaction =
         } catch (err) {
             if (err instanceof Error) {
                 console.error(err);
-                notify({
+                notification && notification({
                     message: `Transaction Failed!`,
                     description: `${err.message}`,
                     type: 'error',
@@ -1142,7 +1311,7 @@ export const thunkCreateTransaction =
         // import { ExplorerLink } from '../components/ExplorerLink';
         if (result) {
             console.info(`Successfully sent ${amount} to ${toAddress}: ${result.txid}`);
-            notify({
+            notification && notification({
                 message: `Signature: ${result.txid}`,
                 description: `Fee: ${result.gas}`,
                 // description: (
@@ -1172,7 +1341,7 @@ export const thunkCreateTransaction =
         // try {
         // } catch (error) {
         //   console.error(`Failed: ${error}`);
-        //   notify({
+        //   notification && notification({
         //     message: 'Transaction',
         //     description: `Failed: ${error}`,
         //     type: 'error',
@@ -1187,22 +1356,22 @@ const createTransaction = (payload: LocalWalletStore[]) => {
     };
 };
 
-export const thunkMintNearNft =
-    (
-        chain: Chain,
-        label: string,
-        keypair: LocalKeypairStore,
-        toAddress: string,
-        quantity: string,
-        props: MintNearNft
-    ): ThunkAction<void, RootState, unknown, Action<string>> =>
+export const thunkMintNearNft = ({chain, label, keypair, toAddress, quantity, props, notification} : {
+    chain: Chain,
+    label: string,
+    keypair: LocalKeypairStore,
+    toAddress: string,
+    quantity: string,
+    props: MintNearNft,
+    notification?: (params: NotificationParams) => void
+}): ThunkAction<void, RootState, unknown, Action<string>> =>
     async (/*dispatch, getState*/) => {
         console.debug(`thunkMintNearNft: minting NFT ...`);
         //@TODO network should derive from Env var like the rest.
         // const balance = await getBalance(chain, keypair);
 
         // if (parseFloat(quantity) > balance!) {
-        //   notify({
+        //   notification && notification({
         //     message: 'Transaction',
         //     description: `Insufficient balance, account requires: ◎ ${
         //       parseFloat(quantity) - balance!
@@ -1217,7 +1386,7 @@ export const thunkMintNearNft =
         console.dir(props);
 
         // @TODO: impliment chain specific ascii text const chainIcon = (◎)
-        notify({
+        notification && notification({
             message: `Minting ${quantity} ${chain} NFT(s)`,
             description: `${toAddress}`,
             type: 'info',
@@ -1243,7 +1412,7 @@ export const thunkMintNearNft =
                 // @TODO create chain specific transaction links.
                 // import { ExplorerLink } from '../components/ExplorerLink';
                 if (result) {
-                    notify({
+                    notification && notification({
                         // message: `Signature: ${result.txid}`,
                         // description: `Fee: ${result.gas}`,
                         message: `Hash: ${result.transaction.hash}`,
@@ -1276,7 +1445,7 @@ export const thunkMintNearNft =
                 // try {
                 // } catch (error) {
                 //   console.error(`Failed: ${error}`);
-                //   notify({
+                //   notification && notification({
                 //     message: 'Transaction',
                 //     description: `Failed: ${error}`,
                 //     type: 'error',
@@ -1285,7 +1454,7 @@ export const thunkMintNearNft =
             }
         } catch (err) {
             console.error(err);
-            notify({
+            notification && notification({
                 message: `Minting failed!`,
                 description: `${err}`,
                 type: 'error',
@@ -1300,11 +1469,11 @@ export const thunkMintNearNft =
 //   };
 // };
 
-export const thunkFetchTransaction =
-    (
-        keypair: Keypair, // keypair: LocalKeypairStore,
-        gid: string
-    ): ThunkAction<void, RootState, unknown, Action<string>> =>
+export const thunkFetchTransaction = ({keypair, gid, notification} : {
+    keypair: ChainKeypair, // keypair: LocalKeypairStore,
+    gid: string,
+    notification?: (params: NotificationParams) => void
+}): ThunkAction<void, RootState, unknown, Action<string>> =>
     async (dispatch, getState) => {
         console.debug(`thunkFetchTransaction: fetching transactions ...`);
         try {
@@ -1357,7 +1526,7 @@ export const thunkFetchTransaction =
             dispatch(fetchTransaction(_updatedWallets));
         } catch (error) {
             console.error(`thunkFetchTransaction: Failed: ${error}`);
-            notify({
+            notification && notification({
                 message: 'Transaction',
                 description: `Failed: ${error}`,
                 type: 'error',
@@ -1372,11 +1541,20 @@ const fetchTransaction = (payload: LocalWalletStore[]) => {
     };
 };
 
-export const thunkCreateAndSendMint =
-    (toAddress: string): ThunkAction<void, RootState, unknown, Action<string>> =>
+export const thunkCreateAndSendMint = ({
+    toAddress, indexDb, notification
+} : {toAddress: string, indexDb: IndexDbAppDatabase, notification?: (params: NotificationParams) => void}): ThunkAction<void, RootState, unknown, Action<string>> =>
     async (dispatch, getState) => {
-        console.debug(`thunkCreateAndSendMint: sending mint ...`);
         try {
+            if (!toAddress) {
+                throw new WalletDatabaseError('unable to create and send mint without specifying a to address')
+            }
+            console.debug(`thunkCreateAndSendMint: sending mint to address ${toAddress}...`);
+
+            if (!indexDb) {
+                throw new WalletDatabaseError(`Unable to create and send mint to address ${toAddress}: IndexDB is not initialized.`)
+            }
+
             const { wallets } = getState() as { wallets: LocalWalletStore[] };
             const [selectedWallet] = wallets.filter((wallet) => wallet.isSelected);
             if (!selectedWallet.privKey) return;
@@ -1385,30 +1563,30 @@ export const thunkCreateAndSendMint =
             const keypair = Keypair.fromSecretKey(selectedWallet.privKey);
 
             console.debug(`thunkCreateAndSendMint: using acct '${selectedWallet.pubKey}' to mint ...'`);
-            const mint = await Token.createMint(connection, keypair, keypair.publicKey, null, 2, TOKEN_PROGRAM_ID);
-            const mintInto = await mint.getMintInfo();
-            console.debug(`thunkCreateAndSendMint: minted: ${mintInto.supply}`);
+            const mint = await createSolanaMint(connection, keypair, keypair.publicKey, null, 2, keypair, {}, TOKEN_PROGRAM_ID);
+            const mintInto = await getMintInfo(connection, mint);
+            console.debug(`thunkCreateAndSendMint: minted: ${mintInto.amount}`);
 
             // Get the token account of the fromWallet Solana address, if it does not exist, create it
-            const fromTokenAccount = await mint.getOrCreateAssociatedAccountInfo(keypair.publicKey);
+            const fromTokenAccount = await getOrCreateAssociatedSolanaTokenAccount(connection, keypair, mint, keypair.publicKey);
             console.debug(`thunkCreateAndSendMint: fromTokenAccount: ${fromTokenAccount.address}`);
 
             //get the token account of the toWallet Solana address, if it does not exist, create it
-            const toTokenAccount = await mint.getOrCreateAssociatedAccountInfo(new PublicKey(toAddress));
+            const toTokenAccount = await getOrCreateAssociatedSolanaTokenAccount(connection, keypair, new PublicKey(toAddress), keypair.publicKey);
             console.debug(`thunkCreateAndSendMint: toTokenAccount: ${toTokenAccount.address}`);
 
             // Minting 1 new token to the "fromTokenAccount" account we just returned/created
-            await mint.mintTo(fromTokenAccount.address, keypair.publicKey, [], LAMPORTS_PER_SOL);
+            await solanaMintTo(connection, keypair, mint, keypair.publicKey, keypair.publicKey, 1, [], {}); //LAMPORTS_PER_SOL
 
             // Add token transfer instructions to transaction
             const transaction = new SolanaTransaction().add(
-                Token.createTransferInstruction(
-                    TOKEN_PROGRAM_ID,
+                createSolanaTransferInstruction(
                     fromTokenAccount.address,
                     toTokenAccount.address,
                     keypair.publicKey,
+                    1,
                     [],
-                    1
+                    TOKEN_PROGRAM_ID
                 )
             );
             console.debug('thunkCreateAndSendMint: mint tx:');
@@ -1440,7 +1618,7 @@ export const thunkCreateAndSendMint =
             if (!selectedWallet.gid) {
                 throw new Error('Wallet gid missing');
             }
-            await saveIndexDbMint(selectedWallet.gid, newMint);
+            await indexDb.saveMint(selectedWallet.gid, newMint);
             const _updatedWallets = wallets.map((wallet) => {
                 if (wallet.isSelected) {
                     return {
@@ -1453,7 +1631,7 @@ export const thunkCreateAndSendMint =
             dispatch(createMintAction(_updatedWallets));
         } catch (error) {
             console.error(`thunkCreateAndSendMint: Failed: ${error}`);
-            notify({
+            notification && notification({
                 message: 'Transaction',
                 description: `Failed: ${error}`,
                 type: 'error',
@@ -1469,14 +1647,20 @@ const createMintAction = (wallets: LocalWalletStore[]) => {
 };
 
 // NOT INVOKED
-export const thunkFetchTokens =
-    (): ThunkAction<void, RootState, unknown, Action<string>> => async (dispatch, getState) => {
+export const thunkFetchTokens = ({
+    indexDb, notification} : { indexDb: IndexDbAppDatabase, notification?: (params: NotificationParams) => void }
+): ThunkAction<void, RootState, unknown, Action<string>> => async (dispatch, getState) => {
+        console.debug('Fetching tokens ...')
         try {
+            if (!indexDb) {
+                throw new WalletDatabaseError('Unable to fetch tokens: IndexDB is not initialized.')
+            }
+
             const { wallets } = getState() as { wallets: LocalWalletStore[] };
             const [selectedWallet] = wallets.filter((wallet) => wallet.isSelected);
             if (!selectedWallet.gid || !selectedWallet.privKey) return;
 
-            const savedMints = await getSavedIndexDbMints(selectedWallet.gid);
+            const savedMints = await indexDb.getSavedMints(selectedWallet.gid);
 
             const connection = new Connection(clusterApiUrl('devnet'), 'confirmed');
             const keypair = Keypair.fromSecretKey(selectedWallet.privKey);
@@ -1509,7 +1693,7 @@ export const thunkFetchTokens =
             console.info(`tokenAccounts: ${tokenAccounts}`);
         } catch (error) {
             console.error(`thunkFetchTokens: Failed: ${error}`);
-            notify({
+            notification && notification({
                 message: 'Transaction',
                 description: `Failed: ${error}`,
                 type: 'error',
@@ -1518,8 +1702,10 @@ export const thunkFetchTokens =
     };
 
 // NOT INVOKED
-export const thunkSendTokens =
-    (toAddress: string): ThunkAction<void, RootState, unknown, Action<string>> =>
+export const thunkSendTokens = ({toAddress, notification} : {
+    toAddress: string,
+    notification?: (params: NotificationParams) => void
+}): ThunkAction<void, RootState, unknown, Action<string>> =>
     async (dispatch, getState) => {
         try {
             const { wallets } = getState() as { wallets: LocalWalletStore[] };
@@ -1554,13 +1740,13 @@ export const thunkSendTokens =
 
             // Add token transfer instructions to transaction
             const transaction = new SolanaTransaction().add(
-                Token.createTransferInstruction(
-                    TOKEN_PROGRAM_ID,
+                createSolanaTransferInstruction(
                     keypair.publicKey,
                     new PublicKey(toAddress),
                     keypair.publicKey,
+                    1,
                     [],
-                    1
+                    TOKEN_PROGRAM_ID,
                 )
             );
             // Sign transaction, broadcast, and confirm
@@ -1569,7 +1755,7 @@ export const thunkSendTokens =
             });
         } catch (error) {
             console.error(`thunkSendTokens: Failed: ${error}`);
-            notify({
+            notification && notification({
                 message: 'Transaction',
                 description: `Failed: ${error}`,
                 type: 'error',
@@ -1586,12 +1772,16 @@ const fetchItems = (items: LocalItemStore[]) => {
 };
 
 export const thunkFetchItems =
-    (): // checkDups?: boolean,
+    ({indexDb, notification} : {indexDb: IndexDbAppDatabase, notification?: (params: NotificationParams) => void}): // checkDups?: boolean,
     ThunkAction<void, RootState, unknown, Action<string>> =>
     async (dispatch) => {
         console.debug(`Fetching items ...`);
         try {
-            const items = await getSavedItems();
+            if (!indexDb) {
+                throw new WalletDatabaseError('Unable to fetch items: IndexDB is not initialized.')
+            }
+
+            const items = await indexDb.getSavedItems();
             console.debug(`Fetched ${items?.length} items.`);
             // console.table(items);
 
@@ -1608,15 +1798,28 @@ export const thunkFetchItems =
             }
         } catch (error) {
             console.error(`thunkFetchItems: Failed: ${error}`);
+            notification && notification({
+                message: 'Item',
+                description: `Failed: ${error}`,
+                type: 'error',
+            });
         }
     };
 
 export const thunkCreateItem =
-    (item: ApiItem): ThunkAction<void, RootState, unknown, Action<string>> =>
+    ({item, indexDb, notification} : {item: ApiItem, indexDb: IndexDbAppDatabase, notification?: (params: NotificationParams) => void}): ThunkAction<void, RootState, unknown, Action<string>> =>
     async (dispatch, getState) => {
-        console.debug(`thunkCreateItem: creating database item: ${item.title} ...`);
         try {
-            const newItem = await saveItem(item);
+            if (!item?.title) {
+                throw new WalletDatabaseError(`Unable to create item having no title ${JSON.stringify(item)}`)
+            }
+            console.debug(`thunkCreateItem: creating database item: ${item.title} ...`);
+
+            if (!indexDb) {
+                throw new WalletDatabaseError(`Unable to create item ${item.title}: IndexDB is not initialized.`)
+            }
+
+            const newItem = await indexDb.saveItem(item);
             const { items } = getState() as { items: LocalItemStore[] };
             const _updatedItem: LocalItemStore[] = items.map((item: LocalItemStore) => {
                 return item;
@@ -1626,8 +1829,13 @@ export const thunkCreateItem =
                 ...newItem,
             });
             dispatch(createItemAction(_updatedItem));
-        } catch (err) {
-            console.error(`thunkCreateItem: Failed: ${err}`);
+        } catch (error) {
+            console.error(`thunkCreateItem: Failed: ${error}`);
+            notification && notification({
+                message: 'Item',
+                description: `Failed: ${error}`,
+                type: 'error',
+            });
         }
     };
 

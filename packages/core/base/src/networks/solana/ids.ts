@@ -1,6 +1,7 @@
 import type { AccountInfo } from '@solana/web3.js';
 import type { StringPublicKey } from '../../types';
-import { SolanaPublicKey } from './types';
+// import { SolanaPublicKey } from './types';
+import { PublicKey as SolanaPublicKey} from "@solana/web3.js";
 
 export interface PublicKeyStringAndAccount<T> {
     pubkey: string;

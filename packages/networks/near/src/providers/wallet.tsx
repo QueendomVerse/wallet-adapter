@@ -1,11 +1,9 @@
-import type { FC, ReactNode } from 'react';
 import React, { useState, useEffect, useMemo } from 'react';
 import {
     // connect as connectNear,
     keyStores,
     // InMemorySigner
 } from 'near-api-js';
-import { useLocation, useNavigate } from 'react-router-dom';
 import type { BrowserWalletConfig } from '..';
 import { BrowserWallet } from '..';
 
@@ -16,11 +14,12 @@ import { initialState, WalletContext } from '../hooks';
 // import { QueryParams } from '@/utils';
 
 interface Props {
-    children: ReactNode;
+    children: React.ReactNode;
     config?: Config;
+    onNavigate: (url: string) => void;
 }
 
-export const WalletProvider: FC<Props> = ({ config, children }) => {
+export const WalletProvider: React.FC<Props> = ({ config, children, onNavigate }) => {
     const [
         {
             chain,
@@ -51,11 +50,7 @@ export const WalletProvider: FC<Props> = ({ config, children }) => {
         ...defaultConfig,
     });
 
-    const useQuerySearch = () => {
-        return new URLSearchParams(useLocation().search);
-    };
-
-    const navigate = useNavigate();
+    // const navigate = useNavigate();
     //   const searchParams = useQuerySearch();
 
     //   const routerQuery = Array.from(searchParams.entries()).reduce((acc, [key, value]) => ({
@@ -141,7 +136,7 @@ export const WalletProvider: FC<Props> = ({ config, children }) => {
                 console.dir(keys);
                 if (!keys) {
                     console.warn('redirecting back ...');
-                    navigate('#/near');
+                    onNavigate('/near');
 
                     return;
                 }
@@ -198,7 +193,7 @@ export const WalletProvider: FC<Props> = ({ config, children }) => {
                 });
             }
             console.debug('redirecting back ... ');
-            navigate(toPageString);
+            onNavigate(toPageString);
         };
         init();
     }, [nearConfig]);

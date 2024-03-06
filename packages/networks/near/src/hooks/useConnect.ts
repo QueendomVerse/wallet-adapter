@@ -1,28 +1,38 @@
 import { Buffer } from 'buffer';
 import { useEffect, useState } from 'react';
 import * as nearAPI from 'near-api-js';
-import { keyStore } from '../utils';
-
-window.Buffer = Buffer;
 
 const { connect, WalletConnection } = nearAPI;
 
-const config = {
-    networkId: 'testnet',
-    keyStore, // optional if not signing transactions
+interface ConnectionParams {
+    networkId: string;
+    keyStore?: nearAPI.keyStores.BrowserLocalStorageKeyStore;
+    nodeUrl: string,
+    walletUrl: string,
+    helperUrl: string,
+    explorerUrl: string,
+    headers: {}
+}
+
+
+const useConnect = (accountID: string, params: ConnectionParams = {
+    networkId: 'testnet',// optional if not signing transactions
     nodeUrl: 'https://rpc.testnet.near.org',
     walletUrl: 'https://wallet.testnet.near.org',
     helperUrl: 'https://helper.testnet.near.org',
     explorerUrl: 'https://explorer.testnet.near.org',
     headers: {},
-};
+}) => {
+    window.Buffer = Buffer;
+    
+    const { keyStores } = nearAPI;
+    const keyStore = new keyStores.BrowserLocalStorageKeyStore();
 
-const useConnect = (accountID: string) => {
     const [wallet, setWallet] = useState<// nearAPI.WalletConnection | undefined
     nearAPI.WalletConnection>();
 
     useEffect(() => {
-        connect(config).then((near) => {
+        connect({...params, keyStore}).then((near) => {
             const wallet = new WalletConnection(near, accountID);
 
             setWallet(wallet);

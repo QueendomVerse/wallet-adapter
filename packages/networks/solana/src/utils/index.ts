@@ -1,5 +1,5 @@
-export * from './borsh';
 export * from './createPipelineExecutor';
+export * from './extendBorsh';
 export * from './getTokenListContainerPromise';
 export * from './helpers';
 export * from './ids';

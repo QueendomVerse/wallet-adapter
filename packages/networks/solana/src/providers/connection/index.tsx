@@ -1,15 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import type { TokenInfo } from '@solana/spl-token-registry';
 import { ENV as ChainId } from '@solana/spl-token-registry';
-import { Keypair, clusterApiUrl, Cluster } from '@solana/web3.js';
-import * as dotenv from 'dotenv';
+import type { Cluster } from '@solana/web3.js';
+import { Keypair, clusterApiUrl } from '@solana/web3.js';
 
-import {
-    SolanaConnection,
-    fetchWithRetry,
-    useQuerySearch,
-    asyncEnsureRpcConnection,
-} from '@mindblox-wallet-adapter/base';
+// import {
+//     fetchWithRetry,
+//     asyncEnsureRpcConnection,
+// } from '@mindblox-wallet-adapter/base';
 import { useLocalStorage } from '@mindblox-wallet-adapter/react';
 
 import {
@@ -20,11 +18,10 @@ import {
 
     // connectionManager
 } from './manager';
-import { getAdapterCluster, getTokenListContainerPromise } from '../../utils';
+import { getTokenListContainerPromise } from '../../utils';
+import { SolanaConnection } from '../../types/connection';
 
 export * from './manager';
-
-dotenv.config();
 
 export type ENV = ENDPOINT_NAME;
 
@@ -41,18 +38,42 @@ const getChainId = (network: string) => {
     }
 };
 
+export const getAdapterCluster = (cluster?: string): Cluster => {
+    if (!cluster) return WalletAdapterNetwork.Devnet;
+    switch (cluster) {
+        case 'devnet':
+            return WalletAdapterNetwork.Devnet;
+        case 'testnet':
+            return WalletAdapterNetwork.Testnet;
+        case 'mainnet-beta':
+            return WalletAdapterNetwork.Mainnet;
+        default:
+            return WalletAdapterNetwork.Devnet;
+    }
+};
+
+export const getAdapterNetwork = (network?: string): WalletAdapterNetwork => {
+    if (!network) return WalletAdapterNetwork.Devnet;
+    switch (network) {
+        case 'devnet':
+        case 'testnet':
+        case 'mainnet-beta':
+            return getAdapterCluster(network) as WalletAdapterNetwork;
+        case 'localnet':
+            return WalletAdapterNetwork.Localnet;
+        default:
+            return WalletAdapterNetwork.Devnet;
+    }
+};
+
+
 export const getEndpointMap = (name: ENDPOINT_NAME): EndpointMap => ({
     name,
-    endpoint: getAdapterCluster(name),
+    endpoint: clusterApiUrl(getAdapterCluster(name)),
     ChainId: getChainId(name),
 });
 
 export const ENDPOINTS: Array<EndpointMap> = [
-    {
-        name: (process.env.PUBLIC_SOLANA_NETWORK ?? 'mainnet-beta') as ENDPOINT_NAME,
-        endpoint: process.env.PUBLIC_SOLANA_RPC_HOST ?? clusterApiUrl('mainnet-beta'),
-        ChainId: getChainId(process.env.PUBLIC_SOLANA_NETWORK ?? 'mainnet-beta'),
-    },
     {
         name: 'mainnet-beta (Solana)',
         endpoint: 'https://api.mainnet-beta.solana.com',
@@ -80,29 +101,23 @@ export const ENDPOINTS: Array<EndpointMap> = [
     },
     {
         name: 'localnet',
-        endpoint: process.env.LOCALNET_SOLANA_RPC_HOST ?? 'http://localhost:8899',
+        endpoint: 'http://localhost:8899',
         ChainId: 100,
     },
 ];
+// export const ENDPOINTS: Array<EndpointMap> = Object.values(WalletAdapterNetwork).map(getEndpointMap);
 
 const DEFAULT_ENDPOINT = ENDPOINTS[0];
-console.info('Default Endpoint', DEFAULT_ENDPOINT);
-const nodeWsUri: string | undefined = process.env.NEXT_PUBLIC_SOLANA_WS_ENDPOINT;
-console.info(`Web Socket endpoint: '${nodeWsUri}'`);
+// console.debug('Default Solana Endpoint', DEFAULT_ENDPOINT);
 
-const getConnection = () => {
-    return new SolanaConnection(DEFAULT_ENDPOINT.endpoint, {
+const getConnection = (endpoint: string, nodeWsUri?: string) => {
+    // console.debug(`Establishing Solana connection with endpoint: '${endpoint}'`);
+    // console.debug(`Solana Web Socket endpoint: '${nodeWsUri}'`);
+
+    return new SolanaConnection(endpoint, {
         commitment: 'recent',
         disableRetryOnRateLimit: true,
-        fetch: fetchWithRetry,
-        wsEndpoint: nodeWsUri,
-    });
-};
-
-const getConnection2 = (endpoint: string) => {
-    return new SolanaConnection(endpoint, {
-        disableRetryOnRateLimit: true,
-        fetch: fetchWithRetry,
+        // fetch: fetchWithRetry,
         wsEndpoint: nodeWsUri,
     });
 };
@@ -115,7 +130,7 @@ export const ConnectionContext = React.createContext<ConnectionContextState>({
         console.warn('setEndpoint function not implemented.');
     },
     // connection: new SolanaConnection(DEFAULT_ENDPOINT.endpoint, 'recent'),
-    connection: getConnection(),
+    // connection: getConnection(DEFAULT_ENDPOINT.endpoint),
     endpointMap: DEFAULT_ENDPOINT,
     env: ENDPOINTS[0].name,
     endpoint: DEFAULT_ENDPOINT.endpoint,
@@ -124,21 +139,22 @@ export const ConnectionContext = React.createContext<ConnectionContextState>({
 });
 
 interface ConnectionProviderProps {
+    network?: ENDPOINT_NAME;
     children: React.ReactNode;
 }
 
-export const ConnectionProvider = ({ children }: ConnectionProviderProps) => {
+export const ConnectionProvider: React.FC<ConnectionProviderProps> = ({ network, children }) => {
+    useEffect(() => {
+        console.debug(`Solana Connection Provider network: ${network}`);
+    }, [network])
     // const [networkConnection, setNetworkConnection] = useState<SolanaConnection>();
 
     // const { setIsLoading } = useMeta();
 
     // const [loading, setLoading] = useState<boolean>(true);
 
-    const searchParams = useQuerySearch();
     const [networkStorage, setNetworkStorage] =
-        // @ts-ignore
         useLocalStorage<ENDPOINT_NAME>('network', DEFAULT_ENDPOINT.name);
-    const networkParam = searchParams.get('network');
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [savedEndpoint, setEndpointMap] = useLocalStorage('connectionEndpoint', ENDPOINTS[0].endpoint);
@@ -146,8 +162,8 @@ export const ConnectionProvider = ({ children }: ConnectionProviderProps) => {
     const setEndpoint = setEndpointMap;
 
     let maybeEndpoint;
-    if (networkParam) {
-        const endpointParam = ENDPOINTS.find(({ name }) => name === networkParam);
+    if (network) {
+        const endpointParam = ENDPOINTS.find(({ name }) => name === network);
         if (endpointParam) {
             maybeEndpoint = endpointParam;
         }
@@ -224,7 +240,7 @@ export const ConnectionProvider = ({ children }: ConnectionProviderProps) => {
 
     // const { current: connection } = useRef(establishedConnection);
     // const { current: connection } = useRef(networkConnection);
-    const { current: connection } = useRef(getConnection2(endpoint));
+    const { current: connection } = useRef(getConnection(endpoint));
     // setIsLoading(false);
 
     const [tokens, setTokens] = useState<Map<string, TokenInfo>>(new Map());
@@ -287,7 +303,9 @@ export const ConnectionProvider = ({ children }: ConnectionProviderProps) => {
             const id = connection.onAccountChange(Keypair.generate().publicKey, () => {
                 // No operations to perform upon account change
             });
-            id && (await (await asyncEnsureRpcConnection(connection)).removeAccountChangeListener(id));
+            if (connection && id) {
+                connection.removeAccountChangeListener(id);
+            }
         };
         init();
     }, []);
@@ -296,8 +314,9 @@ export const ConnectionProvider = ({ children }: ConnectionProviderProps) => {
         const init = async () => {
             const id = connection.onSlotChange(() => null);
             return async () => {
-                // id && connection.removeSlotChangeListener(id);
-                id && (await (await asyncEnsureRpcConnection(connection)).removeSlotChangeListener(id));
+                if (connection && id) {
+                    connection.removeSlotChangeListener(id);
+                }
             };
         };
         init();

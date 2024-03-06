@@ -1,4 +1,4 @@
-import type { LocalItemStore, LocalProfileStore, LocalUserStore, LocalWalletStore } from './store';
+import type { Artist, ArtType, LocalItemStore, LocalProfileStore, LocalUserStore, LocalWalletStore } from './store';
 
 export interface ApiItem extends LocalItemStore {
     createdAt: string;
@@ -41,25 +41,6 @@ export type ApiResponse = {
     data: string;
     path: string;
 };
-
-export interface Artist {
-    address?: string;
-    name: string;
-    link: string;
-    image: string;
-    itemsAvailable?: number;
-    itemsSold?: number;
-    about?: string;
-    verified?: boolean;
-    background?: string;
-    share?: number;
-}
-
-export enum ArtType {
-    Master,
-    Print,
-    NFT,
-}
 
 export interface Art {
     uri: string | undefined;

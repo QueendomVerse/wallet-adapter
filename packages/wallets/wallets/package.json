@@ -4,54 +4,44 @@
     "author": "Phillip Strefling <phillip@queendom.io>",
     "repository": "https://github.com/QueendomVerse/wallet-adapter",
     "license": "Apache-2.0",
-    "type": "module",
-    "sideEffects": false,
-    "main": "lib/cjs/index.js",
-    "module": "lib/esm/index.mjs",
-    "types": "lib/types/index.d.ts",
-    "exports": {
-        "require": "./lib/cjs/index.js",
-        "import": "./lib/esm/index.mjs",
-        "types": "./lib/types/index.d.ts"
+    "publishConfig": {
+        "access": "public"
     },
     "files": [
         "lib",
         "src",
         "LICENSE"
     ],
-    "publishConfig": {
-        "access": "public"
+    "engines": {
+        "node": ">=16"
+    },
+    "type": "module",
+    "sideEffects": false,
+    "main": "./lib/cjs/index.js",
+    "module": "./lib/esm/index.js",
+    "types": "./lib/types/index.d.ts",
+    "exports": {
+        "require": "./lib/cjs/index.js",
+        "import": "./lib/esm/index.js",
+        "types": "./lib/types/index.d.ts"
     },
     "scripts": {
-        "clean": "shx rm -rf lib/*",
-        "prune": "pnpm store prune",
-        "install-phantom": "cd ../phantom && pnpm install && cd ../wallets",
-        "install-web": "cd ../web && pnpm install && cd ../wallets",
-        "install-all": "pnpm install-phantom && pnpm install-web",
-        "link-phantom": "pnpm link ../phantom && cd ../wallets",
-        "link-web": "pnpm link ../web && cd ../wallets",
-        "link-all": "pnpm link-phantom && pnpm link-web",
-        "check": "tsc --noEmit -p tsconfig.json",
-        "build": "tsc -p tsconfig.json && tsc-esm -p tsconfig.json && tsc -p tsconfig.cjs.json",
-        "build-phantom": "cd ../phantom && pnpm build && cd ../wallets",
-        "build-web": "cd ../web && pnpm build && cd ../wallets",
-        "build-all": "pnpm build && pnpm build-phantom && pnpm build-web",
-        "postbuild": "echo '{\"type\":\"commonjs\"}' | npx json > lib/cjs/package.json && echo '{\"type\":\"module\"} ' | npx json > lib/esm/package.json"
-    },
-    "peerDependencies": {
-        "@solana/web3.js": "*",
-        "near-api-js": "*",
-        "react": "*"
+        "build": "tsc --build --verbose && pnpm run package",
+        "clean": "shx mkdir -p lib && rimraf lib",
+        "lint": "prettier --check 'src/{*,**/*}.{ts,tsx,js,jsx,json}' && eslint",
+        "package": "shx mkdir -p lib/cjs && shx echo '{ \"type\": \"commonjs\" }' > lib/cjs/package.json"
     },
     "dependencies": {
-        "@mindblox-wallet-adapter/base": "*",
-        "@mindblox-wallet-adapter/phantom": "*",
-        "@mindblox-wallet-adapter/web": "*"
+        "@mindblox-wallet-adapter/base": "workspace:^",
+        "@mindblox-wallet-adapter/react": "workspace:^",
+        "@mindblox-wallet-adapter/networks": "workspace:^",
+        "@mindblox-wallet-adapter/near": "workspace:^",
+        "@mindblox-wallet-adapter/solana": "workspace:^",
+        "@mindblox-wallet-adapter/phantom": "workspace:^",
+        "@mindblox-wallet-adapter/web": "workspace:^",
+        "@mindblox-wallet-adapter/unsafe-burner": "workspace:^"
     },
     "devDependencies": {
-        "@solana/web3.js": "^1.78.0",
-        "near-api-js": "^2.1.4",
-        "react": "^18.2.0",
-        "tsc-esm": "^1.0.4"
+        "shx": "^0.3.4"
     }
 }

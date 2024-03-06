@@ -21,11 +21,11 @@ export class NearPublicKeyFactory extends PublicKeyFactory<NearPublicKey> {
 export class ChainPublicKeyFactory {
     static createPublicKey<K>(chain: ChainTicker, publicKey: string): K {
         if (chain === ChainTickers.SOL) {
-            return new SolanaPublicKeyFactory().createPublicKey(publicKey) as K;
+            return new SolanaPublicKeyFactory().createPublicKey(publicKey) as unknown as K;
         }
 
         if (chain === ChainTickers.NEAR) {
-            return new NearPublicKeyFactory().createPublicKey(publicKey) as K;
+            return new NearPublicKeyFactory().createPublicKey(publicKey) as unknown as K;
         }
 
         throw new Error('Unsupported chain');

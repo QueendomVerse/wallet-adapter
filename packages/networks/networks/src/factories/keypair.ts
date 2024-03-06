@@ -21,11 +21,11 @@ export class NearKeypairFactory extends KeypairFactory<NearKeypair> {
 export class ChainKeypairFactory {
     static createKeypair<K>(chain: ChainTicker, secretKey?: Uint8Array): K {
         if (chain === ChainTickers.SOL) {
-            return new SolanaKeypairFactory().createKeypair(secretKey) as K;
+            return new SolanaKeypairFactory().createKeypair(secretKey) as unknown as K;
         }
 
         if (chain === ChainTickers.NEAR) {
-            return new NearKeypairFactory().createKeypair(secretKey) as K;
+            return new NearKeypairFactory().createKeypair(secretKey) as unknown as K;
         }
 
         throw new Error('Unsupported chain');

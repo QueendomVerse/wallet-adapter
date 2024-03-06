@@ -33,11 +33,10 @@ import {
     WalletSignTransactionError,
     WalletAccountError,
 } from '@mindblox-wallet-adapter/base';
-import { capitalizeFirst } from '@mindblox-wallet-adapter/base';
+// import { capitalizeFirst } from '@mindblox-wallet-adapter/base';
 import { notify } from '@mindblox-wallet-adapter/react';
 import type { WalletAdapterNetwork } from '../providers/connection/core/utils/cluster';
-import { Transaction } from 'ethers';
-import { string, boolean } from 'superstruct';
+// import { string, boolean } from 'superstruct';
 
 // import { BaseMessageSignerWalletAdapter } from '../../../utils/wallets/base';
 // import { NearIcon } from './view/icon/near';
@@ -113,9 +112,9 @@ export class BrowserWalletAdapter extends BaseMessageSignerWalletAdapter<
         }
     };
 
-    get autoConnect(): boolean {
-        return this._autoConnect;
-    }
+    // async autoConnect(): Promise<boolean> {
+    //     return this._autoConnect;
+    // }
 
     get publicKey(): NearPublicKey | null {
         const pubKeyStr = this._publicKey?.toBase58();

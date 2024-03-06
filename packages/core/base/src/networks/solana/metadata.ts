@@ -2,7 +2,7 @@ import { SystemProgram, SYSVAR_RENT_PUBKEY, TransactionInstruction } from '@sola
 import { deserializeUnchecked, serialize } from 'borsh';
 import type BN from 'bn.js';
 import type { StringPublicKey } from '../../types';
-import { findProgramAddress } from './helpers';
+import { findProgramAddress } from './publicKey';
 
 import { emptyKey } from './constants';
 import { toPublicKey } from './helpers';
@@ -1154,7 +1154,7 @@ export const deprecatedGetReservationList = async (
 ): Promise<StringPublicKey | undefined> => {
     const PROGRAM_IDS = programIds();
 
-    const result = await findProgramAddress(
+    const result = findProgramAddress(
         [
             Buffer.from(METADATA_PREFIX),
             toPublicKey(PROGRAM_IDS.metadata).toBuffer(),
@@ -1171,7 +1171,7 @@ export const deprecatedGetReservationList = async (
 export const getEditionMarkPda = async (mint: StringPublicKey, edition: BN): Promise<StringPublicKey | undefined> => {
     const PROGRAM_IDS = programIds();
     const editionNumber = Math.floor(edition.toNumber() / 248);
-    const result = await findProgramAddress(
+    const result = findProgramAddress(
         [
             Buffer.from(METADATA_PREFIX),
             toPublicKey(PROGRAM_IDS.metadata).toBuffer(),

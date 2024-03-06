@@ -1,5 +1,6 @@
 import { connect, Account } from 'near-api-js';
-import type { TransactionParams } from './types';
+import type { FinalExecutionOutcome } from 'near-api-js/lib/providers';
+import type {TransactionParams } from './types';
 
 const nearConfig = {
     networkId: 'default',
@@ -9,7 +10,7 @@ const nearConfig = {
     keyPath: '~/.near/credentials/default/test.near.json',
 };
 
-export const sendTransaction = async (params: TransactionParams) => {
+export const sendTransaction= async (params: TransactionParams): Promise<FinalExecutionOutcome | undefined>  => {
     try {
         // Initiate the transaction, notice the amount is in near units
         console.log(`Sending ${params.amount.toString()} tokens to ${params.receiver}`);
@@ -20,7 +21,10 @@ export const sendTransaction = async (params: TransactionParams) => {
     }
 };
 
-export const getTransactionStatus = async (txHash: Uint8Array, sender: string) => {
+export const getTransactionStatus = async (txHash: Uint8Array, sender: string): Promise<{
+    status: string;
+    transaction: FinalExecutionOutcome;
+}> => {
     const near = await connect(nearConfig);
     const provider = near.connection.provider;
 
@@ -33,7 +37,10 @@ export const getTransactionStatus = async (txHash: Uint8Array, sender: string) =
     }
 };
 
-export const signAndSendTransaction = async (receiverId: string, sender: string, actions: any[]) => {
+export const signAndSendTransaction = async (receiverId: string, sender: string, actions: any[]): Promise<{
+    status: string;
+    transaction: FinalExecutionOutcome;
+}> => {
     const near = await connect(nearConfig);
     const account = new Account(near.connection, sender);
 

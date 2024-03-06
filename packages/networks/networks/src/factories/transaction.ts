@@ -22,11 +22,11 @@ export class NearTransactionFactory extends TransactionFactory<NearTransaction> 
 export class ChainTransactionFactory {
     static createTransaction<K>(chain: ChainTicker, connection: ChainConnection): K {
         if (chain === ChainTickers.SOL) {
-            return new SolanaTransactionFactory().createTransaction(connection as SolanaConnection) as K;
+            return new SolanaTransactionFactory().createTransaction(connection as SolanaConnection) as unknown as K;
         }
 
         if (chain === ChainTickers.NEAR) {
-            return new NearTransactionFactory().createTransaction(connection as NearConnection) as K;
+            return new NearTransactionFactory().createTransaction(connection as NearConnection) as unknown as K;
         }
 
         throw new Error('Unsupported chain');

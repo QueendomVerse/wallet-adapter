@@ -1,41 +1,18 @@
 import type {
     Commitment,
-    GetProgramAccountsResponse,
-    GetTokenAccountsByOwnerConfig,
-    RpcResponseAndContext,
     SendOptions,
     Signer,
-    TokenAccountsFilter,
     TransactionSignature,
-    ConnectionConfig,
+    ConnectionConfig
 } from '@solana/web3.js';
-import { Connection, PublicKey, Keypair, Transaction } from '@solana/web3.js';
+import { Keypair, Transaction } from '@solana/web3.js';
 
-import type { Chain } from '../../chains';
-import { ChainNetworks } from '../../chains';
 import type { IKeypair } from '../../types';
 import type { Creator, Attribute, FileOrString } from './metadata';
 import { MetadataCategory } from './metadata';
-
-export class SolanaConnection extends Connection {
-    public chain: Chain = ChainNetworks.SOL;
-    public sendRawTransaction = async <TxSig extends SolanaTransactionSignature>(
-        rawTransaction: Buffer | number[] | Uint8Array,
-        options?: SolanaSendOptions | undefined
-    ): Promise<TxSig> => {
-        return (await super.sendRawTransaction(rawTransaction, options)) as TxSig;
-    };
-    public getTokenAccountsByOwner = async (
-        ownerAddress: PublicKey,
-        filter: TokenAccountsFilter,
-        commitmentOrConfig?: SolanaCommitment | GetTokenAccountsByOwnerConfig
-    ): Promise<RpcResponseAndContext<GetProgramAccountsResponse>> =>
-        await super.getTokenAccountsByOwner(ownerAddress, filter, commitmentOrConfig);
-}
+import { SolanaPublicKey } from './publicKey';
 
 export type SolanaCommitment = Commitment;
-
-export class SolanaPublicKey extends PublicKey {}
 
 // export class SolanaPublicKey implements IPublicKey {
 //     private publicKey: PublicKey;
@@ -66,6 +43,11 @@ export class SolanaKeypair implements IKeypair {
         return this.keypair.secretKey;
     }
 
+    static generate = (): SolanaKeypair =>  {
+      const keypair = Keypair.generate();
+      return new SolanaKeypair(keypair.secretKey);
+    }
+
     static fromSecretKey(secretKey: Uint8Array): SolanaKeypair {
         return new SolanaKeypair(secretKey);
     }
@@ -82,7 +64,7 @@ export interface SolanaSendOptions extends SendOptions {
 export interface SolanaSigner extends Signer {}
 
 export class SolanaTransaction extends Transaction {
-    public feePayer?: PublicKey | undefined = this.feePayer;
+    public feePayer?: SolanaPublicKey | undefined = this.feePayer;
     public partialSign = (...signers: Array<SolanaSigner>): void => {
         super.partialSign(...signers);
         super.serialize();

@@ -11,5 +11,7 @@ docs
 
 .parcel-cache
 
+.turbo
+
 wip
 **/*.wip

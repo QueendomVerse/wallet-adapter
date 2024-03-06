@@ -4,6 +4,7 @@ export type {
     SendNear,
     NearAccount,
     NearWallet,
+    NearWalletSigner,
     ContractWithMint as NearContractWithMint,
     ConnectionContextState as NearConnectionContextState,
     MintNft as MintNearNft,
@@ -13,7 +14,9 @@ export type {
     BrowserWalletConfig as NearBrowserWalletConfig,
     Gas as NearGas,
     Config as NearConfig,
+    BrowserWalletAdapterConfig as NearBrowserWalletAdapterConfig,
     MintNft as NearMintNft,
+    AccountParams as NearAccountParams
 } from '@mindblox-wallet-adapter/near';
 export {
     walletName as nearWalletName,
@@ -21,10 +24,10 @@ export {
     WalletContext as NearWalletContext,
     ConnectionContext as NearConnectionContext,
     ConnectionProvider as NearConnectionProvider,
-    BrowserWalletAdapterConfig as NearBrowserWalletAdapterConfig,
     BrowserWalletAdapter as NearBrowserWalletAdapter,
     WalletAdapterNetwork as NearWalletAdapterNetwork,
     useConnection as useNearConnection,
+    useAccount as useNearAccount,
     getAccount as getNearAccount,
     getImplicitAccountId as getNearImplicitAccountId,
     getBalance as getNearBalance,

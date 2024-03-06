@@ -1,0 +1,54 @@
+{
+    "name": "@mindblox-wallet-adapter/react",
+    "version": "0.15.9",
+    "author": "Phillip Strefling <phillip@queendom.io>",
+    "repository": "https://github.com/QueendomVerse/wallet-adapter",
+    "license": "Apache-2.0",
+    "type": "module",
+    "sideEffects": false,
+    "main": "lib/cjs/index.js",
+    "module": "lib/esm/index.js",
+    "types": "lib/types/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./lib/types/*.d.ts",
+            "require": "./lib/cjs/*.js",
+            "import": "./lib/esm/*.js",
+            "default": "./lib/esm/*.js"
+        },
+        "./package.json": "./package.json"
+    },
+    "files": [
+        "lib",
+        "src",
+        "LICENSE"
+    ],
+    "publishConfig": {
+        "access": "public"
+    },
+    "scripts": {
+        "clean": "shx rm -rf lib/*",
+        "build": "tsc -p tsconfig.json && tsc-esm -p tsconfig.json && tsc -p tsconfig.cjs.json",
+        "test": "jest",
+        "postbuild": "echo '{\"type\":\"commonjs\"}' | npx json > lib/cjs/package.json && echo '{\"type\":\"module\"} ' | npx json > lib/esm/package.json"
+    },
+    "peerDependencies": {
+        "@solana/web3.js": "*",
+        "react": "*"
+    },
+    "dependencies": {
+        "@mindblox-wallet-adapter/base": "*",
+        "@react-native-async-storage/async-storage": "^1.19.0",
+        "concurrently": "^8.2.0",
+        "less-watch-compiler": "^1.16.3"
+    },
+    "devDependencies": {
+        "@solana/web3.js": "^1.78.0",
+        "@testing-library/react": "^14.0.0",
+        "jest": "^25.5.4",
+        "jest-localstorage-mock": "^2.4.26",
+        "react": "^18.2.0",
+        "tsc-esm": "^1.0.4",
+        "tsconfig-paths": "^4.2.0"
+    }
+}

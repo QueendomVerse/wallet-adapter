@@ -1,2 +1,2 @@
-export * from './keys';
-export * from './math';
+export * from './keys.js';
+export * from './math.js';

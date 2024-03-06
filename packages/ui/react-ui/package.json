@@ -1,0 +1,59 @@
+{
+    "name": "@mindblox-wallet-adapter/react-ui",
+    "version": "0.9.32",
+    "author": "Phillip Strefling <phillip@chiefmetaverse.co>",
+    "repository": "https://github.com/QueendomVerse/wallet-adapter",
+    "license": "Apache-2.0",
+    "publishConfig": {
+        "access": "public"
+    },
+    "files": [
+        "lib",
+        "src",
+        "LICENSE",
+        "styles.css"
+    ],
+    "engines": {
+        "node": ">=16"
+    },
+    "type": "module",
+    "sideEffects": [
+        "styles.css"
+    ],
+    "main": "./lib/cjs/index.js",
+    "module": "./lib/esm/index.js",
+    "types": "./lib/types/index.d.ts",
+    "exports": {
+        ".": {
+            "import": "./lib/esm/index.js",
+            "require": "./lib/cjs/index.js",
+            "types": "./lib/types/index.d.ts"
+        },
+        "./styles.css": "./styles.css"
+    },
+    "scripts": {
+        "build": "tsc --build --verbose && pnpm run package",
+        "clean": "shx mkdir -p lib && rimraf lib",
+        "lint": "prettier --check 'src/{*,**/*}.{ts,tsx,js,jsx,json}' && eslint",
+        "package": "shx mkdir -p lib/cjs && shx echo '{ \"type\": \"commonjs\" }' > lib/cjs/package.json"
+    },
+    "peerDependencies": {
+        "@solana/web3.js": "^1.77.3",
+        "react": "*",
+        "react-dom": "*"
+    },
+    "dependencies": {
+        "@mindblox-wallet-adapter/base": "workspace:^",
+        "@mindblox-wallet-adapter/solana": "workspace:^",
+        "@mindblox-wallet-adapter/base-ui": "workspace:^",
+        "@mindblox-wallet-adapter/react": "workspace:^"
+    },
+    "devDependencies": {
+        "@solana/web3.js": "^1.77.3",
+        "@types/react": "^18.2.15",
+        "@types/react-dom": "^18.2.6",
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0",
+        "shx": "^0.3.4"
+    }
+}

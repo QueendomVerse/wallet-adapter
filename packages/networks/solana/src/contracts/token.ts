@@ -1,13 +1,21 @@
-import { MintLayout, AccountLayout, Token } from '@solana/spl-token';
+import { MintLayout, AccountLayout } from '@solana/spl-token';
 import { SystemProgram, Keypair } from '@solana/web3.js';
 
 export type WalletSigner = Pick<
-    WalletAdapter<SolanaPublicKey, SolanaTransaction, SolanaConnection, SolanaTransactionSignature>,
+    SolanaAdapter,
     'publicKey' | 'sendTransaction'
 >;
 
-import type { SolanaConnection, SolanaTransactionSignature, WalletAdapter } from '@mindblox-wallet-adapter/base';
+import type { SolanaConnection  } from '@mindblox-wallet-adapter/base';
 import { SolanaPublicKey, SolanaTransaction, WalletNotConnectedError } from '@mindblox-wallet-adapter/base';
+import type { SolanaAdapter } from '../providers';
+import { AuthorityType,
+    createInitializeAccountInstruction,
+    createInitializeMintInstruction,
+    createMintToInstruction,
+    createSetAuthorityInstruction
+} from '@solana/spl-token';
+
 
 export const mintNFT = async (
     connection: SolanaConnection,
@@ -54,29 +62,29 @@ export const mintNFT = async (
     );
 
     transaction.add(
-        Token.createInitMintInstruction(TOKEN_PROGRAM_ID, mintAccount.publicKey, 0, wallet.publicKey, wallet.publicKey)
+        createInitializeMintInstruction(mintAccount.publicKey, 0, wallet.publicKey, wallet.publicKey, TOKEN_PROGRAM_ID)
     );
     transaction.add(
-        Token.createInitAccountInstruction(TOKEN_PROGRAM_ID, mintAccount.publicKey, tokenAccount.publicKey, owner)
+        createInitializeAccountInstruction(mintAccount.publicKey, tokenAccount.publicKey, owner, TOKEN_PROGRAM_ID)
     );
     transaction.add(
-        Token.createMintToInstruction(
-            TOKEN_PROGRAM_ID,
+        createMintToInstruction(
             mintAccount.publicKey,
             tokenAccount.publicKey,
             wallet.publicKey,
+            1,
             [],
-            1
+            TOKEN_PROGRAM_ID,
         )
     );
     transaction.add(
-        Token.createSetAuthorityInstruction(
-            TOKEN_PROGRAM_ID,
+        createSetAuthorityInstruction(
             mintAccount.publicKey,
-            null,
-            'MintTokens',
             wallet.publicKey,
-            []
+            AuthorityType.MintTokens,
+            null,
+            [],
+            TOKEN_PROGRAM_ID,
         )
     );
 

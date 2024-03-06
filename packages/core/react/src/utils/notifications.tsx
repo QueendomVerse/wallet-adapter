@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 import React from 'react';
 import { notification } from 'antd';
-import 'react-toastify/dist/ReactToastify.min.css';
 
 interface NotificationArgsProps {
     type?: NotificationType;
@@ -17,10 +16,17 @@ interface NotificationArgsProps {
     style?: React.CSSProperties;
 }
 
-export type NotificationType = 'success' | 'info' | 'warning' | 'error' | undefined;
+const NotificationTypes = [
+    'success',
+    'info',
+    'warning',
+    'error',
+  ] as const;
+  
+export type NotificationType = typeof NotificationTypes[number] | undefined;
 
 export const notify = ({ type = 'info', message, description, ...props }: NotificationArgsProps) => {
-    if (type && ['info', 'otherTypes'].includes(type)) {
+    if (type && NotificationTypes.includes(type)) {
         notification[type]({
             message: <span>{message as ReactNode}</span>,
             description: <span>{description as ReactNode}</span>,

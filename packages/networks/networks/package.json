@@ -4,61 +4,41 @@
     "author": "Phillip Strefling <phillip@chiefmetaverse.co>",
     "repository": "https://github.com/QueendomVerse/wallet-adapter",
     "license": "Apache-2.0",
-    "type": "module",
-    "sideEffects": false,
-    "main": "lib/cjs/index.js",
-    "module": "lib/esm/index.mjs",
-    "types": "lib/types/index.d.ts",
-    "exports": {
-        "require": "./lib/cjs/index.js",
-        "import": "./lib/esm/index.mjs",
-        "types": "./lib/types/index.d.ts"
+    "publishConfig": {
+        "access": "public"
     },
     "files": [
         "lib",
         "src",
         "LICENSE"
     ],
-    "publishConfig": {
-        "access": "public"
+    "engines": {
+        "node": ">=16"
+    },
+    "type": "module",
+    "sideEffects": false,
+    "main": "./lib/cjs/index.js",
+    "module": "./lib/esm/index.js",
+    "types": "./lib/types/index.d.ts",
+    "exports": {
+        "require": "./lib/cjs/index.js",
+        "import": "./lib/esm/index.js",
+        "types": "./lib/types/index.d.ts"
     },
     "scripts": {
-        "clean": "shx rm -rf lib/*",
-        "build": "tsc -p tsconfig.json && tsc-esm -p tsconfig.json && tsc -p tsconfig.cjs.json",
-        "postbuild": "echo '{\"type\":\"commonjs\"}' | npx json > lib/cjs/package.json && echo '{\"type\":\"module\"} ' | npx json > lib/esm/package.json"
-    },
-    "peerDependencies": {
-        "@solana/web3.js": "*",
-        "near-api-js": "*",
-        "react": "*"
+        "build": "tsc --build --verbose && pnpm run package",
+        "clean": "shx mkdir -p lib && rimraf lib",
+        "lint": "prettier --check 'src/{*,**/*}.{ts,tsx,js,jsx,json}' && eslint",
+        "package": "shx mkdir -p lib/cjs && shx echo '{ \"type\": \"commonjs\" }' > lib/cjs/package.json"
     },
     "dependencies": {
-        "@ant-design/icons": "^5.1.4",
-        "@mindblox-wallet-adapter/base": "*",
-        "@mindblox-wallet-adapter/phantom": "*",
-        "@mindblox-wallet-adapter/react": "*",
-        "@mindblox-wallet-adapter/solana": "*",
-        "@mindblox-wallet-adapter/near": "*",
-        "@solana/buffer-layout": "^4.0.1",
-        "@solana/spl-token-registry": "^0.2.4574",
-        "@types/react-dom": "^18.2.7",
-        "bigint-buffer": "^1.1.5",
-        "ethers": "^6.6.2",
-        "formdata-node": "^5.0.1",
-        "jayson": "^4.1.0",
-        "js-base64": "^3.7.5",
-        "react-redux": "^8.1.1",
-        "rpc-websocket": "^0.7.6",
-        "rpc-websockets": "^7.5.1",
-        "secp256k1": "^5.0.0",
-        "superstruct": "^1.0.3",
-        "use-between": "^1.3.5"
+        "@mindblox-wallet-adapter/base": "workspace:^",
+        "@mindblox-wallet-adapter/near": "workspace:^",
+        "@mindblox-wallet-adapter/phantom": "workspace:^",
+        "@mindblox-wallet-adapter/react": "workspace:^",
+        "@mindblox-wallet-adapter/solana": "workspace:^"
     },
     "devDependencies": {
-        "@solana/web3.js": "^1.78.0",
-        "@types/secp256k1": "^4.0.3",
-        "near-api-js": "^2.1.4",
-        "react": "^18.2.0",
-        "tsc-esm": "^1.0.4"
+        "shx": "^0.3.4"
     }
 }

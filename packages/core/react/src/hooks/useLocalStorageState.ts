@@ -70,11 +70,35 @@ export const useLocalStorageStringState = (defaultState = '', key?: string): [st
     return [state, setNewState];
 };
 
+// export const useLocalStorageState = <T>(defaultState: T, key?: string): [T, (newState: T) => void] => {
+//     const [stringState, setStringState] = useLocalStorageStringState(key, JSON.stringify(defaultState));
+
+//     return [
+//         useMemo(() => (stringState ? (JSON.parse(stringState) as T) : defaultState), [stringState, defaultState]),
+//         (newState: T) => setStringState(JSON.stringify(newState)),
+//     ];
+// };
+
+
 export const useLocalStorageState = <T>(defaultState: T, key?: string): [T, (newState: T) => void] => {
     const [stringState, setStringState] = useLocalStorageStringState(key, JSON.stringify(defaultState));
-
-    return [
-        useMemo(() => (stringState ? (JSON.parse(stringState) as T) : defaultState), [stringState, defaultState]),
-        (newState: T) => setStringState(JSON.stringify(newState)),
-    ];
-};
+  
+    const parsedState = useMemo(() => {
+      try {
+        return stringState ? JSON.parse(stringState) : defaultState;
+      } catch (error) {
+        console.error("Error parsing JSON data from localStorage:", error);
+        return defaultState;
+      }
+    }, [stringState, defaultState]);
+  
+    const setState = (newState: T) => {
+      try {
+        setStringState(JSON.stringify(newState));
+      } catch (error) {
+        console.error("Error serializing data to JSON:", error);
+      }
+    };
+  
+    return [parsedState, setState];
+  };

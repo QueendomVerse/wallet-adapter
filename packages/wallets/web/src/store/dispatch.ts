@@ -1,7 +1,6 @@
 import { configureStore } from '@reduxjs/toolkit';
 
 import mainReducer from './reducer';
-import { useDispatch } from 'react-redux';
 
 export const store = configureStore({
     reducer: mainReducer,

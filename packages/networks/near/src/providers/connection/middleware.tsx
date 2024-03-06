@@ -40,18 +40,16 @@ import {
     connect as nearConnect,
 } from 'near-api-js';
 import { getNonFungibleTokenList } from './api';
-import { sleep } from '@saberhq/solana-contrib';
 import type {
     TransactionSignature,
     Blockhash,
     CompiledInstruction,
     // FeeCalculator
-} from '@solana/web3.js';
+    TransactionStatus} from '@solana/web3.js';
 import {
     // PublicKey as NearPublicKey,
     // Transaction as NearTransaction,
     SolanaJSONRPCError,
-    TransactionStatus,
     TransactionExpiredBlockheightExceededError,
     TransactionExpiredTimeoutError,
     EpochSchedule,
@@ -65,7 +63,7 @@ import { makeWebsocketUrl } from './core/utils/makeWebsocketUrl';
 import assert from './core/utils/assert';
 import { MS_PER_SLOT } from './core/timing';
 import type { NearTransaction } from '@mindblox-wallet-adapter/base';
-import { NearPublicKey } from '@mindblox-wallet-adapter/base';
+import { NearPublicKey, sleep } from '@mindblox-wallet-adapter/base';
 // import NonFungibleTokens  from './network/NonFungibleTokens';
 // import { listLikelyNfts } from './network/listLikelyAssets';
 
@@ -2491,7 +2489,7 @@ export type FetchFn = typeof fetch;
 export type FetchMiddleware = (
     info: Parameters<FetchFn>[0],
     init: Parameters<FetchFn>[1],
-    fetch: (...a: Parameters<FetchFn>) => void
+    fetch?: (...a: Parameters<FetchFn>) => void
 ) => void;
 
 /**
@@ -3316,7 +3314,7 @@ export class Connection extends NearConnection {
     async confirmTransaction(
         strategy: BlockheightBasedTransactionConfirmationStrategy | TransactionSignature,
         commitment?: Commitment
-    ): Promise<RpcResponseAndContext<SignatureResult>> {
+    ): Promise<RpcResponseAndContext<SignatureResult> | null> {
         let rawSignature: string;
 
         if (typeof strategy == 'string') {
@@ -3355,7 +3353,7 @@ export class Connection extends NearConnection {
                             value: result,
                         };
                         done = true;
-                        resolve({ __type: TransactionStatus.PROCESSED, response });
+                        resolve({ __type: 1, response });
                     },
                     subscriptionCommitment
                 );
@@ -3385,7 +3383,7 @@ export class Connection extends NearConnection {
                     case 'root':
                 }
 
-                timeoutId = setTimeout(() => resolve({ __type: TransactionStatus.TIMED_OUT, timeoutMs }), timeoutMs);
+                timeoutId = setTimeout(() => resolve({ __type: 2, timeoutMs }), timeoutMs);
             } else {
                 const config = strategy as BlockheightBasedTransactionConfirmationStrategy;
                 const checkBlockHeight = async () => {
@@ -3405,21 +3403,21 @@ export class Connection extends NearConnection {
                         currentBlockHeight = await checkBlockHeight();
                         if (done) return;
                     }
-                    resolve({ __type: TransactionStatus.BLOCKHEIGHT_EXCEEDED });
+                    resolve({ __type: 0 });
                 })();
             }
         });
 
-        let result: RpcResponseAndContext<SignatureResult>;
+        let result: RpcResponseAndContext<SignatureResult> | null = null;
         try {
             const outcome = await Promise.race([confirmationPromise, expiryPromise]);
             switch (outcome.__type) {
-                case TransactionStatus.BLOCKHEIGHT_EXCEEDED:
+                case 0:
                     throw new TransactionExpiredBlockheightExceededError(rawSignature);
-                case TransactionStatus.PROCESSED:
+                case 1:
                     result = outcome.response;
                     break;
-                case TransactionStatus.TIMED_OUT:
+                case 2:
                     throw new TransactionExpiredTimeoutError(rawSignature, outcome.timeoutMs / 1000);
             }
         } finally {

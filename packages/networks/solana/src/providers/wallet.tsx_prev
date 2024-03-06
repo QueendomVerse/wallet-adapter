@@ -44,7 +44,7 @@ import { useWallet, WalletContext } from '../hooks/useWallet';
 
 const { Panel } = Collapse;
 
-const ModalComponent: FC<ModalProps> = ({ modalContent, modalFooter, visible, onCancel, closable, centered }) => {
+const ModalComponent: React.FC<ModalProps> = ({ modalContent, modalFooter, visible, onCancel, closable, centered }) => {
     return (
         <Modal centered={centered} visible={visible} onCancel={onCancel} closable={closable}>
             {modalContent}
@@ -130,7 +130,7 @@ const initialState: {
     connected: false,
 };
 
-export const WalletModal: FC = () => {
+export const WalletModal: React.FC = () => {
     const {
         wallets,
         // wallet: selected,
@@ -245,7 +245,7 @@ export const WalletModal: FC = () => {
     );
 };
 
-export const WalletModalProvider: FC<{ children: ReactNode }> = ({ children }) => {
+export const WalletModalProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     // const { wallet, connected, disconnect, publicKey } = useWallet();
     const { wallet, publicKey, disconnect } = useWallet();
 
@@ -323,7 +323,7 @@ export const WalletModalProvider: FC<{ children: ReactNode }> = ({ children }) =
     );
 };
 
-export const WalletProvider: FC<WalletProviderProps> = ({
+export const WalletProvider: React.FC<WalletProviderProps> = ({
     children,
     wallets: adapters,
     autoConnect = false,

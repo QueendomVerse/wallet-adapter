@@ -1,6 +1,5 @@
 import React from 'react';
 import type {
-    Keypair,
     Commitment,
     RpcResponseAndContext,
     SignatureStatus,
@@ -19,7 +18,7 @@ import {
 } from '@solana/web3.js';
 import { Base64 } from 'js-base64';
 
-import type { SolanaConnection, SolanaPublicKey, SolanaTransactionSignature } from '@mindblox-wallet-adapter/base';
+import type { SolanaConnection, SolanaKeypair, SolanaPublicKey, SolanaTransactionSignature } from '@mindblox-wallet-adapter/base';
 import {
     WalletError,
     WalletPublicKeyError,
@@ -55,12 +54,12 @@ interface BaseTransactionParams {
 
 interface BaseSendTransactionsParams extends BaseTransactionParams {
     instructionSet: TransactionInstruction[][];
-    signersSet: Keypair[][];
+    signersSet: SolanaKeypair[][];
 }
 
 interface BaseSendTransactionParams extends BaseTransactionParams {
     instructions: TransactionInstruction[];
-    signers: Keypair[];
+    signers: SolanaKeypair[];
     block?: BlockhashAndFeeCalculator;
 }
 
@@ -261,7 +260,7 @@ export const sendTransactionsInChunks = async ({
 }: SendTransactionsInChunksParams): Promise<number> => {
     if (!wallet.publicKey) throw new WalletPublicKeyError('Wallet Public Keys Not Defined!');
     let instructionsChunk: TransactionInstruction[][][] = [instructionSet];
-    let signersChunk: Keypair[][][] = [signersSet];
+    let signersChunk: SolanaKeypair[][][] = [signersSet];
 
     instructionsChunk = chunks(instructionSet, batchSize);
     signersChunk = chunks(signersSet, batchSize);

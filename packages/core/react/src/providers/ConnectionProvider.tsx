@@ -1,22 +1,20 @@
 import type { ReactNode } from 'react';
 import React, { useMemo } from 'react';
 import { ConnectionContext } from '../hooks';
-import type { ChainConnectionConfig, ChainConnection } from '@mindblox-wallet-adapter/base';
+import type { ChainConnection } from '@mindblox-wallet-adapter/base';
 
 export interface ConnectionProviderProps<Connection extends ChainConnection> {
     children: ReactNode;
-    connectionConstructor: new (endpoint: string, config: ChainConnectionConfig) => Connection;
+    connectionConstructor: new (endpoint: string) => Connection;
     endpoint: string;
-    config: ChainConnectionConfig;
 }
 
 export const ConnectionProvider = <Connection extends ChainConnection>({
     children,
     connectionConstructor,
-    endpoint,
-    config,
+    endpoint
 }: ConnectionProviderProps<Connection>): JSX.Element => {
-    const connection = useMemo(() => new connectionConstructor(endpoint, config), [endpoint, config]);
+    const connection = useMemo(() => new connectionConstructor(endpoint), [endpoint]);
 
     return <ConnectionContext.Provider value={{ connection }}>{children}</ConnectionContext.Provider>;
 };

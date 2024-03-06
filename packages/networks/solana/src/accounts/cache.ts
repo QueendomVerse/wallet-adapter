@@ -1,5 +1,5 @@
 import type { AccountInfo } from '@solana/web3.js';
-import type { MintInfo } from '@solana/spl-token';
+import type { Account as MintAccount, RawMint } from '@solana/spl-token';
 
 import type { SolanaConnection } from '@mindblox-wallet-adapter/base';
 import { SolanaPublicKey } from '@mindblox-wallet-adapter/base';
@@ -11,9 +11,9 @@ import type { TokenAccount } from '../types';
 import { AccountEmitter } from './emitter';
 
 export const genericCache = new Map<string, ParsedAccountBase>();
-const mintCache = new Map<string, MintInfo>();
+const mintCache = new Map<string, RawMint>();
 const pendingCalls = new Map<string, Promise<ParsedAccountBase>>();
-const pendingMintCalls = new Map<string, Promise<MintInfo>>();
+const pendingMintCalls = new Map<string, Promise<MintAccount>>();
 
 const keyToAccountParser = new Map<string, AccountParser>();
 
@@ -153,7 +153,7 @@ export const cache = {
 
             mintCache.set(address, data);
             return data;
-        }) as Promise<MintInfo>;
+        }) as Promise<MintAccount>;
         pendingMintCalls.set(address, query as any);
 
         return query;

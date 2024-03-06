@@ -11,6 +11,7 @@ import type {
     ChainTransactionSignature,
     SendTransactionOptions,
     Wallet,
+    WalletAdapter,
     WalletError,
     WalletName,
 } from '@mindblox-wallet-adapter/base';
@@ -30,7 +31,7 @@ export interface WalletProviderProps<
     TransactionSignature extends ChainTransactionSignature
 > {
     children: ReactNode;
-    wallets: Adapter<PublicKey, Transaction, Connection, TransactionSignature>[];
+    wallets: WalletAdapter<PublicKey, Transaction, Connection, TransactionSignature>[];
     autoConnect?: boolean;
     onError?: (error: WalletError) => void;
     localStorageKey?: string;
@@ -48,7 +49,7 @@ const initialState: {
     connected: false,
 };
 
-export const WalletProvider: FC<
+export const WalletProvider: React.FC<
     WalletProviderProps<ChainPublicKey, ChainTransaction, ChainConnection, ChainTransactionSignature>
 > = ({ children, wallets: adapters, autoConnect = false, onError, localStorageKey = 'walletName' }) => {
     const [name, setName] = useLocalStorage<WalletName | null>(localStorageKey, null);
@@ -71,7 +72,7 @@ export const WalletProvider: FC<
     // When the wallets change, start to listen for changes to their `readyState`
     useEffect(() => {
         const handleReadyStateChange = (
-            adapter: Adapter<ChainPublicKey, ChainTransaction, ChainConnection, ChainTransactionSignature>,
+            adapter: WalletAdapter<ChainPublicKey, ChainTransaction, ChainConnection, ChainTransactionSignature>,
             readyState: WalletReadyState
         ) => {
             setWallets((prevWallets) => {

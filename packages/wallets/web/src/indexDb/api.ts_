@@ -1,0 +1,614 @@
+import type { ApiItem, ApiProfile, ApiUser, LocalMintStore, LocalWalletStore } from '@mindblox-wallet-adapter/base';
+import { ArtType } from '@mindblox-wallet-adapter/base';
+import { notify } from '@mindblox-wallet-adapter/react';
+
+import {
+    deleteDatabase,
+    readAllUsers,
+    clearAllUserTables,
+    loadUserProfiles,
+    loadWalletsByPublicKey,
+    loadUsersByWalletAddress,
+    loadUsersByEmail,
+    loadUsersById,
+    loadUserWallets,
+    createUser,
+    readUser,
+    // amendUser,
+    modifyUser,
+    // addUserWallet,
+    // createProfile,
+    // amendProfile,
+    readAllWallets,
+    loadWalletMints,
+    createWallet,
+    // readWallet,
+    // amendWallet,
+    modifyWallet,
+    deleteWallet,
+    createMint,
+    amendItem,
+    createItem,
+    loadUserItems,
+    readAllItems,
+    createProfile,
+    deleteUser,
+    amendProfile,
+} from './utils';
+import { IndexDbAppDatabase, IndexDbProfile } from './db';
+import { IndexDbUser, IndexDbWallet, IndexDbMint, IndexDbItem } from './db';
+
+// Interfaces
+// Helper functions
+
+const hasDuplicates = <T>(arr: T[]): boolean => (arr.length > 1 ? true : false);
+
+// General database functions
+
+export class IndexDatabase {
+    private _db: IndexDbAppDatabase;
+
+    constructor() {
+        this._db = new IndexDbAppDatabase();
+    }
+
+    removeAllData = async (): Promise<void> => {
+        console.warn(`IndexDB: deleting database ...`);
+        return await deleteDatabase(this._db).catch((error) => {
+            console.error(`IndexDB: failed to remove database: ${error}`);
+            return error;
+        });
+    };
+
+    // User database functions
+
+    removeAllUserData = async (): Promise<void> => {
+        console.warn(`IndexDB: deleting all user tables ...`);
+        return await clearAllUserTables(this._db).catch((error) => {
+            console.error(`IndexDB: failed to remove user tables: ${error}`);
+            return error;
+        });
+    };
+
+    getSavedUsers = async (): Promise<IndexDbUser[]> => {
+        console.debug(`IndexDB: getting users ...`);
+        const dbUsers = await this._db.transaction('rw', this._db.users, async (): Promise<IndexDbUser[]> => {
+            return await readAllUsers(this._db).catch((error) => {
+                console.warn(`IndexDB: unable to get saved users: ${error}`);
+                notify({
+                    message: 'Local Storage',
+                    description: 'Unable to read the local user database. Is your browser in private mode?',
+                    type: 'error',
+                });
+                return error;
+            });
+        });
+        return dbUsers;
+    };
+
+    getSavedUser = async (gid: string): Promise<IndexDbUser | undefined> => {
+        console.debug(`IndexDB: getting user gid: ${gid} ...`);
+        const dbUser = await this._db.transaction('rw', this._db.users, async (): Promise<IndexDbUser | undefined> => {
+            // fetch the user
+            const currentUser = await readUser(this._db, gid);
+            console.debug(`IndexDB: fetched saved user: ${currentUser?.gid ? `gid: ${currentUser.gid}` : 'failed'}`);
+            return currentUser;
+        });
+        return dbUser;
+    };
+
+    getSavedUserByAddress = async (walletAddress: string): Promise<IndexDbUser | undefined> => {
+        console.debug(`IndexDB: getting user: ${walletAddress}`);
+        const dbUsers = await this._db.transaction('rw', this._db.users, async (): Promise<IndexDbUser[]> => {
+            return await loadUsersByWalletAddress(this._db, walletAddress);
+        });
+        if (hasDuplicates(dbUsers)) {
+            console.warn(`IndexDB: multiple users found under wallet address: ${walletAddress}!`);
+            return;
+        }
+        return dbUsers.find((usr) => usr.walletAddress === walletAddress);
+    };
+
+    getSavedUserByEmail = async (email: string): Promise<IndexDbUser | undefined> => {
+        console.debug(`IndexDB: getting user: ${email}`);
+        const usersByEmail = await loadUsersByEmail(this._db, email);
+        if (!usersByEmail) {
+            return undefined;
+        }
+        const dbUsers = await this._db.transaction('rw', this._db.users, async (): Promise<IndexDbUser[]> => {
+            return usersByEmail;
+        });
+        if (hasDuplicates(dbUsers)) {
+            console.warn(`IndexDB: multiple users found under email: ${email}!`);
+            return;
+        }
+        return dbUsers.find((usr) => usr.email === email);
+    };
+
+    getSavedUserById = async (id: string): Promise<IndexDbUser | undefined> => {
+        console.debug(`IndexDB: getting user id: ${id}`);
+        const usersById = await loadUsersById(this._db, id);
+        if (!usersById) {
+            return undefined;
+        }
+        const dbUsers = await this._db.transaction('rw', this._db.users, async (): Promise<IndexDbUser[]> => {
+            return usersById;
+        });
+        if (hasDuplicates(dbUsers)) {
+            console.warn(`IndexDB: multiple users found under id: ${id}!`);
+            return;
+        }
+        return dbUsers.find((usr) => usr.id === id);
+    };
+
+    getSavedUserMatches = async (email: string): Promise<IndexDbUser[] | undefined> => {
+        console.debug(`IndexDB: getting saved users matching: ${email}`);
+        const dbUsers = await this._db.transaction('rw', this._db.users, async (): Promise<IndexDbUser[]> => {
+            return await loadUsersByEmail(this._db, email);
+        });
+        return dbUsers.filter((usr) => usr.email === email);
+    };
+
+    saveUser = async (apiUser: ApiUser, wallets: LocalWalletStore[]): Promise<IndexDbUser> => {
+        console.debug(`IndexDB: saving user id: ${apiUser.id} ...`);
+        const dbUser = await this._db.transaction('rw', this._db.users, async (): Promise<IndexDbUser> => {
+            const {
+                id,
+                name,
+                email,
+                role,
+                walletAddress,
+                image,
+                avatar,
+                banner,
+                roles,
+                settings,
+                isSelected,
+                password,
+                hashedPassword,
+                createdAt,
+                updatedAt,
+            } = apiUser;
+            const newUser = new IndexDbUser(
+                id,
+                name,
+                email,
+                role,
+                walletAddress,
+                image ?? '',
+                avatar ?? '',
+                banner ?? '',
+                roles,
+                settings,
+                isSelected ?? false,
+                createdAt,
+                updatedAt,
+                password,
+                hashedPassword
+            );
+
+            // create the user
+            const gid = await createUser(this._db, newUser);
+            console.debug(`IndexDB: user saved: ${gid ? `gid: ${gid}` : 'failed'}`);
+            return newUser;
+        });
+
+        // Add wallets to the new user.
+        const updatedUser = {
+            ...dbUser,
+            gid: dbUser.gid,
+            wallets: wallets,
+        } as IndexDbUser;
+
+        const update = await this.updateUser(updatedUser);
+        console.debug(`IndexDB: ${dbUser.email} update: ${update ? 'succeded' : 'failed'}`);
+        return updatedUser;
+    };
+
+    updateUser = async (userObject: IndexDbUser) => {
+        console.debug(`IndexDB: updating user id: ${userObject.id}} ...`);
+        // console.dir(userObject)
+        const result = await this._db.transaction('rw', this._db.users, this._db.profiles, this._db.wallets, this._db.items, async () => {
+            return await modifyUser(this._db, userObject);
+            // return await amendUser(this._db, userObject);
+        });
+        return result;
+    };
+
+    removeUser = async (userObject: IndexDbUser) => {
+        console.debug(`IndexDB: Removing user: ${userObject.email} ...`);
+        const result = await this._db.transaction('rw', this._db.users, this._db.profiles, this._db.wallets, this._db.items, async () => {
+            return await deleteUser(this._db, userObject);
+        });
+        return result;
+    };
+
+    getUserProfiles = async (userId: string): Promise<IndexDbProfile[]> => {
+        console.debug(`IndexDB: getting profile for user id: ${userId} ...`);
+        const dbProfile = await this._db.transaction('rw', this._db.users, this._db.profiles, async (): Promise<IndexDbProfile[]> => {
+            return await loadUserProfiles(userId, this._db);
+        });
+        return dbProfile;
+    };
+
+    saveProfile = async (userId: string, apiProfile: ApiProfile) => {
+        console.debug(`IndexDB: saving profile for user id: ${userId} ...`);
+        const dbProfile = await this._db.transaction('rw', this._db.users, this._db.profiles, async () => {
+            const {
+                id: userId,
+                name,
+                url,
+                bio,
+                twitter,
+                site,
+                email,
+                avatarUrl,
+                walletAddress,
+                createdAt,
+                updatedAt,
+            } = apiProfile;
+            const newProfile = new IndexDbProfile(
+                userId,
+                name,
+                url ?? '',
+                bio ?? '',
+                twitter ?? '',
+                site ?? '',
+                email ?? '',
+                avatarUrl ?? '',
+                walletAddress ?? '',
+                createdAt,
+                updatedAt
+            );
+            const gid = await createProfile(this._db, newProfile);
+            console.debug(`IndexDB: profile saved: ${gid ? `gid: ${gid}` : 'failed'}`);
+            // console.dir(newProfile);
+            return newProfile;
+        });
+        return dbProfile;
+    };
+
+    updateProfile = async (userId: string, apiProfile: ApiProfile) => {
+        console.debug(`IndexDB: updating profile for user id: ${userId} ...`);
+        const dbProfile = await this._db.transaction('rw', this._db.users, this._db.profiles, async () => {
+            const {
+                id: userId,
+                name,
+                url,
+                bio,
+                twitter,
+                site,
+                email,
+                avatarUrl,
+                walletAddress,
+                createdAt,
+                updatedAt,
+            } = apiProfile;
+            const newProfile = new IndexDbProfile(
+                userId,
+                name,
+                url ?? '',
+                bio ?? '',
+                twitter ?? '',
+                site ?? '',
+                email ?? '',
+                avatarUrl ?? '',
+                walletAddress ?? '',
+                createdAt,
+                updatedAt
+            );
+            const gid = await amendProfile(this._db, newProfile);
+            console.debug(`IndexDB: profile updated: ${gid ? `gid: ${gid}` : 'failed'}`);
+            // console.dir(newWallet);
+            return newProfile;
+        });
+        return dbProfile;
+    };
+
+    // Wallet database functions
+    getSavedWallets = async (): Promise<IndexDbWallet[]> => {
+        console.debug(`IndexDB: getting saved wallets ...`);
+        const dbWallet = await this._db.transaction('rw', this._db.wallets, async (): Promise<IndexDbWallet[]> => {
+            return await readAllWallets(this._db).catch((error) => {
+                console.warn(`IndexDB: Unable to get saved wallets: ${error}`);
+                notify({
+                    message: 'Local Storage',
+                    description: 'Unable to read the local wallets database. Is your browser in private mode?',
+                    type: 'error',
+                });
+                return error;
+            });
+        });
+        return dbWallet;
+    };
+
+    getSavedWalletMatches = async (publicKey: string): Promise<IndexDbWallet[] | undefined> => {
+        console.debug(`IndexDB: getting saved wallets matching: ${publicKey}`);
+        const dbWallets = await this._db.transaction('rw', this._db.wallets, async (): Promise<IndexDbWallet[]> => {
+            return await loadWalletsByPublicKey(this._db, publicKey);
+        });
+        return dbWallets.filter((wlt) => wlt.pubKey === publicKey);
+    };
+
+    getSavedWallet = async (publicKey: string): Promise<IndexDbWallet | undefined> => {
+        console.debug(`IndexDB: getting saved wallet: ${publicKey}`);
+        const dbWallets = await this._db.transaction('rw', this._db.wallets, async (): Promise<IndexDbWallet[]> => {
+            return await loadWalletsByPublicKey(this._db, publicKey);
+        });
+        if (hasDuplicates(dbWallets)) {
+            console.warn(`IndexDB: multiple dbWallets found under publicKey: ${publicKey}!`);
+            return;
+        }
+        return dbWallets.find((usr) => usr.pubKey === publicKey);
+    };
+
+    saveWallet = async (lwallet: LocalWalletStore): Promise<IndexDbWallet> => {
+        console.debug(`IndexDB: saving ${lwallet.chain} ${lwallet.label} wallet: ${lwallet.pubKey} ...`);
+        const dbWallet = await this._db.transaction('rw', this._db.wallets, async (): Promise<IndexDbWallet> => {
+            const {
+                chain,
+                label,
+                pubKey,
+                encryptedSeedPhrase,
+                encryptedPrivKey,
+                balance,
+                isSelected,
+                privKey,
+                seed,
+                seedPhrase,
+            } = lwallet;
+
+            const newWallet = new IndexDbWallet(
+                chain,
+                label,
+                pubKey,
+                encryptedSeedPhrase,
+                encryptedPrivKey,
+                balance,
+                isSelected ?? false,
+                privKey,
+                seed,
+                seedPhrase
+            );
+            const gid = await createWallet(this._db, newWallet);
+            console.debug(`IndexDB: wallet saved: ${gid ? `gid: ${gid}` : 'failed'}`);
+            // console.dir(newWallet);
+            return newWallet;
+        });
+        return dbWallet;
+    };
+
+    updateWallet = async (walletObject: IndexDbWallet) => {
+        console.debug(`IndexDB: updating wallet: ${walletObject.pubKey}}...`);
+        const result = await this._db.transaction('rw', this._db.users, this._db.profiles, this._db.wallets, this._db.items, async () => {
+            return await modifyWallet(this._db, walletObject);
+            // return await amendWallet(this._db, walletObject);
+        });
+        return result;
+    };
+
+    removeWallet = async (walletObject: IndexDbWallet) => {
+        console.debug(`IndexDB: Removing wallet: ${walletObject.chain} ${walletObject.label} ${walletObject.pubKey} ...`);
+        const result = await this._db.transaction('rw', this._db.users, this._db.profiles, this._db.wallets, this._db.items, async () => {
+            return await deleteWallet(this._db, walletObject);
+        });
+        return result;
+    };
+
+    getSavedMints = async (walletId: string): Promise<IndexDbMint[]> => {
+        console.debug(`IndexDB: getting wallet ${walletId} mints ...`);
+        const dbMint = await this._db.transaction('rw', this._db.wallets, this._db.mints, async (): Promise<IndexDbMint[]> => {
+            return await loadWalletMints(walletId, this._db).catch((error) => {
+                console.warn(`IndexDB: Unable to get saved mints: ${error}`);
+                notify({
+                    message: 'Local Storage',
+                    description: 'Unable to read the local mints database. Is your browser in private mode?',
+                    type: 'error',
+                });
+                return error;
+            });
+        });
+        return dbMint;
+    };
+
+    saveMint = async (id: string, lMint: LocalMintStore) => {
+        console.debug(`IndexDB: saving mint ${id} ...`);
+        const newMint = await this._db.transaction('rw', this._db.wallets, this._db.mints, async () => {
+            const { mint, owner, address } = lMint;
+            const newMint = new IndexDbMint(id, mint, owner, address);
+            const gid = await createMint(this._db, newMint);
+            console.debug(`IndexDB: mint saved: ${gid ? `gid: ${gid}` : 'failed'}`);
+        });
+
+        return newMint;
+    };
+
+    getUserWallets = async (userId: string): Promise<IndexDbWallet[]> => {
+        console.debug(`IndexDB: getting wallets for user id: ${userId} ...`);
+        const dbWallet = await this._db.transaction('rw', this._db.users, this._db.wallets, async (): Promise<IndexDbWallet[]> => {
+            return await loadUserWallets(userId, this._db);
+        });
+        return dbWallet;
+    };
+
+    // Item database functions
+    getSavedItems = async (): Promise<IndexDbItem[]> => {
+        console.debug(`IndexDB: getting saved items ...`);
+        const dbItems = await this._db.transaction('rw', this._db.items, async (): Promise<IndexDbItem[]> => {
+            return await readAllItems(this._db).catch((error) => {
+                console.warn(`IndexDB: Unable to get saved items: ${error}`);
+                notify({
+                    message: 'Local Storage',
+                    description: 'Unable to read the local items database. Is your browser in private mode?',
+                    type: 'error',
+                });
+                return error;
+            });
+        });
+        return dbItems;
+    };
+
+    saveItem = async (apiItem: ApiItem): Promise<IndexDbItem> => {
+        console.debug(`IndexDB: saving item: ${apiItem.id} ...`);
+        const dbItem = await this._db.transaction('rw', this._db.items, async (): Promise<IndexDbItem> => {
+            const {
+                id,
+                identifier,
+                uri,
+                image,
+                artists,
+                mint,
+                link,
+                external_url,
+                title,
+                seller_fee_basis_points,
+                creators,
+                type,
+                category,
+                edition,
+                supply,
+                maxSupply,
+                solPrice,
+                description,
+                story,
+                attributes,
+                files,
+                chain,
+                tokenMint,
+                publicKey,
+                createdAt,
+                updatedAt,
+            } = apiItem;
+
+            if (
+                edition === undefined ||
+                supply === undefined ||
+                maxSupply === undefined ||
+                seller_fee_basis_points === undefined
+            ) {
+                throw new Error('Required values are undefined');
+            }
+
+            const newItem = new IndexDbItem(
+                id,
+                identifier,
+                uri,
+                image,
+                artists ?? [],
+                mint,
+                link ?? '',
+                external_url ?? '',
+                title,
+                seller_fee_basis_points,
+                creators ?? [],
+                type ?? ArtType.NFT,
+                category,
+                edition,
+                supply,
+                maxSupply,
+                solPrice,
+                description ?? '',
+                story ?? '',
+                attributes ?? [],
+                files ?? [],
+                chain,
+                tokenMint ?? '',
+                publicKey ?? '',
+                createdAt, // If these may be undefined, consider handling them
+                updatedAt // If these may be undefined, consider handling them
+            );
+            const gid = await createItem(this._db, newItem);
+            console.debug(`IndexDB: item saved: ${gid ? `gid: ${gid}` : 'failed'}`);
+            return newItem;
+        });
+        return dbItem;
+    };
+
+    updateItem = async (itemId: string, apiItem: IndexDbItem) => {
+        console.debug(`IndexDB: updating item: ${itemId}} ...`);
+        const dbItem = await this._db.transaction('rw', this._db.items, async () => {
+            const {
+                id,
+                identifier,
+                uri,
+                image,
+                artists,
+                mint,
+                link,
+                external_url,
+                title,
+                seller_fee_basis_points,
+                creators,
+                type,
+                category,
+                edition,
+                supply,
+                maxSupply,
+                solPrice,
+                description,
+                story,
+                attributes,
+                files,
+                chain,
+                tokenMint,
+                publicKey,
+                createdAt,
+                updatedAt,
+            } = apiItem;
+
+            if (
+                seller_fee_basis_points === undefined ||
+                edition === undefined ||
+                supply === undefined ||
+                maxSupply === undefined ||
+                attributes === undefined ||
+                files === undefined ||
+                createdAt === undefined ||
+                updatedAt === undefined
+            ) {
+                throw new Error('Some required fields are undefined');
+            }
+
+            const newItem = new IndexDbItem(
+                id,
+                identifier,
+                uri,
+                image,
+                artists,
+                mint,
+                link,
+                external_url,
+                title,
+                seller_fee_basis_points,
+                creators,
+                type,
+                category,
+                edition,
+                supply,
+                maxSupply,
+                solPrice,
+                description,
+                story,
+                attributes,
+                files,
+                chain,
+                tokenMint,
+                publicKey,
+                createdAt,
+                updatedAt
+            );
+            const gid = await amendItem(this._db, newItem);
+            console.debug(`IndexDB: item updated: ${gid ? `gid: ${gid}` : 'failed'}`);
+            return newItem;
+        });
+        return dbItem;
+    };
+
+    getUserItems = async (userId: string): Promise<IndexDbItem[]> => {
+        console.debug(`IndexDB: getting profile for user: ${userId} ...`);
+        const dbItem = await this._db.transaction('rw', this._db.users, this._db.items, async (): Promise<IndexDbItem[]> => {
+            return await loadUserItems(userId, this._db);
+        });
+        return dbItem;
+    };
+}

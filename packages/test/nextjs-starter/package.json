@@ -1,0 +1,57 @@
+{
+    "name": "@mindblox-wallet-adapter/nextjs-starter",
+    "version": "0.8.19",
+    "author": "Phillip Strefling <phillip@queendom.io>",
+    "repository": "https://github.com/QueendomVerse/wallet-adapter",
+    "license": "Apache-2.0",
+    "publishConfig": {
+        "access": "public"
+    },
+    "files": [
+        "public",
+        "src",
+        ".editorconfig",
+        ".eslintrc.json",
+        ".gitignore",
+        ".prettierignore",
+        ".prettierrc",
+        "LICENSE",
+        "next.config.js",
+        "next-env.d.ts",
+        "package.json",
+        "README.md",
+        "tsconfig.json"
+    ],
+    "engines": {
+        "node": ">=16"
+    },
+    "scripts": {
+        "build": "tsc --build --verbose && next build",
+        "clean": "rimraf .next .swc lib",
+        "dev": "NODE_OPTIONS='--inspect' next dev",
+        "start": "next start",
+        "lint": "prettier --check 'src/{*,**/*}.{ts,tsx,js,jsx,json}' && eslint && next lint"
+    },
+    "dependencies": {
+        "@mindblox-wallet-adapter/base": "workspace:^",
+        "@mindblox-wallet-adapter/react": "workspace:^",
+        "@mindblox-wallet-adapter/react-ui": "workspace:^",
+        "@mindblox-wallet-adapter/wallets": "workspace:^",
+        "@mindblox-wallet-adapter/networks": "workspace:^",
+        "@mindblox-wallet-adapter/solana": "workspace:^",
+        "@mindblox-wallet-adapter/web": "workspace:^",
+        "next": "^12.3.4",
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0"
+    },
+    "devDependencies": {
+        "@types/node-fetch": "^2.6.4",
+        "@types/react": "^18.2.15",
+        "@types/react-dom": "^18.2.6",
+        "eslint": "8.22.0",
+        "eslint-config-next": "^12.3.4",
+        "prettier": "^3.0.0",
+        "shx": "^0.3.4",
+        "typescript": "~4.7.4"
+    }
+}

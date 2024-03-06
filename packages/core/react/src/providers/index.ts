@@ -1,2 +1,2 @@
-export * from './ConnectionProvider';
-export * from './WalletProvider';
+export * from './ConnectionProvider.js';
+export * from './WalletProvider.js';

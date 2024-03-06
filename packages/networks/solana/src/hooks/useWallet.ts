@@ -16,23 +16,29 @@ import type {
 } from '@mindblox-wallet-adapter/base';
 
 import { ChainNetworks } from '@mindblox-wallet-adapter/base';
-import type { PhantomWallet } from '@mindblox-wallet-adapter/phantom';
+import type { PhantomWallet, PhantomWalletAdapter } from '@mindblox-wallet-adapter/phantom';
 import type { SolanaAdapter } from '../providers';
 
+export type BrowserWalletAdapaters = PhantomWalletAdapter;
 export type BrowserWallets = PhantomWallet;
 
 export interface SolanaWallet
-    extends Wallet<SolanaPublicKey, SolanaTransaction, SolanaConnection, SolanaTransactionSignature> {}
+    extends Wallet<
+        SolanaPublicKey,
+        SolanaTransaction,
+        SolanaConnection,
+        SolanaTransactionSignature
+    > {}
 
 export interface WalletContextState {
     chain: Chain | null;
-    adapter?: SolanaAdapter | BrowserWallets | null;
+    adapter?: SolanaAdapter | BrowserWalletAdapaters | null;
     autoConnect: boolean;
     wallets: (
-        | Wallet<SolanaPublicKey, SolanaTransaction, SolanaConnection, SolanaTransactionSignature>
+        | SolanaWallet
         | BrowserWallets
     )[];
-    wallet: Wallet<SolanaPublicKey, SolanaTransaction, SolanaConnection, SolanaTransactionSignature> | null;
+    wallet: SolanaWallet | null;
     publicKey: SolanaPublicKey | null;
     connecting: boolean;
     connected: boolean;
